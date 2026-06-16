@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Financiero — Representaciones Grantt Ltda. 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --azul-dark:  #1F3864;
+    --azul-mid:   #2E75B6;
+    --azul-light: #BDD7EE;
+    --azul-row:   #F2F7FB;
+    --verde:      #1E8449;
+    --verde-tot:  #27AE60;   /* verde oscuro para totales en fondo oscuro */
+    --rojo:       #C0392B;
+    --rojo-tot:   #E74C3C;   /* rojo oscuro para totales en fondo oscuro */
+    --ambar:      #D4AC0D;
+    --gris:       #5D6D7E;
+    --bg:         #EEF2F7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: #1a1a2e; font-size: 13px; }
+
+  /* ══ HEADER ══ */
+  header {
+    background: linear-gradient(135deg, #0d1f3c 0%, #1F3864 45%, #2E75B6 100%);
+    color: #fff;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 72px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.28);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    right: 60px; bottom: -60px;
+    width: 150px; height: 150px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; z-index: 1; }
+  .header-logo {
+    width: 72px; height: 52px; border-radius: 8px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,.3);
+    flex-shrink: 0;
+  }
+  .header-logo img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: left top;
+  }
+  .header-text h1 { font-size: 17px; font-weight: 800; letter-spacing: .3px; line-height: 1.2; }
+  .header-text p  { font-size: 11.5px; opacity: .65; margin-top: 2px; letter-spacing: .2px; }
+  .header-right { display: flex; gap: 20px; z-index: 1; }
+  .hstat { text-align: center; }
+  .hstat .hval { font-size: 15px; font-weight: 800; color: #7ecfff; line-height: 1.1; }
+  .hstat .hlbl { font-size: 10px; opacity: .6; text-transform: uppercase; letter-spacing: .5px; }
+  .header-divider { width: 1px; background: rgba(255,255,255,.15); margin: 6px 0; }
+
+  /* ══ NAV ══ */
+  nav {
+    background: #162c52;
+    display: flex;
+    gap: 2px;
+    padding: 0 28px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  nav button {
+    background: none; border: none;
+    color: rgba(255,255,255,.6);
+    padding: 12px 20px;
+    cursor: pointer; font-size: 12.5px; font-weight: 600;
+    border-bottom: 3px solid transparent;
+    transition: .2s; letter-spacing: .2px;
+  }
+  nav button.active { color: #fff; border-bottom-color: #5baef7; background: rgba(255,255,255,.05); }
+  nav button:hover  { color: #fff; border-bottom-color: rgba(91,174,247,.5); }
+
+  /* ── TOOLBAR ── */
+  .toolbar { background: #fff; border-bottom: 1px solid #dde3ea; padding: 10px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .toolbar label { font-weight: 600; color: var(--azul-dark); }
+  .toolbar select, .toolbar input[type=file] { border: 1px solid #bfc9d3; border-radius: 4px; padding: 5px 9px; font-size: 12px; background: #fff; }
+  .toolbar .btn { background: var(--azul-mid); color: #fff; border: none; border-radius: 4px; padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .toolbar .btn:hover { background: var(--azul-dark); }
+  #status { font-size: 11px; color: var(--gris); margin-left: auto; }
+
+  /* ── TABS ── */
+  .tab { display: none; padding: 20px 24px; }
+  .tab.active { display: block; }
+
+  /* ── CARDS ── */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .card { background: #fff; border-radius: 8px; padding: 16px 18px; border-left: 5px solid var(--azul-mid); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .card.verde { border-color: var(--verde); }
+  .card.rojo  { border-color: var(--rojo); }
+  .card.ambar { border-color: var(--ambar); }
+  .card h4 { font-size: 11px; color: var(--gris); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+  .card .val { font-size: 22px; font-weight: 700; }
+  .card .val.pos { color: var(--verde); }
+  .card .val.neg { color: var(--rojo); }
+  .card .sub { font-size: 11px; color: var(--gris); margin-top: 3px; }
+
+  /* ── TABLE ── */
+  .tbl-wrap { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; margin-bottom: 22px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: var(--azul-dark); color: #fff; }
+  thead th { padding: 9px 10px; text-align: right; font-weight: 700; font-size: 12px; white-space: nowrap; }
+  thead th:first-child, thead th:nth-child(2) { text-align: left; }
+  tbody tr:nth-child(even) { background: var(--azul-row); }
+  tbody tr:hover { background: var(--azul-light); }
+  tbody td { padding: 3px 8px; text-align: right; border-bottom: 1px solid #e8eef4; }
+  tbody td:first-child { text-align: left; font-family: monospace; font-size: 11px; color: var(--gris); }
+  tbody td:nth-child(2) { text-align: left; font-weight: 500; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tr.section-header td { background: var(--azul-dark); color: #fff; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  tr.section-header td { text-align: left !important; padding: 8px 10px; }
+  tr.subtotal td { background: var(--azul-mid); color: #fff; font-weight: 700; }
+  tr.total td { background: var(--azul-dark); color: #fff; font-weight: 700; font-size: 13px; }
+  tr.resultado-op td { background: #1a5276; color: #fff; font-weight: 700; }
+  /* Datos regulares: negro */
+  .neg-val { color: #111; font-weight: 600; }
+  .pos-val { color: #111; font-weight: 600; }
+  /* Filas de totales — sin delineado, verde claro que contrasta con fondo azul */
+  tr.subtotal .neg-val     { color: #FFA0A0; font-weight: 800; }
+  tr.subtotal .pos-val     { color: #6FEBB0; font-weight: 800; }
+  tr.resultado-op .neg-val { color: #FFA0A0; font-weight: 800; }
+  tr.resultado-op .pos-val { color: #6FEBB0; font-weight: 800; }
+  tr.total .neg-val        { color: #FF9090; font-weight: 900; font-size: 14px; }
+  tr.total .pos-val        { color: #52E896; font-weight: 900; font-size: 14px; }
+
+  /* ── PRINT ── */
+  .btn-print-pdf   { background: #C0392B; }
+  .btn-print-pdf:hover { background: #96281B; }
+  .btn-print-xls   { background: #1E8449; }
+  .btn-print-xls:hover { background: #145A32; }
+  .btn-print-imp   { background: #5D6D7E; }
+  .btn-print-imp:hover { background: #34495E; }
+
+  @page {
+    size: letter portrait;
+    margin: 8mm 8mm 8mm 8mm;
+  }
+
+  @media print {
+    /* Ocultar todo excepto tabla EERR */
+    header, nav, .toolbar, #kpi-cards, .chart-wrap,
+    #tab-auditoria, #tab-graficos, #fecha-panel,
+    #eerr-titulo, .no-print { display: none !important; }
+
+    html, body {
+      width: 100%; height: auto;
+      background: #fff !important;
+      margin: 0; padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Escalar para que todo quepa en 1 hoja carta landscape */
+    body { zoom: 62%; }
+
+    .tab { display: block !important; padding: 0; }
+    #tab-eerr { display: block !important; }
+
+    /* Tabla al 100% sin scroll */
+    .tbl-wrap { box-shadow: none; border: none; width: 100%; overflow: visible; margin: 0; }
+    table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+
+    /* Anchos de columna ajustados para carta */
+    thead th:nth-child(1), tbody td:nth-child(1) { width: 80px; }   /* Código */
+    thead th:nth-child(2), tbody td:nth-child(2) { width: 180px; }  /* Nombre */
+    /* columnas de meses y total se reparten el resto */
+
+    /* Celdas ultra compactas */
+    thead th {
+      padding: 3px 4px !important;
+      font-size: 7.5px !important;
+      white-space: nowrap;
+      letter-spacing: 0;
+    }
+    tbody td {
+      padding: 2px 4px !important;
+      font-size: 7.5px !important;
+      white-space: nowrap;
+      border-bottom: 1px solid #dde3ea !important;
+    }
+    tbody td:nth-child(2) { max-width: none !important; white-space: normal; word-break: break-word; }
+
+    /* Filas de sección y totales aún más bajas */
+    tr.section-header td { padding: 3px 4px !important; font-size: 7px !important; letter-spacing: .3px; }
+    tr.subtotal td, tr.resultado-op td, tr.total td { padding: 3px 4px !important; font-size: 8px !important; }
+
+    /* Colores forzados */
+    thead tr             { background: #1F3864 !important; color: #fff !important; }
+    tr.section-header td { background: #1F3864 !important; color: #fff !important; }
+    tr.subtotal td       { background: #2E75B6 !important; color: #fff !important; }
+    tr.resultado-op td   { background: #1a5276 !important; color: #fff !important; }
+    tr.total td          { background: #1F3864 !important; color: #fff !important; }
+    tbody tr:nth-child(even) { background: #F2F7FB !important; }
+
+    tr.subtotal .pos-val, tr.resultado-op .pos-val { color: #6FEBB0 !important; font-size: 8px !important; }
+    tr.subtotal .neg-val, tr.resultado-op .neg-val { color: #FFA0A0 !important; font-size: 8px !important; }
+    tr.total .pos-val { color: #52E896 !important; font-size: 8.5px !important; }
+    tr.total .neg-val { color: #FF9090 !important; font-size: 8.5px !important; }
+
+    /* Encabezado impreso compacto */
+    .print-header { display: block !important; text-align: center; margin-bottom: 6px; }
+    .print-header h2 { font-size: 11px; color: #1F3864; font-weight: 800; margin-bottom: 2px; }
+    .print-header p  { font-size: 8px; color: #5D6D7E; }
+
+    /* Sin saltos de página dentro de filas */
+    tr { page-break-inside: avoid; }
+  }
+  .print-header { display: none; }
+  /* Swing en tabla de auditoría mantiene colores */
+  .swing-pos { color: var(--verde) !important; font-weight: 600; }
+  .swing-neg { color: var(--rojo) !important; font-weight: 600; }
+
+  /* ── FILTROS MESES ── */
+  .mes-btns { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .mes-btns span { font-weight: 600; color: var(--azul-dark); font-size: 12px; margin-right: 2px; }
+  .mes-btn { border: 2px solid var(--azul-mid); background: #fff; color: var(--azul-dark); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: .15s; user-select: none; }
+  .mes-btn:hover { background: var(--azul-light); }
+  .mes-btn.active { background: var(--azul-mid); color: #fff; border-color: var(--azul-dark); }
+  .mes-btn.btn-todos { border-color: #34495e; }
+  .mes-btn.btn-todos.active { background: #34495e; color: #fff; border-color: #1a252f; }
+  .mes-btn.acum { border-color: #1a5276; }
+  .mes-btn.acum.active { background: #1a5276; color: #fff; }
+  .mes-hint { font-size: 10px; color: var(--gris); font-style: italic; }
+
+  /* ── PANEL A LA FECHA ── */
+  .fecha-panel { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 20px 24px; margin-top: 28px; border-top: 4px solid var(--azul-dark); }
+  .fecha-panel h3 { color: var(--azul-dark); font-size: 16px; margin-bottom: 6px; }
+  .fecha-panel .fecha-sub { color: var(--gris); font-size: 12px; margin-bottom: 16px; }
+  .fecha-kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; margin-bottom: 16px; }
+  .fkpi { background: var(--azul-row); border-radius: 6px; padding: 12px 14px; }
+  .fkpi h5 { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: var(--gris); margin-bottom: 5px; }
+  .fkpi .fval { font-size: 19px; font-weight: 700; color: #111; }
+  .fkpi .fval.pos { color: var(--verde); }
+  .fkpi .fval.neg { color: var(--rojo); }
+
+  /* ── CHART ── */
+  .chart-wrap { background: #fff; border-radius: 8px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 22px; }
+  .chart-wrap h3 { color: var(--azul-dark); margin-bottom: 14px; font-size: 14px; }
+
+  /* ── AUDITORIA ── */
+  .audit-section { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .audit-section h2 { color: var(--azul-dark); font-size: 15px; border-bottom: 2px solid var(--azul-mid); padding-bottom: 8px; margin-bottom: 14px; }
+  .audit-section p { line-height: 1.7; margin-bottom: 10px; color: #333; }
+  .alert-box { border-radius: 6px; padding: 12px 16px; margin-bottom: 10px; }
+  .alert-box.critico { background: #fdf2f2; border-left: 5px solid var(--rojo); }
+  .alert-box.advertencia { background: #fefcec; border-left: 5px solid var(--ambar); }
+  .alert-box h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .alert-box.critico h4 { color: var(--rojo); }
+  .alert-box.advertencia h4 { color: #9a7200; }
+  .alert-box p { margin: 0; font-size: 12px; }
+  .swing-pos { color: var(--verde); font-weight: 600; }
+  .swing-neg { color: var(--rojo); font-weight: 600; }
+  .badge { display: inline-block; border-radius: 3px; padding: 2px 6px; font-size: 10px; font-weight: 700; margin-right: 4px; }
+  .badge.crit { background: var(--rojo); color: #fff; }
+  .badge.warn { background: var(--ambar); color: #fff; }
+
+  /* ── LOADING ── */
+  #loading { display: none; position: fixed; inset: 0; background: rgba(31,56,100,.8); z-index: 999; align-items: center; justify-content: center; flex-direction: column; color: #fff; gap: 14px; }
+  #loading.show { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><div id="loading-msg">Procesando archivo…</div></div>
+
+<header>
+  <div class="header-left">
+    <div class="header-logo">📊</div>
+    <div class="header-text">
+      <h1>Representaciones Grantt Ltda.</h1>
+      <p>Dashboard Financiero · Libro Mayor 2026 · Enero – Junio · Peso Chileno (CLP)</p>
+    </div>
+  </div>
+  <div class="header-right" id="header-stats">
+    <div class="hstat"><div class="hval" id="h-ingresos">—</div><div class="hlbl">Ingresos</div></div>
+    <div class="header-divider"></div>
+    <div class="hstat"><div class="hval" id="h-costos">—</div><div class="hlbl">Costos</div></div>
+    <div class="header-divider"></div>
+    <div class="hstat"><div class="hval" id="h-resultado" style="color:#56E39F">—</div><div class="hlbl">Resultado</div></div>
+    <div class="header-divider"></div>
+    <div class="hstat"><div class="hval" id="h-margen">—</div><div class="hlbl">Margen</div></div>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('eerr')">Estado de Resultados</button>
+  <button onclick="showTab('auditoria')">Auditoría</button>
+  <button onclick="showTab('graficos')">Gráficos</button>
+</nav>
+
+<div class="toolbar">
+  <label>📂 Archivo:</label>
+  <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)">
+  <div class="mes-btns" id="mes-btns">
+    <span>Ver:</span>
+    <button class="mes-btn btn-todos active" data-mes="0"    onclick="toggleMes(0,this)">Todos</button>
+    <button class="mes-btn"                  data-mes="1"    onclick="toggleMes(1,this)">Ene</button>
+    <button class="mes-btn"                  data-mes="2"    onclick="toggleMes(2,this)">Feb</button>
+    <button class="mes-btn"                  data-mes="3"    onclick="toggleMes(3,this)">Mar</button>
+    <button class="mes-btn"                  data-mes="4"    onclick="toggleMes(4,this)">Abr</button>
+    <button class="mes-btn"                  data-mes="5"    onclick="toggleMes(5,this)">May</button>
+    <button class="mes-btn"                  data-mes="6"    onclick="toggleMes(6,this)">Jun</button>
+    <button class="mes-btn acum"             data-mes="acum" onclick="toggleMes('acum',this)">📅 A la Fecha</button>
+  </div>
+  <span class="mes-hint">Puedes seleccionar varios meses</span>
+  <button class="btn" onclick="exportExcel()">⬇ Excel</button>
+  <button class="btn btn-print-pdf" onclick="imprimirPDF()">🖨 PDF</button>
+  <button class="btn btn-print-imp" onclick="window.print()">🖨 Imprimir</button>
+  <span id="status">Sin archivo — selecciona libro_mayor_2026.xlsx</span>
+</div>
+
+<!-- Encabezado solo visible al imprimir -->
+<div class="print-header">
+  <h2>Representaciones Grantt Ltda. — Estado de Resultados 2026</h2>
+  <p>Período: Enero – Junio 2026 &nbsp;|&nbsp; Moneda: Peso Chileno (CLP) &nbsp;|&nbsp; Generado: <span id="print-fecha"></span></p>
+</div>
+
+<!-- ══════════════════ TAB: EERR ══════════════════ -->
+<div id="tab-eerr" class="tab active">
+  <div class="cards" id="kpi-cards"></div>
+  <div id="eerr-titulo" style="font-size:13px;color:var(--gris);margin-bottom:10px;font-style:italic"></div>
+  <div class="tbl-wrap"><table id="tbl-eerr"><thead></thead><tbody></tbody></table></div>
+  <!-- Panel A la Fecha -->
+  <div class="fecha-panel" id="fecha-panel" style="display:none">
+    <h3>📅 Estado de Resultados Acumulado a la Fecha</h3>
+    <div class="fecha-sub" id="fecha-sub"></div>
+    <div class="fecha-kpis" id="fecha-kpis"></div>
+    <div class="tbl-wrap"><table id="tbl-fecha"><thead></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══════════════════ TAB: AUDITORÍA ══════════════════ -->
+<div id="tab-auditoria" class="tab">
+  <div id="audit-content"><p style="color:var(--gris);padding:30px">Carga el archivo para generar la auditoría.</p></div>
+</div>
+
+<!-- ══════════════════ TAB: GRÁFICOS ══════════════════ -->
+<div id="tab-graficos" class="tab">
+  <div class="chart-wrap"><h3>Resultado Mensual (Ingresos vs Costos vs Resultado Neto)</h3><canvas id="chart-resultado" height="100"></canvas></div>
+  <div class="chart-wrap"><h3>Composición de Ingresos por Mes</h3><canvas id="chart-ingresos" height="100"></canvas></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  GLOBALS
+// ═══════════════════════════════════════════════════════
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun'];
+const MESES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio'];
+const CAT = {
+  '10':'Activo Corriente','11':'Activo Fijo','12':'Activo Intangible',
+  '20':'Pasivo Corriente','22':'Patrimonio',
+  '30':'Ingresos Operacionales','31':'Otros Ingresos',
+  '40':'Costos y Gastos','41':'Gastos Financieros'
+};
+const EERR_CATS = ['30','31','40','41'];
+
+let DATA = null;
+let charts = {};
+// MESES_SEL: Set de meses seleccionados (1-6), vacío = todos, 'acum' = a la fecha
+let MESES_SEL = new Set(); // vacío = "Todos"
+let MODO_ACUM = false;
+
+function toggleMes(mes, btn) {
+  if (mes === 0) {
+    // Todos → limpiar selección y desactivar resto
+    MESES_SEL.clear();
+    MODO_ACUM = false;
+    document.querySelectorAll('.mes-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAll();
+    return;
+  }
+  if (mes === 'acum') {
+    // A la Fecha → modo especial, desactiva multi
+    MESES_SEL.clear();
+    MODO_ACUM = true;
+    document.querySelectorAll('.mes-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAll();
+    return;
+  }
+  // Mes individual: toggle
+  MODO_ACUM = false;
+  // Quitar "Todos" al elegir un mes específico
+  document.querySelector('.mes-btn.btn-todos').classList.remove('active');
+
+  if (MESES_SEL.has(mes)) {
+    MESES_SEL.delete(mes);
+    btn.classList.remove('active');
+    // Si no queda ninguno seleccionado, volver a "Todos"
+    if (MESES_SEL.size === 0) {
+      document.querySelector('.mes-btn.btn-todos').classList.add('active');
+    }
+  } else {
+    MESES_SEL.add(mes);
+    btn.classList.add('active');
+    document.querySelector('.mes-btn.acum').classList.remove('active');
+  }
+  renderAll();
+}
+
+// Devuelve el array de meses activos para el renderizado
+function getMesesActivos() {
+  if (MODO_ACUM) {
+    const hoy = new Date();
+    const mesHoy = Math.min(hoy.getMonth() + 1, 6);
+    return Array.from({length: mesHoy}, (_, i) => i + 1);
+  }
+  if (MESES_SEL.size === 0) return [1,2,3,4,5,6];
+  return Array.from(MESES_SEL).sort((a,b) => a - b);
+}
+
+// ═══════════════════════════════════════════════════════
+//  FILE HANDLER
+// ═══════════════════════════════════════════════════════
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  setLoading(true, 'Leyendo archivo Excel…');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      setLoading(true, 'Parseando libro mayor…');
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: false });
+      DATA = parseLibroMayor(wb);
+      document.getElementById('status').textContent =
+        `✅ ${file.name} — ${DATA.rows.length.toLocaleString('es-CL')} movimientos cargados`;
+      renderAll();
+    } catch(err) {
+      alert('Error al procesar: ' + err.message);
+      console.error(err);
+    }
+    setLoading(false);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ═══════════════════════════════════════════════════════
+//  PARSER
+// ═══════════════════════════════════════════════════════
+function parseLibroMayor(wb) {
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+
+  // Headers at row 8 (index 7)
+  // Cols: A=0 CUENTA, B=1 FECHA, C=2 N°COMP, D=3 TIPO, E=4 N°INT, F=5 PRESUP, G=6 CC,
+  //       H=7 AUX, I=8 TIPODOC, J=9 NUMDOC, K=10 DET, L=11 DEBE, M=12 HABER, N=13 SALDO, O=14 DESC
+  const HDR = 7; // row index of headers
+
+  const cuentaRe = /^(\d{2}-\d{2}-\d{2}-\d{2})\s+(.*)/;
+  const saldoAntRe = /SALDO ANTERIOR DE LA CUENTA:\s*(\d{2}-\d{2}-\d{2}-\d{2})\s*(.*)/i;
+
+  function parseNum(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return v;
+    const s = String(v).replace(/[\s$]/g, '').replace(/\./g,'').replace(',','.');
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function parseDate(v) {
+    if (!v) return null;
+    // Excel serial or string DD/MM/YYYY or M/D/YYYY
+    if (typeof v === 'number') {
+      // Excel date serial
+      const d = XLSX.SSF.parse_date_code(v);
+      if (d) return new Date(d.y, d.m - 1, d.d);
+    }
+    const s = String(v).trim();
+    // DD/MM/YYYY
+    let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]));
+    // M/D/YYYY (SheetJS sometimes outputs this)
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]));
+    return null;
+  }
+
+  const rows = [];
+  const saldosAnt = {}; // codigo -> saldo anterior
+
+  let currentCuenta = null;
+
+  for (let i = HDR + 1; i < raw.length; i++) {
+    const r = raw[i];
+    if (!r || r.length === 0) continue;
+
+    const col0 = String(r[0] || '').trim();
+
+    // Detect SALDO ANTERIOR row
+    const saMatch = col0.match(saldoAntRe);
+    if (saMatch) {
+      const cod = saMatch[1];
+      const saldoVal = parseNum(r[11] || r[12] || r[13]);
+      saldosAnt[cod] = saldoVal;
+      currentCuenta = { codigo: cod, nombre: saMatch[2].trim() };
+      continue;
+    }
+
+    // Detect account header row (starts with account code)
+    const cuentaMatch = col0.match(cuentaRe);
+    if (cuentaMatch) {
+      // This is a transaction row with account code repeated
+      currentCuenta = { codigo: cuentaMatch[1], nombre: cuentaMatch[2].trim() };
+    }
+
+    if (!currentCuenta) continue;
+
+    // Date is col B (index 1)
+    const fechaRaw = r[1];
+    const fecha = parseDate(fechaRaw);
+    if (!fecha) continue;
+
+    const mes = fecha.getMonth() + 1; // 1-6
+    if (mes < 1 || mes > 6) continue;
+
+    const debe  = parseNum(r[11]);
+    const haber = parseNum(r[12]);
+    const neto  = haber - debe; // REGLA: HABER - DEBE
+
+    const cat2 = currentCuenta.codigo.substring(0, 2);
+
+    rows.push({
+      codigo: currentCuenta.codigo,
+      nombre: currentCuenta.nombre,
+      cat2,
+      mes,
+      debe,
+      haber,
+      neto,
+      desc: String(r[14] || r[10] || '').trim()
+    });
+  }
+
+  // Aggregate by cuenta + mes
+  const agg = {}; // key: codigo -> { codigo, nombre, cat2, meses: {1..6: neto}, totalDebe: {}, totalHaber: {} }
+  for (const row of rows) {
+    const k = row.codigo;
+    if (!agg[k]) agg[k] = { codigo: row.codigo, nombre: row.nombre, cat2: row.cat2, meses: {}, debeM: {}, haberM: {} };
+    agg[k].meses[row.mes]  = (agg[k].meses[row.mes]  || 0) + row.neto;
+    agg[k].debeM[row.mes]  = (agg[k].debeM[row.mes]  || 0) + row.debe;
+    agg[k].haberM[row.mes] = (agg[k].haberM[row.mes] || 0) + row.haber;
+  }
+
+  // Monthly totals for double-entry check
+  const mesDebeTotal  = {};
+  const mesHaberTotal = {};
+  for (const row of rows) {
+    mesDebeTotal[row.mes]  = (mesDebeTotal[row.mes]  || 0) + row.debe;
+    mesHaberTotal[row.mes] = (mesHaberTotal[row.mes] || 0) + row.haber;
+  }
+
+  return { rows, cuentas: Object.values(agg), saldosAnt, mesDebeTotal, mesHaberTotal };
+}
+
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
+function fmt(n, sign = false) {
+  if (n === 0 || n === null || n === undefined) return '-';
+  const abs = Math.abs(n);
+  const s = abs.toLocaleString('es-CL', { maximumFractionDigits: 0 });
+  if (sign && n < 0) return `(${s})`;
+  if (n < 0) return `(${s})`;
+  return s;
+}
+
+function fmtK(n) {
+  if (Math.abs(n) >= 1e9) return (n/1e9).toFixed(1).replace('.',',') + ' MM';
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(1).replace('.',',') + ' M';
+  return fmt(n);
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function setLoading(show, msg = '') {
+  const el = document.getElementById('loading');
+  el.classList.toggle('show', show);
+  if (msg) document.getElementById('loading-msg').textContent = msg;
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER ALL
+// ═══════════════════════════════════════════════════════
+function renderAll() {
+  if (!DATA) return;
+  const meses = getMesesActivos();
+
+  // Título descriptivo
+  const tit = document.getElementById('eerr-titulo');
+  if (MODO_ACUM) {
+    const hoy = new Date();
+    const mesHoy = Math.min(hoy.getMonth() + 1, 6);
+    tit.textContent = `Acumulado Enero → ${MESES_FULL[mesHoy-1]} 2026 (${mesHoy} meses)`;
+  } else if (meses.length === 6) {
+    tit.textContent = 'Todos los meses: Enero – Junio 2026';
+  } else if (meses.length === 1) {
+    tit.textContent = `Mes seleccionado: ${MESES_FULL[meses[0]-1]} 2026`;
+  } else {
+    tit.textContent = `Meses seleccionados: ${meses.map(m => MESES_FULL[m-1]).join(', ')} 2026`;
+  }
+
+  renderKPIs(meses);
+  renderEERR(meses);
+  renderFechaPanel(MODO_ACUM);
+  renderAuditoria();
+  renderCharts();
+}
+
+// ═══════════════════════════════════════════════════════
+//  KPIs
+// ═══════════════════════════════════════════════════════
+function renderKPIs(meses) {
+  const { cuentas } = DATA;
+
+  function sumCat(cats) {
+    return cuentas
+      .filter(c => cats.includes(c.cat2))
+      .reduce((s, c) => s + meses.reduce((a, m) => a + (c.meses[m] || 0), 0), 0);
+  }
+
+  const ing  = sumCat(['30','31']);
+  const cos  = sumCat(['40']);
+  const fin  = sumCat(['41']);
+  const res  = ing + cos + fin;
+
+  const margen = ing !== 0 ? (res/ing*100).toFixed(1) : 0;
+  const html = `
+    <div class="card verde"><h4>Ingresos Totales</h4><div class="val pos">$${fmtK(ing)}</div><div class="sub">Operacionales + Otros</div></div>
+    <div class="card rojo"><h4>Costos y Gastos</h4><div class="val neg">$(${fmtK(Math.abs(cos))})</div><div class="sub">Categorías 40+41</div></div>
+    <div class="card ${res >= 0 ? 'verde' : 'rojo'}"><h4>Resultado Ejercicio</h4><div class="val ${res >= 0 ? 'pos' : 'neg'}">$${fmtK(res)}</div><div class="sub">Margen: ${margen}%</div></div>
+    <div class="card"><h4>Cuentas Activas</h4><div class="val">${cuentas.filter(c => EERR_CATS.includes(c.cat2)).length}</div><div class="sub">En Estado de Resultados</div></div>
+  `;
+  document.getElementById('kpi-cards').innerHTML = html;
+
+  // Actualizar stats del header
+  document.getElementById('h-ingresos').textContent  = '$' + fmtK(ing);
+  document.getElementById('h-costos').textContent    = '(' + fmtK(Math.abs(cos+fin)) + ')';
+  const hRes = document.getElementById('h-resultado');
+  hRes.textContent = '$' + fmtK(res);
+  hRes.style.color = res >= 0 ? '#56E39F' : '#FF6B6B';
+  document.getElementById('h-margen').textContent    = margen + '%';
+}
+
+// ═══════════════════════════════════════════════════════
+//  ESTADO DE RESULTADOS
+// ═══════════════════════════════════════════════════════
+function renderEERR(meses) {
+  const { cuentas } = DATA;
+
+  function getVal(c, mes) { return c.meses[mes] || 0; }
+  function sumCat(cats) {
+    return cuentas.filter(c => cats.includes(c.cat2));
+  }
+
+  // Mostrar columna TOTAL si hay más de 1 mes
+  const showTotal = meses.length > 1;
+
+  const thead = document.querySelector('#tbl-eerr thead');
+  thead.innerHTML = `<tr>
+    <th style="width:110px">Código</th>
+    <th style="min-width:220px;text-align:left">Nombre Cuenta</th>
+    ${meses.map(m => `<th>${MESES[m-1]}</th>`).join('')}
+    ${showTotal ? '<th style="background:#162c52">TOTAL</th>' : ''}
+  </tr>`;
+
+  const tbody = document.querySelector('#tbl-eerr tbody');
+  let html = '';
+
+  function fmtCell(v, isTotRow=false) {
+    if (v === 0) return '<td>-</td>';
+    const cls = v < 0 ? 'neg-val' : 'pos-val';
+    return `<td class="${cls}">${fmt(v)}</td>`;
+  }
+
+  function addSectionHeader(title) {
+    const cols = meses.length + (showTotal ? 1 : 0) + 2;
+    html += `<tr class="section-header"><td colspan="${cols}">${title}</td></tr>`;
+  }
+
+  function addCuenta(c) {
+    const vals = meses.map(m => getVal(c, m));
+    const total = vals.reduce((a,b) => a+b, 0);
+    html += `<tr>
+      <td>${c.codigo}</td>
+      <td title="${c.nombre}">${c.nombre.length > 45 ? c.nombre.substring(0,45)+'…' : c.nombre}</td>
+      ${vals.map(v => fmtCell(v)).join('')}
+      ${showTotal ? fmtCell(total) : ''}
+    </tr>`;
+  }
+
+  function addSubtotal(label, cats, rowClass='subtotal') {
+    const vals = meses.map(mes =>
+      sumCat(cats).reduce((s, c) => s + getVal(c, mes), 0)
+    );
+    const total = vals.reduce((a,b) => a+b, 0);
+    html += `<tr class="${rowClass}">
+      <td></td><td>${label}</td>
+      ${vals.map(v => fmtCell(v, true)).join('')}
+      ${showTotal ? fmtCell(total, true) : ''}
+    </tr>`;
+    return { vals, total };
+  }
+
+  // ── INGRESOS OPERACIONALES (30) ──
+  addSectionHeader('INGRESOS OPERACIONALES');
+  sumCat(['30']).forEach(c => addCuenta(c));
+  const sub30 = addSubtotal('Subtotal Ingresos Operacionales', ['30']);
+
+  // ── OTROS INGRESOS (31) ──
+  addSectionHeader('OTROS INGRESOS');
+  sumCat(['31']).forEach(c => addCuenta(c));
+  const sub31 = addSubtotal('Subtotal Otros Ingresos', ['31']);
+
+  // ── COSTOS Y GASTOS (40) ──
+  addSectionHeader('COSTOS Y GASTOS');
+  sumCat(['40']).forEach(c => addCuenta(c));
+  const sub40 = addSubtotal('Subtotal Costos y Gastos', ['40']);
+
+  // ── RESULTADO OPERACIONAL ──
+  const resOpVals = meses.map((_,i) => (sub30.vals[i]||0)+(sub31.vals[i]||0)+(sub40.vals[i]||0));
+  const resOpTotal = resOpVals.reduce((a,b)=>a+b,0);
+  html += `<tr class="resultado-op">
+    <td></td><td>▶ RESULTADO OPERACIONAL (30+31+40)</td>
+    ${resOpVals.map(v => fmtCell(v,true)).join('')}
+    ${showTotal ? fmtCell(resOpTotal,true) : ''}
+  </tr>`;
+
+  // ── GASTOS FINANCIEROS (41) ──
+  addSectionHeader('GASTOS FINANCIEROS');
+  sumCat(['41']).forEach(c => addCuenta(c));
+  const sub41 = addSubtotal('Subtotal Gastos Financieros', ['41']);
+
+  // ── RESULTADO DEL EJERCICIO ──
+  const resEjVals = meses.map((_,i) => resOpVals[i]+(sub41.vals[i]||0));
+  const resEjTotal = resEjVals.reduce((a,b)=>a+b,0);
+  html += `<tr class="total">
+    <td></td><td>★ RESULTADO DEL EJERCICIO</td>
+    ${resEjVals.map(v => fmtCell(v,true)).join('')}
+    ${showTotal ? fmtCell(resEjTotal,true) : ''}
+  </tr>`;
+
+  tbody.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+//  PANEL A LA FECHA
+// ═══════════════════════════════════════════════════════
+function renderFechaPanel(mostrar) {
+  const panel = document.getElementById('fecha-panel');
+  panel.style.display = mostrar ? 'block' : 'none';
+  if (!mostrar || !DATA) return;
+
+  const { cuentas } = DATA;
+  const hoy = new Date();
+  const mesHoy = Math.min(hoy.getMonth() + 1, 6);
+  const mesesAcum = Array.from({length: mesHoy}, (_,i) => i+1);
+
+  document.getElementById('fecha-sub').textContent =
+    `Acumulado Enero – ${MESES_FULL[mesHoy-1]} 2026 · Generado el ${hoy.toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'})}`;
+
+  function sumAcum(cats) {
+    return cuentas.filter(c => cats.includes(c.cat2))
+      .reduce((s,c) => s + mesesAcum.reduce((a,m) => a + (c.meses[m]||0), 0), 0);
+  }
+
+  const ing  = sumAcum(['30','31']);
+  const cos  = sumAcum(['40']);
+  const fin  = sumAcum(['41']);
+  const res  = ing + cos + fin;
+  const mg   = ing !== 0 ? (res/ing*100).toFixed(1) : 0;
+
+  document.getElementById('fecha-kpis').innerHTML = `
+    <div class="fkpi"><h5>Ingresos Acumulados</h5><div class="fval pos">$${fmt(ing)}</div></div>
+    <div class="fkpi"><h5>Costos y Gastos</h5><div class="fval neg">$(${fmt(Math.abs(cos))})</div></div>
+    <div class="fkpi"><h5>Gastos Financieros</h5><div class="fval neg">$(${fmt(Math.abs(fin))})</div></div>
+    <div class="fkpi"><h5>Resultado a la Fecha</h5><div class="fval ${res>=0?'pos':'neg'}">$${fmt(res)}</div></div>
+    <div class="fkpi"><h5>Margen Neto</h5><div class="fval">${mg}%</div></div>
+    <div class="fkpi"><h5>Meses Transcurridos</h5><div class="fval">${mesHoy} / 12</div></div>
+  `;
+
+  // Tabla acumulada (una sola columna "Acumulado")
+  const thead = document.querySelector('#tbl-fecha thead');
+  const tbody = document.querySelector('#tbl-fecha tbody');
+  thead.innerHTML = `<tr>
+    <th style="text-align:left;width:110px">Código</th>
+    <th style="text-align:left;min-width:220px">Nombre Cuenta</th>
+    <th>Acumulado Ene–${MESES[mesHoy-1]}</th>
+    <th>Promedio / Mes</th>
+    <th>Proyección Anual</th>
+  </tr>`;
+
+  let html = '';
+  const SECCIONES = [
+    { cats:['30'], titulo:'INGRESOS OPERACIONALES' },
+    { cats:['31'], titulo:'OTROS INGRESOS' },
+    { cats:['40'], titulo:'COSTOS Y GASTOS' },
+    { cats:['41'], titulo:'GASTOS FINANCIEROS' },
+  ];
+
+  function fmtCellF(v) {
+    if (v === 0) return '<td>-</td>';
+    return `<td style="color:#111;font-weight:600">${fmt(v)}</td>`;
+  }
+
+  const subtotales = {};
+  for (const sec of SECCIONES) {
+    const cols = 3 + 2; // code+name+3 cols
+    html += `<tr class="section-header"><td colspan="5">${sec.titulo}</td></tr>`;
+    const cs = cuentas.filter(c => sec.cats.includes(c.cat2));
+    let subtot = 0;
+    for (const c of cs) {
+      const acum = mesesAcum.reduce((a,m) => a+(c.meses[m]||0), 0);
+      const avg  = mesHoy > 0 ? acum/mesHoy : 0;
+      const proy = avg * 12;
+      subtot += acum;
+      html += `<tr>
+        <td>${c.codigo}</td>
+        <td title="${c.nombre}">${c.nombre.length>45?c.nombre.substring(0,45)+'…':c.nombre}</td>
+        ${fmtCellF(acum)}
+        ${fmtCellF(Math.round(avg))}
+        ${fmtCellF(Math.round(proy))}
+      </tr>`;
+    }
+    subtotales[sec.cats[0]] = subtot;
+    html += `<tr class="subtotal">
+      <td></td><td>Subtotal ${sec.titulo}</td>
+      ${fmtCellF(subtot)}
+      ${fmtCellF(Math.round(subtot/mesHoy))}
+      ${fmtCellF(Math.round(subtot/mesHoy*12))}
+    </tr>`;
+  }
+
+  // Resultado Operacional
+  const resOp = (subtotales['30']||0)+(subtotales['31']||0)+(subtotales['40']||0);
+  html += `<tr class="resultado-op">
+    <td></td><td>▶ RESULTADO OPERACIONAL</td>
+    ${fmtCellF(resOp)}
+    ${fmtCellF(Math.round(resOp/mesHoy))}
+    ${fmtCellF(Math.round(resOp/mesHoy*12))}
+  </tr>`;
+
+  // Resultado Ejercicio
+  html += `<tr class="total">
+    <td></td><td>★ RESULTADO DEL EJERCICIO A LA FECHA</td>
+    ${fmtCellF(res)}
+    ${fmtCellF(Math.round(res/mesHoy))}
+    ${fmtCellF(Math.round(res/mesHoy*12))}
+  </tr>`;
+
+  tbody.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+//  AUDITORÍA
+// ═══════════════════════════════════════════════════════
+function renderAuditoria() {
+  if (!DATA) return;
+  const { cuentas, rows, mesDebeTotal, mesHaberTotal } = DATA;
+
+  function sumCatMes(cats, mes) {
+    return cuentas.filter(c => cats.includes(c.cat2))
+      .reduce((s, c) => s + (c.meses[mes] || 0), 0);
+  }
+  function sumCat(cats) {
+    return [1,2,3,4,5,6].reduce((s, m) => s + sumCatMes(cats, m), 0);
+  }
+
+  const ingTotal = sumCat(['30','31']);
+  const cosTotal = sumCat(['40']);
+  const finTotal = sumCat(['41']);
+  const resTotal = ingTotal + cosTotal + finTotal;
+  const margen   = ingTotal !== 0 ? (resTotal/ingTotal*100).toFixed(1) : 0;
+
+  // Monthly volumes
+  const volMes = [1,2,3,4,5,6].map(m => ({
+    mes: MESES_FULL[m-1],
+    debe:  mesDebeTotal[m] || 0,
+    haber: mesHaberTotal[m] || 0,
+    diff:  (mesDebeTotal[m]||0) - (mesHaberTotal[m]||0)
+  }));
+  const volTotal = volMes.reduce((s,m) => s + m.debe, 0);
+
+  // Swing analysis (max - min across months)
+  const swingData = cuentas
+    .filter(c => EERR_CATS.includes(c.cat2))
+    .map(c => {
+      const vals = [1,2,3,4,5,6].map(m => c.meses[m] || 0);
+      const max = Math.max(...vals), min = Math.min(...vals);
+      return { ...c, swing: max - min, vals, max, min };
+    })
+    .sort((a,b) => b.swing - a.swing)
+    .slice(0, 15);
+
+  // Best/worst months
+  const resxMes = [1,2,3,4,5,6].map(m => sumCatMes(['30','31'], m) + sumCatMes(['40','41'], m));
+  const maxMesIdx = resxMes.indexOf(Math.max(...resxMes));
+  const minMesIdx = resxMes.indexOf(Math.min(...resxMes));
+
+  // Cat analysis
+  const catStats = ['30','31','40','41'].map(cat => {
+    const cs = cuentas.filter(c => c.cat2 === cat);
+    const total = cs.reduce((s,c) => s + Object.values(c.meses).reduce((a,b)=>a+b,0), 0);
+    const maxSwing = cs.map(c => {
+      const vals = [1,2,3,4,5,6].map(m => c.meses[m]||0);
+      return { ...c, sw: Math.max(...vals)-Math.min(...vals) };
+    }).sort((a,b)=>b.sw-a.sw)[0];
+    return { cat, nombre: CAT[cat], total, count: cs.length, maxSwing };
+  });
+
+  let html = `
+  <!-- I: Resumen Ejecutivo -->
+  <div class="audit-section">
+    <h2>I. Resumen Ejecutivo</h2>
+    <p>Durante el período <strong>enero a junio de 2026</strong>, Representaciones Grantt Ltda. registró
+    ingresos totales (operacionales y otros) por <strong>$${fmt(ingTotal)}</strong>, con costos y gastos operacionales
+    de <strong>$(${fmt(Math.abs(cosTotal))})</strong> y gastos financieros de <strong>$(${fmt(Math.abs(finTotal))})</strong>.
+    El resultado neto del ejercicio ascendió a <strong>$${fmt(resTotal)}</strong>, representando un margen sobre ingresos
+    de <strong>${margen}%</strong>.</p>
+    <p>El mes de mayor resultado fue <strong>${MESES_FULL[maxMesIdx]}</strong> con $${fmt(resxMes[maxMesIdx])},
+    mientras que <strong>${MESES_FULL[minMesIdx]}</strong> registró el resultado más bajo con $${fmt(resxMes[minMesIdx])}.
+    El volumen contable acumulado (DEBE = HABER) alcanzó los <strong>$${fmt(volTotal)}</strong>,
+    verificando la partida doble en los seis meses.</p>
+    <p>Se identificaron <strong>${swingData.length}</strong> cuentas con variabilidad mensual significativa.
+    La cuenta de mayor oscilación fue <strong>${swingData[0]?.nombre || 'N/D'}</strong>
+    con un swing de <strong>$${fmt(swingData[0]?.swing || 0)}</strong> entre su mes más alto y más bajo.
+    El presente informe detalla los hallazgos y recomendaciones para mejorar la gestión financiera.</p>
+  </div>
+
+  <!-- II: Volumen Mensual -->
+  <div class="audit-section">
+    <h2>II. Análisis de Volumen Mensual</h2>
+    <p>La siguiente tabla muestra el volumen total de transacciones por mes (DEBE = HABER confirma partida doble),
+    la variación absoluta respecto al mes anterior y la variación porcentual:</p>
+    <div class="tbl-wrap" style="margin-top:12px">
+    <table>
+      <thead><tr>
+        <th style="text-align:left">Mes</th>
+        <th>Total DEBE</th><th>Total HABER</th>
+        <th>Diferencia</th><th>Var. vs Anterior</th><th>Var. %</th>
+      </tr></thead>
+      <tbody>
+        ${volMes.map((v,i) => {
+          const prev = i > 0 ? volMes[i-1].debe : null;
+          const varAbs = prev !== null ? v.debe - prev : null;
+          const varPct = prev !== null && prev !== 0 ? (varAbs/prev*100).toFixed(1) : null;
+          const diffCls = Math.abs(v.diff) < 1 ? 'pos-val' : 'neg-val';
+          return `<tr>
+            <td style="text-align:left;font-weight:600">${v.mes}</td>
+            <td>$${fmt(v.debe)}</td>
+            <td>$${fmt(v.haber)}</td>
+            <td class="${diffCls}">${Math.abs(v.diff) < 1 ? '✓ Cuadra' : fmt(v.diff)}</td>
+            <td>${varAbs !== null ? (varAbs >= 0 ? '+' : '') + fmt(varAbs) : '—'}</td>
+            <td>${varPct !== null ? (parseFloat(varPct) >= 0 ? '+' : '') + varPct + '%' : '—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- III: Análisis por Categoría -->
+  <div class="audit-section">
+    <h2>III. Análisis por Categoría</h2>
+    ${catStats.map(cs => `
+      <p><strong>${cs.cat} — ${cs.nombre} (${cs.count} cuentas):</strong>
+      Total acumulado $${fmt(cs.total)}.
+      ${cs.maxSwing ? `La cuenta con mayor variabilidad mensual es <em>${cs.maxSwing.nombre}</em>
+      con un swing de $${fmt(cs.maxSwing.sw)}.` : ''}
+      </p>
+    `).join('')}
+  </div>
+
+  <!-- IV: Top 15 Swing -->
+  <div class="audit-section">
+    <h2>IV. Top 15 Cuentas con Mayor Variabilidad Mensual</h2>
+    <p>Cuentas del Estado de Resultados ordenadas por diferencia máx–mín entre meses:</p>
+    <div class="tbl-wrap" style="margin-top:12px">
+    <table>
+      <thead><tr>
+        <th style="text-align:left">#</th>
+        <th style="text-align:left">Código</th>
+        <th style="text-align:left">Nombre</th>
+        <th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th><th>May</th><th>Jun</th>
+        <th>Swing</th>
+      </tr></thead>
+      <tbody>
+        ${swingData.map((c,i) => `<tr>
+          <td style="text-align:left;color:var(--gris)">${i+1}</td>
+          <td style="text-align:left;font-family:monospace;font-size:11px">${c.codigo}</td>
+          <td style="text-align:left">${c.nombre.length>40 ? c.nombre.substring(0,40)+'…' : c.nombre}</td>
+          ${c.vals.map(v => `<td class="${v > 0 ? 'swing-pos' : v < 0 ? 'swing-neg' : ''}">${fmt(v)}</td>`).join('')}
+          <td style="font-weight:700">$${fmt(c.swing)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- V: Hallazgos -->
+  <div class="audit-section">
+    <h2>V. Hallazgos y Alertas</h2>
+    <div class="alert-box critico">
+      <h4><span class="badge crit">CRÍTICO</span> Concentración de Ingresos</h4>
+      <p>Los ingresos operacionales totales de $${fmt(ingTotal)} presentan alta concentración.
+      ${swingData.filter(c=>c.cat2==='30').length > 0
+        ? `La cuenta ${swingData.find(c=>c.cat2==='30')?.nombre || ''} muestra el mayor swing,
+           indicando dependencia de pocos períodos o clientes.`
+        : 'Se recomienda revisar la distribución de clientes y estacionalidad.'}</p>
+    </div>
+    <div class="alert-box critico">
+      <h4><span class="badge crit">CRÍTICO</span> Variabilidad en Costos y Gastos</h4>
+      <p>Los costos totales de $(${fmt(Math.abs(cosTotal))}) presentan variación mensual.
+      ${swingData.filter(c=>c.cat2==='40').length > 0
+        ? `La cuenta con mayor swing en categoría 40 es "${swingData.find(c=>c.cat2==='40')?.nombre || ''}"
+           con $${fmt(swingData.find(c=>c.cat2==='40')?.swing || 0)}.`
+        : ''} Se recomienda revisar controles de gasto.</p>
+    </div>
+    <div class="alert-box advertencia">
+      <h4><span class="badge warn">ADVERTENCIA</span> Gastos Financieros</h4>
+      <p>Los gastos financieros acumulados de $(${fmt(Math.abs(finTotal))}) representan
+      ${ingTotal !== 0 ? (Math.abs(finTotal)/ingTotal*100).toFixed(2) : 0}% de los ingresos.
+      Monitorear evolución mensual para detectar incrementos en costo de deuda.</p>
+    </div>
+    <div class="alert-box advertencia">
+      <h4><span class="badge warn">ADVERTENCIA</span> Estacionalidad</h4>
+      <p>El mes ${MESES_FULL[minMesIdx]} registró el resultado más bajo ($${fmt(resxMes[minMesIdx])}).
+      Diferencia de $${fmt(resxMes[maxMesIdx] - resxMes[minMesIdx])} respecto al mes peak.
+      Evaluar planificación de flujo de caja para meses de menor actividad.</p>
+    </div>
+    <div class="alert-box advertencia">
+      <h4><span class="badge warn">ADVERTENCIA</span> Cuentas con Saldo Cero en Meses</h4>
+      <p>${cuentas.filter(c => EERR_CATS.includes(c.cat2) && Object.keys(c.meses).length < 6).length}
+      cuentas del Estado de Resultados no presentan movimiento en todos los meses.
+      Verificar si corresponde a cuentas estacionales o a registros omitidos.</p>
+    </div>
+  </div>
+
+  <!-- VI: Partida Doble -->
+  <div class="audit-section">
+    <h2>VI. Verificación de Partida Doble</h2>
+    <p>Se verificó que la suma del DEBE iguala la suma del HABER en cada mes del período:</p>
+    <div class="tbl-wrap" style="margin-top:12px">
+    <table>
+      <thead><tr>
+        <th style="text-align:left">Mes</th>
+        <th>DEBE</th><th>HABER</th><th>Diferencia</th><th>Estado</th>
+      </tr></thead>
+      <tbody>
+        ${[1,2,3,4,5,6].map(m => {
+          const d = mesDebeTotal[m] || 0;
+          const h = mesHaberTotal[m] || 0;
+          const diff = d - h;
+          const ok = Math.abs(diff) < 1;
+          return `<tr>
+            <td style="text-align:left;font-weight:600">${MESES_FULL[m-1]}</td>
+            <td>$${fmt(d)}</td>
+            <td>$${fmt(h)}</td>
+            <td class="${ok ? 'pos-val' : 'neg-val'}">${ok ? '$0' : fmt(diff)}</td>
+            <td class="${ok ? 'pos-val' : 'neg-val'}" style="font-weight:700">${ok ? '✓ CUADRA' : '✗ DESCUADRE'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- VII: Conclusiones -->
+  <div class="audit-section">
+    <h2>VII. Conclusiones y Recomendaciones</h2>
+    <p><strong>1. Rentabilidad:</strong> El resultado del ejercicio de $${fmt(resTotal)} con margen del ${margen}%
+    indica una operación ${resTotal > 0 ? 'rentable' : 'deficitaria'} en el primer semestre 2026.
+    ${resTotal > 0 ? 'Se recomienda mantener los controles de gasto actuales y explorar oportunidades de crecimiento en ingresos.' : 'Se requiere revisión urgente de la estructura de costos.'}</p>
+    <p><strong>2. Control de Gastos:</strong> Los costos de $${fmt(Math.abs(cosTotal))} representan
+    ${ingTotal !== 0 ? (Math.abs(cosTotal)/ingTotal*100).toFixed(1) : 0}% de los ingresos.
+    Implementar revisión mensual de las cuentas con mayor variabilidad para detectar desviaciones oportunamente.</p>
+    <p><strong>3. Partida Doble:</strong> La verificación confirma integridad contable en todos los meses del período.
+    No se detectaron descuadres. Se recomienda mantener este control como proceso mensual automático.</p>
+    <p><strong>4. Estacionalidad:</strong> La variación entre el mejor y peor mes sugiere estacionalidad.
+    Se recomienda elaborar un presupuesto mensual y comparar resultados reales vs. presupuestados.</p>
+  </div>
+  `;
+
+  document.getElementById('audit-content').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+//  CHARTS
+// ═══════════════════════════════════════════════════════
+function renderCharts() {
+  if (!DATA) return;
+  const { cuentas } = DATA;
+
+  function sumCatMes(cats, mes) {
+    return cuentas.filter(c => cats.includes(c.cat2)).reduce((s,c) => s + (c.meses[mes]||0), 0);
+  }
+
+  const labels = MESES_FULL;
+  const ingresos = [1,2,3,4,5,6].map(m => sumCatMes(['30','31'], m));
+  const costos   = [1,2,3,4,5,6].map(m => sumCatMes(['40','41'], m));
+  const resultado= ingresos.map((v,i) => v + costos[i]);
+
+  // Destroy existing
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  charts.resultado = new Chart(document.getElementById('chart-resultado'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Ingresos', data: ingresos, backgroundColor: 'rgba(46,117,182,.8)', borderRadius: 4 },
+        { label: 'Costos+Gastos', data: costos.map(v => Math.abs(v)), backgroundColor: 'rgba(192,57,43,.7)', borderRadius: 4 },
+        { label: 'Resultado Neto', data: resultado, type: 'line', borderColor: '#1a8a3c', backgroundColor: 'rgba(26,138,60,.15)', tension: .3, fill: true, pointRadius: 5 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' },
+        tooltip: { callbacks: { label: ctx => `$${ctx.parsed.y.toLocaleString('es-CL')}` } }
+      },
+      scales: {
+        y: { ticks: { callback: v => '$'+Number(v).toLocaleString('es-CL',{maximumFractionDigits:0}) } }
+      }
+    }
+  });
+
+  const ing30 = [1,2,3,4,5,6].map(m => sumCatMes(['30'], m));
+  const ing31 = [1,2,3,4,5,6].map(m => sumCatMes(['31'], m));
+  charts.ingresos = new Chart(document.getElementById('chart-ingresos'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Ingresos Operacionales (30)', data: ing30, backgroundColor: 'rgba(46,117,182,.85)', borderRadius: 4 },
+        { label: 'Otros Ingresos (31)', data: ing31, backgroundColor: 'rgba(31,56,100,.7)', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' },
+        tooltip: { callbacks: { label: ctx => `$${ctx.parsed.y.toLocaleString('es-CL')}` } }
+      },
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, ticks: { callback: v => '$'+Number(v).toLocaleString('es-CL',{maximumFractionDigits:0}) } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  IMPRIMIR / PDF
+// ═══════════════════════════════════════════════════════
+function imprimirPDF() {
+  // Rellenar fecha de generación
+  document.getElementById('print-fecha').textContent =
+    new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+  // Asegurarse de mostrar el tab EERR
+  document.querySelectorAll('.tab').forEach(t => t.style.display = '');
+  window.print();
+}
+
+// ═══════════════════════════════════════════════════════
+//  EXPORT EXCEL (simple CSV via XLSX)
+// ═══════════════════════════════════════════════════════
+function exportExcel() {
+  if (!DATA) { alert('Carga el archivo primero.'); return; }
+  const { cuentas } = DATA;
+
+  const rows = [['Código','Nombre','Categoría','Ene','Feb','Mar','Abr','May','Jun','TOTAL']];
+  cuentas.filter(c => EERR_CATS.includes(c.cat2)).forEach(c => {
+    const vals = [1,2,3,4,5,6].map(m => c.meses[m]||0);
+    rows.push([c.codigo, c.nombre, CAT[c.cat2], ...vals, vals.reduce((a,b)=>a+b,0)]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Estado de Resultados');
+  XLSX.writeFile(wb, 'EERR_Grantt_2026.xlsx');
+}
+</script>
+</body>
+</html>

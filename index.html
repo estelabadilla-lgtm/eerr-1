@@ -374,8 +374,8 @@
 </nav>
 
 <div class="toolbar">
-  <label>📂 Archivo:</label>
-  <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)">
+  <label>📂 Actualizar:</label>
+  <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)" title="Reemplaza el archivo mayor/mayor.xlsx y vuelve a publicar, o carga uno manualmente aquí">
   <div class="mes-btns" id="mes-btns">
     <span>Ver:</span>
     <button class="mes-btn btn-todos active" data-mes="0"    onclick="toggleMes(0,this)">Todos</button>
@@ -514,27 +514,45 @@ function getMesesActivos() {
 // ═══════════════════════════════════════════════════════
 //  FILE HANDLER
 // ═══════════════════════════════════════════════════════
+function processArrayBuffer(buffer, nombre) {
+  try {
+    setLoading(true, 'Parseando libro mayor…');
+    const wb = XLSX.read(buffer, { type: 'array', cellDates: false });
+    DATA = parseLibroMayor(wb);
+    document.getElementById('status').textContent =
+      `✅ ${nombre} — ${DATA.rows.length.toLocaleString('es-CL')} movimientos cargados`;
+    renderAll();
+  } catch(err) {
+    alert('Error al procesar: ' + err.message);
+    console.error(err);
+  }
+  setLoading(false);
+}
+
 function handleFile(input) {
   const file = input.files[0];
   if (!file) return;
   setLoading(true, 'Leyendo archivo Excel…');
   const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      setLoading(true, 'Parseando libro mayor…');
-      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: false });
-      DATA = parseLibroMayor(wb);
-      document.getElementById('status').textContent =
-        `✅ ${file.name} — ${DATA.rows.length.toLocaleString('es-CL')} movimientos cargados`;
-      renderAll();
-    } catch(err) {
-      alert('Error al procesar: ' + err.message);
-      console.error(err);
-    }
-    setLoading(false);
-  };
+  reader.onload = e => processArrayBuffer(e.target.result, file.name);
   reader.readAsArrayBuffer(file);
 }
+
+function autoLoadMayor() {
+  setLoading(true, 'Cargando mayor/mayor.xlsx…');
+  fetch('./mayor/mayor.xlsx')
+    .then(r => {
+      if (!r.ok) throw new Error('No encontrado');
+      return r.arrayBuffer();
+    })
+    .then(buf => processArrayBuffer(buf, 'mayor.xlsx'))
+    .catch(() => {
+      setLoading(false);
+      document.getElementById('status').textContent = 'Carga el archivo manualmente ↑';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', autoLoadMayor);
 
 // ═══════════════════════════════════════════════════════
 //  PARSER

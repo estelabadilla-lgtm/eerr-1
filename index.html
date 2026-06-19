@@ -309,6 +309,16 @@
   .ppto-legend span { display: flex; align-items: center; gap: 6px; }
   .ppto-legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
+  /* ══ EERR TABLE (estructura ppto) ══ */
+  #tbl-eerr thead th { background: var(--azul-dark); color: #fff; padding: 8px 10px; text-align: right; font-size: 12px; white-space: nowrap; }
+  #tbl-eerr thead th:nth-child(1) { text-align: left; width: 110px; }
+  #tbl-eerr thead th:nth-child(2) { text-align: left; min-width: 220px; }
+  #tbl-eerr tbody tr:hover td { background: #e8f0fa; }
+  #tbl-eerr tr.ppto-cuenta td:not(:nth-child(1)):not(:nth-child(2)) { text-align: right; }
+  #tbl-eerr tr.ppto-stot td:not(:nth-child(2)) { text-align: right; }
+  #tbl-eerr tr.ppto-total td:not(:nth-child(2)) { text-align: right; }
+  #tbl-eerr tr.ppto-resultado td:not(:nth-child(2)) { text-align: right; }
+
   /* ══ CENTROS DE COSTOS TAB ══ */
   .cc-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 16px; background: #fff; border-radius: 10px; border: 1px solid #dde3ea; }
   .cc-toolbar label { font-weight: 700; color: var(--azul-dark); font-size: 12.5px; white-space: nowrap; }
@@ -750,101 +760,76 @@ function renderKPIs(meses) {
 //  ESTADO DE RESULTADOS
 // ═══════════════════════════════════════════════════════
 function renderEERR(meses) {
-  const { cuentas } = DATA;
+  if (!DATA) return;
+  const cMap = {};
+  DATA.cuentas.forEach(c => { cMap[c.codigo] = c; });
 
-  function getVal(c, mes) { return c.meses[mes] || 0; }
-  function sumCat(cats) {
-    return cuentas.filter(c => cats.includes(c.cat2));
-  }
-
-  // Mostrar columna TOTAL si hay más de 1 mes
   const showTotal = meses.length > 1;
 
-  const thead = document.querySelector('#tbl-eerr thead');
-  thead.innerHTML = `<tr>
-    <th style="width:110px">Código</th>
-    <th style="min-width:220px;text-align:left">Nombre Cuenta</th>
-    ${meses.map(m => `<th>${MESES[m-1]}</th>`).join('')}
-    ${showTotal ? '<th style="background:#162c52">TOTAL</th>' : ''}
-  </tr>`;
-
-  const tbody = document.querySelector('#tbl-eerr tbody');
-  let html = '';
-
-  function fmtCell(v, isTotRow=false) {
-    if (v === 0) return '<td>-</td>';
+  function getValsMes(cod) {
+    const c = cMap[cod];
+    return meses.map(m => c ? (c.meses[m] || 0) : 0);
+  }
+  function sumCodsMes(cods) {
+    return meses.map(m => cods.reduce((s, cod) => {
+      const c = cMap[cod]; return s + (c ? (c.meses[m] || 0) : 0);
+    }, 0));
+  }
+  function fv(v) {
+    if (v === 0) return '<span style="color:#aaa">-</span>';
     const cls = v < 0 ? 'neg-val' : 'pos-val';
-    return `<td class="${cls}">${fmt(v)}</td>`;
+    return `<span class="${cls}">${v < 0 ? '(' : ''}$${fmt(Math.abs(v))}${v < 0 ? ')' : ''}</span>`;
   }
-
-  function addSectionHeader(title) {
-    const cols = meses.length + (showTotal ? 1 : 0) + 2;
-    html += `<tr class="section-header"><td colspan="${cols}">${title}</td></tr>`;
-  }
-
-  function addCuenta(c) {
-    const vals = meses.map(m => getVal(c, m));
+  function cells(vals) {
     const total = vals.reduce((a,b) => a+b, 0);
-    html += `<tr>
-      <td>${c.codigo}</td>
-      <td title="${c.nombre}">${c.nombre.length > 45 ? c.nombre.substring(0,45)+'…' : c.nombre}</td>
-      ${vals.map(v => fmtCell(v)).join('')}
-      ${showTotal ? fmtCell(total) : ''}
-    </tr>`;
+    return vals.map(v => `<td>${fv(v)}</td>`).join('') +
+           (showTotal ? `<td>${fv(total)}</td>` : '');
   }
 
-  function addSubtotal(label, cats, rowClass='subtotal') {
-    const vals = meses.map(mes =>
-      sumCat(cats).reduce((s, c) => s + getVal(c, mes), 0)
-    );
-    const total = vals.reduce((a,b) => a+b, 0);
-    html += `<tr class="${rowClass}">
-      <td></td><td>${label}</td>
-      ${vals.map(v => fmtCell(v, true)).join('')}
-      ${showTotal ? fmtCell(total, true) : ''}
-    </tr>`;
-    return { vals, total };
+  let rows = '';
+  let secVals = [];
+
+  for (const row of PPTO_STRUCT) {
+    const tipo = row[0];
+    if (tipo === 'S') {
+      secVals = [];
+      rows += `<tr class="ppto-seccion"><td></td><td colspan="99">${row[1]}</td></tr>`;
+    } else if (tipo === 's') {
+      rows += `<tr class="ppto-sub"><td></td><td colspan="99">${row[1]}</td></tr>`;
+    } else if (tipo === 'c') {
+      const vals = getValsMes(row[1]);
+      const allZero = vals.every(v => v === 0);
+      secVals.push(vals);
+      rows += `<tr class="ppto-cuenta${allZero ? ' ppto-zero' : ''}">
+        <td>${row[1]}</td><td>${row[2]}</td>${cells(vals)}</tr>`;
+    } else if (tipo === 'm') {
+      const vals = sumCodsMes(row[1]);
+      const allZero = vals.every(v => v === 0);
+      secVals.push(vals);
+      rows += `<tr class="ppto-cuenta${allZero ? ' ppto-zero' : ''}">
+        <td style="font-size:10px">${row[1].join(', ')}</td><td>${row[2]}</td>${cells(vals)}</tr>`;
+    } else if (tipo === 't') {
+      const totVals = meses.map((_, i) => secVals.reduce((s, v) => s + (v[i] || 0), 0));
+      secVals = [];
+      rows += `<tr class="ppto-stot"><td></td><td>${row[1]}</td>${cells(totVals)}</tr>`;
+    } else if (tipo === 'T') {
+      const vals = sumCodsMes(row[2]);
+      rows += `<tr class="ppto-total"><td></td><td>${row[1]}</td>${cells(vals)}</tr>`;
+    } else if (tipo === 'R') {
+      const vals = sumCodsMes(row[2]);
+      rows += `<tr class="ppto-resultado"><td></td><td>${row[1]}</td>${cells(vals)}</tr>`;
+    }
   }
 
-  // ── INGRESOS OPERACIONALES (30) ──
-  addSectionHeader('INGRESOS OPERACIONALES');
-  sumCat(['30']).forEach(c => addCuenta(c));
-  const sub30 = addSubtotal('Subtotal Ingresos Operacionales', ['30']);
-
-  // ── OTROS INGRESOS (31) ──
-  addSectionHeader('OTROS INGRESOS');
-  sumCat(['31']).forEach(c => addCuenta(c));
-  const sub31 = addSubtotal('Subtotal Otros Ingresos', ['31']);
-
-  // ── COSTOS Y GASTOS (40) ──
-  addSectionHeader('COSTOS Y GASTOS');
-  sumCat(['40']).forEach(c => addCuenta(c));
-  const sub40 = addSubtotal('Subtotal Costos y Gastos', ['40']);
-
-  // ── RESULTADO OPERACIONAL ──
-  const resOpVals = meses.map((_,i) => (sub30.vals[i]||0)+(sub31.vals[i]||0)+(sub40.vals[i]||0));
-  const resOpTotal = resOpVals.reduce((a,b)=>a+b,0);
-  html += `<tr class="resultado-op">
-    <td></td><td>▶ RESULTADO OPERACIONAL (30+31+40)</td>
-    ${resOpVals.map(v => fmtCell(v,true)).join('')}
-    ${showTotal ? fmtCell(resOpTotal,true) : ''}
+  const thead = document.querySelector('#tbl-eerr thead');
+  const tbody  = document.querySelector('#tbl-eerr tbody');
+  thead.innerHTML = `<tr>
+    <th>Código</th>
+    <th>Nombre Cuenta</th>
+    ${meses.map(m => `<th>${MESES[m-1]}</th>`).join('')}
+    ${showTotal ? '<th>TOTAL</th>' : ''}
   </tr>`;
-
-  // ── GASTOS FINANCIEROS (41) ──
-  addSectionHeader('GASTOS FINANCIEROS');
-  sumCat(['41']).forEach(c => addCuenta(c));
-  const sub41 = addSubtotal('Subtotal Gastos Financieros', ['41']);
-
-  // ── RESULTADO DEL EJERCICIO ──
-  const resEjVals = meses.map((_,i) => resOpVals[i]+(sub41.vals[i]||0));
-  const resEjTotal = resEjVals.reduce((a,b)=>a+b,0);
-  html += `<tr class="total">
-    <td></td><td>★ RESULTADO DEL EJERCICIO</td>
-    ${resEjVals.map(v => fmtCell(v,true)).join('')}
-    ${showTotal ? fmtCell(resEjTotal,true) : ''}
-  </tr>`;
-
-  tbody.innerHTML = html;
+  tbody.innerHTML = rows;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1269,8 +1254,28 @@ function imprimirPDF() {
 //  EXPORT EXCEL (simple CSV via XLSX)
 // ═══════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════
-//  CENTROS DE COSTOS — estado y render
+//  CENTROS DE COSTOS — mapa de nombres
 // ═══════════════════════════════════════════════════════
+const CC_NOMBRES = {
+  '001': 'Logística',
+  '002': 'Administración',
+  '003': 'Ventas',
+  '004': 'Gerencia',
+  '005': 'RRHH',
+  '007': 'CCM',
+  '010': 'Otros',
+  '011': 'Vendedores',
+  '012': 'Reponedores',
+  '020': 'Sodimac',
+  '021': 'Imperial',
+  '022': 'Construmart',
+  '023': 'Mercado Libre',
+  '024': 'Chile Mat',
+  'C01': 'CC1',
+};
+function ccNombre(cod) { return CC_NOMBRES[cod] || cod; }
+
+// ─────────────────────────────────────────────────────
 let CC_SEL = new Set(); // vacío = todos
 
 function toggleCC(cc, btn) {
@@ -1330,7 +1335,7 @@ function renderCC(meses) {
     <label>Centro de Costos:</label>
     <button class="mes-btn btn-todos cc-btn${CC_SEL.size===0?' active':''}" data-cc="__ALL__" onclick="toggleCC('__ALL__',this)">Todos</button>`;
   allCCs.forEach(cc => {
-    toolbar += `<button class="mes-btn cc-btn${CC_SEL.has(cc)?' active':''}" data-cc="${cc}" onclick="toggleCC('${cc.replace(/'/g,"\\'")}',this)">${cc}</button>`;
+    toolbar += `<button class="mes-btn cc-btn${CC_SEL.has(cc)?' active':''}" data-cc="${cc}" onclick="toggleCC('${cc.replace(/'/g,"\\'")}',this)" title="Código: ${cc}">${ccNombre(cc)}</button>`;
   });
   toolbar += `</div>`;
 
@@ -1340,7 +1345,7 @@ function renderCC(meses) {
     <th style="width:110px;text-align:left">Código</th>
     <th style="text-align:left;min-width:200px">Descripción</th>`;
   showCCs.forEach(cc => {
-    thead += `<th style="width:${colW}px">${cc}</th>`;
+    thead += `<th style="width:${colW}px" title="CC ${cc}">${ccNombre(cc)}</th>`;
   });
   thead += `<th style="width:120px">Total Período</th>
     <th style="width:68px">% Gasto</th>
@@ -1419,97 +1424,157 @@ function renderCC(meses) {
 //  PRESUPUESTO DATA (anual 2026)
 // ═══════════════════════════════════════════════════════
 const PPTO = {
+  // Ingresos explotación
   '30-01-01-02': 4983852144, '30-01-01-10': 0, '30-01-01-21': 0,
+  // Costos de ventas
   '40-01-01-01': -2501926072, '40-01-01-21': 0, '40-01-04-21': -750069748,
-  '40-01-02-22': -12000000, '40-01-02-24': -15559270, '40-01-02-25': -7475784,
-  '40-01-02-26': -87217416, '40-01-02-27': -14951556, '40-01-02-28': -15000000,
+  // Costos logística
+  '40-01-02-22': -12000000, '40-01-02-24': -15559270,
+  '40-01-02-25': -7475784, '40-01-02-26': -87217416, '40-01-02-27': -14951556,
+  '40-01-02-28': -15000000, '40-01-03-04': 0,
   '40-01-04-22': -37378891, '40-01-04-23': -9967704,
-  '40-01-08-21': -17443483, '40-01-08-22': -8472549,
-  '40-01-08-23': -9469319,  '40-01-08-24': -4236274,
+  '40-01-08-21': -17443483, '40-01-08-22': -8472549, '40-01-08-23': -9469319, '40-01-08-24': -4236274,
+  // Remuneraciones
   '40-02-01-12': -598062257, '40-02-01-13': -74757782, '40-02-01-14': -14951556,
   '40-02-01-16': -7984908,   '40-02-01-17': -17719608, '40-02-01-18': -9368100,
   '40-02-01-19': -5658591,   '40-02-01-21': -113269824, '40-02-04-04': -9360000,
-  '40-01-02-31': -2990311,   '40-02-02-21': -4500000,
-  '40-02-02-25': -4983852,   '40-02-04-26': -4983852,
-  '40-02-03-21': -12459630,  '40-02-04-21': -4983852,  '40-02-06-04': -12999996,
-  '40-02-04-24': -17443483,  '40-02-04-25': -42362743,
-  '40-02-04-27': -4983852,   '40-02-06-07': -12000000,
-  '40-02-06-01': -66999996,
-  '40-03-04-23': -18440253,  '40-03-09-21': -7475778,
-  '41-02-01-01': -2491932,
+  // Otros gastos del personal
+  '40-01-02-31': -2990311, '40-02-01-10': 0, '40-02-02-21': -4500000,
+  '40-02-02-25': -4983852, '40-02-04-26': -4983852,
+  // Gastos generales
+  '40-02-03-21': -12459630, '40-02-04-21': -4983852, '40-02-06-04': -12999996,
+  '40-02-04-24': -17443483, '40-02-04-25': -42362743, '40-02-04-27': -4983852,
+  '40-02-06-07': -12000000, '40-02-08-01': 0,
+  '40-03-04-12': 0, '40-03-04-18': 0, '40-03-04-23': -18440253, '40-03-09-21': -7475778,
+  // Depreciación
+  '40-02-06-01': 0, '40-02-06-03': -66999996,
+  // Ingresos no operacionales
+  '30-01-02-01': 0, '31-01-01-01': 0, '31-01-01-06': 0,
+  '31-01-02-01': 0, '31-01-02-02': 0, '31-01-02-03': 0, '31-01-02-04': 0,
+  // Gastos no operacionales
+  '41-01-01-01': 0, '41-01-01-02': 0, '41-01-01-04': 0,
+  '40-01-02-29': -2491932, '40-01-02-30': 0, '41-02-01-01': 0, '41-02-01-03': 0, '41-02-01-04': 0, '41-02-01-10': 0,
+  // Corrección monetaria
+  '31-01-03-01': 0, '31-01-03-02': 0, '41-04-01-03': 0, '41-04-01-05': 0,
+  '41-04-01-10': 0, '41-05-01-02': 0, '41-06-01-02': 0,
+  // No clasificadas (en mayor, sin presupuesto asignado)
+  '40-01-01-10': 0, '40-02-04-15': 0, '40-03-09-20': 0, '41-07-01-01': 0,
 };
 
 const PPTO_STRUCT = [
-  ['S','INGRESOS DE EXPLOTACION'],
+  // ── INGRESO DE EXPLOTACION ──────────────────────────────
+  ['S','INGRESO DE EXPLOTACION'],
   ['s','Ingresos por Ventas'],
-  ['c','30-01-01-02','Venta Línea Electricos'],
-  ['c','30-01-01-10','Venta Otros AF'],
-  ['c','30-01-01-21','Ventas de Herramientas Rptos'],
+  ['m',['30-01-01-02','30-01-01-21'],'Ventas'],
+  ['c','30-01-01-10','Venta Otros Af'],
   ['t','TOTAL INGRESO DE EXPLOTACION'],
+
+  // ── COSTOS DE VENTAS ────────────────────────────────────
   ['S','COSTOS DE VENTAS'],
-  ['c','40-01-01-01','Costo Venta Linea Electricos'],
-  ['c','40-01-01-21','Costo De ventas Herramientas'],
-  ['c','40-01-04-21','ACUERDO COMERCIAL / REBATE'],
+  ['m',['40-01-01-01','40-01-01-21'],'Costo De Ventas'],
+  ['c','40-01-01-10','Costo Venta Otros Articulos'],
+  ['c','40-01-04-21','Acuerdo Comercial / Rebate'],
   ['t','TOTAL COSTOS DE VENTAS'],
+  ['R','MARGEN DE VENTAS',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21']],
+
+  // ── COSTOS LOGISTICA Y OTROS ────────────────────────────
   ['S','COSTOS LOGISTICA Y OTROS'],
-  ['c','40-01-02-22','MANTENCION DE Activos Fijos'],
-  ['c','40-01-02-24','SEGUROS'],
-  ['c','40-01-02-25','GASTOS DE LOGISTICA'],
-  ['c','40-01-02-26','ARRIENDO BODEGA'],
-  ['c','40-01-02-27','MATERIALES DE EMBALAJE'],
-  ['c','40-01-02-28','SERVICIOS SEGURIDAD GUARDIAS'],
-  ['c','40-01-04-22','CERTIFICACIONES'],
-  ['c','40-01-04-23','MUESTRAS IMPORTACIONES'],
-  ['c','40-01-08-21','COMBUSTIBLE VEHICULOS'],
-  ['c','40-01-08-22','FLETES ESTACIONAMIENTOS Y PEAJES'],
-  ['c','40-01-08-23','MANTENCION VEHICULOS'],
-  ['c','40-01-08-24','P.CIRCULACION VEHICULOS / SEGUROS'],
+  ['c','40-01-02-22','Mantencion De Activos Fijos'],
+  ['c','40-01-02-24','Seguros'],
+  ['c','40-01-02-25','Gastos De Logistica'],
+  ['c','40-01-02-26','Arriendo Bodega'],
+  ['c','40-01-02-27','Materiales De Embalaje'],
+  ['c','40-01-02-28','Servicios Seguridad Guardias'],
+  ['c','40-01-03-04','Dif Costeo Importaciones'],
+  ['c','40-01-04-22','Certificaciones'],
+  ['c','40-01-04-23','Muestras Importaciones'],
+  ['c','40-01-08-21','Combustible Vehiculos'],
+  ['c','40-01-08-22','Fletes Estacionamientos Y Peajes'],
+  ['c','40-01-08-23','Mantencion Vehiculos'],
+  ['c','40-01-08-24','P.circulacion Vehiculos / Seguros'],
   ['t','TOTAL COSTOS LOGISTICA Y OTROS'],
-  ['T','COSTOS DE EXPLOTACION',['40-01-01-01','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
-  ['R','MARGEN DE EXPLOTACION',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
+  ['T','COSTOS DE EXPLOTACION',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
+  ['R','MARGEN DE EXPLOTACION',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
+
+  // ── GASTOS DE ADMINISTRACION Y VENTAS ──────────────────
   ['S','GASTOS DE ADMINISTRACION Y VENTAS'],
-  ['s','Remuneraciones y Honorarios'],
-  ['c','40-02-01-12','SUELDOS'],
-  ['c','40-02-01-13','BONOS METAS'],
-  ['c','40-02-01-14','FINIQUITOS PAGADOS'],
-  ['c','40-02-01-16','ACHS Aporte Mutual'],
+  ['s','REMUNERACIONES Y HONORARIOS'],
+  ['c','40-02-01-12','Sueldos'],
+  ['c','40-02-01-13','Bonos Metas'],
+  ['c','40-02-01-14','Finiquitos Pagados'],
+  ['c','40-02-01-16','Achs Aporte Mutual'],
   ['c','40-02-01-17','Seg. Cesantia Empleador'],
-  ['c','40-02-01-18','SIS Empleador'],
+  ['c','40-02-01-18','Sis Empleador'],
   ['c','40-02-01-19','Seguro Social'],
-  ['c','40-02-01-21','HONORARIOS'],
+  ['c','40-02-01-21','Honorarios'],
   ['c','40-02-04-04','Seguros Complementario'],
   ['t','TOTAL REMUNERACIONES Y HONORARIOS'],
-  ['s','Otros Gastos del Personal'],
-  ['c','40-01-02-31','Ropa de Trabajo'],
-  ['c','40-02-02-21','Gastos de Capacitacion'],
-  ['c','40-02-02-25','Gastos Varios del Personal'],
-  ['c','40-02-04-26','Gastos RRHH y ACT Extraprogramáticas'],
+  ['s','OTROS GASTOS DEL PERSONAL'],
+  ['c','40-01-02-31','Ropa De Trabajo'],
+  ['c','40-02-02-21','Gastos De Capacitacion'],
+  ['c','40-02-02-25','Gastos Varios Del Personal'],
+  ['c','40-02-04-26','Gastos Rrhh Y Act. Extraprogramáticas'],
   ['t','TOTAL OTROS GASTOS DEL PERSONAL'],
-  ['s','Gastos de Oficina'],
-  ['c','40-02-03-21','SERVICIOS BASICOS'],
-  ['c','40-02-04-21','ARTICULOS DE OFICINA / COCINA'],
-  ['c','40-02-06-04','ARRIENDO OFICINA'],
-  ['t','TOTAL GASTOS DE OFICINA'],
-  ['s','Gastos Generales de Oficina'],
+  ['s','GASTOS GENERALES'],
+  ['c','40-02-03-21','Servicios Basicos'],
+  ['c','40-02-04-21','Articulos De Oficina / Cocina'],
+  ['c','40-02-06-04','Arriendo Oficina'],
+  ['c','40-02-04-15','Gastos Computacionales'],
   ['c','40-02-04-24','Servicios Computacionales'],
-  ['c','40-02-04-25','GASTOS PUBLICITARIOS Y OTROS'],
+  ['c','40-02-04-25','Gastos Publicitarios Y Otros'],
   ['c','40-02-04-27','Gastos Generales Varios'],
-  ['c','40-02-06-07','PATENTE COMERCIAL Y DERECHOS'],
-  ['t','TOTAL GASTOS GRALES OFICINA'],
-  ['s','Depreciación y Amortización'],
-  ['c','40-02-06-01','Depreciacion Activo Fijo'],
+  ['c','40-02-06-07','Patente Comercial Y Derechos'],
+  ['c','40-02-08-01','Comision Mercadolibre Y Otros'],
+  ['c','40-03-04-23','Gastos Viajes Y Representaciones'],
+  ['c','40-03-09-20','Gastos Ferias, Comisiones Y Otros'],
+  ['c','40-03-09-21','Servicios De Informacion Ventas'],
+  ['t','TOTAL GASTOS GENERALES'],
+  ['s','DEPRECIACION Y AMORTIZACION'],
+  ['c','40-02-06-03','Depreciacion Activo Fijo'],
   ['t','TOTAL DEPRECIACION Y AMORTIZACION'],
-  ['s','Gastos Fuerza de Ventas'],
-  ['c','40-03-04-23','Gastos Viajes y Representaciones'],
-  ['c','40-03-09-21','Servicios de Informacion Ventas'],
-  ['t','TOTAL FUERZA DE VENTAS'],
-  ['T','TOTAL GASTOS ADM Y VENTAS',['40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-01-02-31','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-06-01','40-03-04-23','40-03-09-21']],
-  ['T','TOTAL GASTOS OPERACIONALES',['40-01-01-01','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-01-02-31','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-06-01','40-03-04-23','40-03-09-21']],
-  ['R','RESULTADO OPERACIONAL',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-01-02-31','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-06-01','40-03-04-23','40-03-09-21']],
+  ['T','TOTAL GASTOS DE ADM Y VENTAS',['40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03']],
+  ['T','TOTAL GASTOS OPERACIONALES',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03']],
+  ['R','RESULTADO OPERACIONAL',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03']],
+
+  // ── INGRESOS NO OPERACIONALES ───────────────────────────
+  ['S','INGRESOS NO OPERACIONALES'],
+  ['c','30-01-02-01','Otros Ingresos De La Explotación'],
+  ['c','31-01-01-01','Ingresos Financieros'],
+  ['c','31-01-01-06','Intereses Percibidos'],
+  ['c','31-01-02-01','Utilidad En Venta De Activo Fijo'],
+  ['c','31-01-02-03','Otros Ingresos'],
+  ['c','31-01-02-04','Otros Descuentos'],
+  ['t','TOTAL INGRESOS NO OPERACIONALES'],
+
+  // ── GASTOS NO OPERACIONALES ─────────────────────────────
   ['S','GASTOS NO OPERACIONALES'],
-  ['c','41-02-01-01','Ajuste Inventario / Otros Gtos No Operacionales'],
+  ['c','41-01-01-01','Gastos Financieros'],
+  ['c','41-01-01-02','Intereses Cta. Relacionada'],
+  ['c','41-01-01-04','Intereses Pagado'],
+  ['c','40-01-02-30','Mermas De Bodega'],
+  ['c','41-02-01-01','Ajuste Inv / Otros Gtos No Oper'],
+  ['c','41-02-01-03','Otros Gtos Oper'],
+  ['c','41-02-01-04','Castigo Bodega Merma'],
+  ['c','41-02-01-10','Otros Gastos C.c.d.g'],
+  ['c','41-07-01-01','Otros Egresos Fuera De La Explotacion'],
+  ['c','40-01-02-29','Ajuste Inventario'],
   ['t','TOTAL GASTOS NO OPERACIONALES'],
-  ['R','UTILIDAD DEL EJERCICIO',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-01-02-31','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-06-01','40-03-04-23','40-03-09-21','41-02-01-01']],
+  ['R','RESULTADO NO OPERACIONAL',['30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01']],
+
+  ['R','RESULTADO ANTES DE CORREC. MONETARIA',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03','30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01']],
+
+  // ── CORRECCION MONETARIA ────────────────────────────────
+  ['S','CORRECCION MONETARIA'],
+  ['c','31-01-03-01','Correc. Monetaria A.fijo / Existencias'],
+  ['c','31-01-03-02','Correc. Monet. Remuneración Cr. Fiscal'],
+  ['c','41-04-01-03','Correc. Monet. Retiros'],
+  ['c','41-04-01-05','Correc. Monet. Proveedores/extranjera'],
+  ['c','41-04-01-10','Correc. Monetaria Rev. Capital'],
+  ['c','41-05-01-02','Diferencia Tipo Cambio Usd'],
+  ['c','41-06-01-02','Reajuste Impuesto Renta Art.7'],
+  ['t','TOTAL CORRECCION MONETARIA'],
+
+  ['R','UTILIDAD (PERDIDA) DEL EJERCICIO',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03','30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01','31-01-03-01','31-01-03-02','41-04-01-03','41-04-01-05','41-04-01-10','41-05-01-02','41-06-01-02']],
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -1560,6 +1625,25 @@ function renderPresupuesto(meses) {
       rows += `<tr class="ppto-seccion"><td></td><td colspan="6">${row[1]}</td></tr>`;
     } else if (tipo === 's') {
       rows += `<tr class="ppto-sub"><td></td><td colspan="6">${row[1]}</td></tr>`;
+    } else if (tipo === 'm') {
+      // Merged: varios codigos en una sola fila
+      const cods = row[1], nom = row[2];
+      const anual = sumCods(cods, getPptoAnual);
+      const ppto  = sumCods(cods, getPpto);
+      const real  = sumCods(cods, getReal);
+      const varD  = real - ppto;
+      const vc    = varClass(varD);
+      const isZero = anual === 0 && real === 0;
+      cods.forEach(c => sectionCods.push(c));
+      rows += `<tr class="ppto-cuenta${isZero ? ' ppto-zero' : ''}">
+        <td style="font-size:10.5px;color:var(--gris)">${cods.join(', ')}</td>
+        <td>${nom}</td>
+        <td>${fv(anual)}</td>
+        <td>${fv(ppto)}</td>
+        <td>${fv(real)}</td>
+        <td class="${vc}">${fv(varD)}</td>
+        <td>${fpct(real, ppto)}</td>
+      </tr>`;
     } else if (tipo === 'c') {
       const cod = row[1], nom = row[2];
       const anual = getPptoAnual(cod);

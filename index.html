@@ -877,8 +877,8 @@ function parseLibroMayor(wb) {
     const fecha = parseDate(fechaRaw);
     if (!fecha) continue;
 
-    const mes = fecha.getMonth() + 1; // 1-6
-    if (mes < 1 || mes > 6) continue;
+    const mes = fecha.getMonth() + 1;
+    if (mes < 1 || mes > 12) continue;
 
     const debe  = parseNum(r[11]);
     const haber = parseNum(r[12]);
@@ -1106,7 +1106,7 @@ function renderFechaPanel(mostrar) {
 
   const { cuentas } = DATA;
   const hoy = new Date();
-  const mesHoy = Math.min(hoy.getMonth() + 1, 6);
+  const mesHoy = Math.min(hoy.getMonth() + 1, 12);
   const mesesAcum = Array.from({length: mesHoy}, (_,i) => i+1);
 
   document.getElementById('fecha-sub').textContent =

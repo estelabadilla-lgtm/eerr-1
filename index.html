@@ -2410,7 +2410,7 @@ async function meliGenerarHECHO() {
     const a    = document.createElement('a');
     a.href     = URL.createObjectURL(blob);
     const rut  = String(MELI_RAW.meta[1]||'').replace(/\D/g,'');
-    a.download = `liquidacion-${rut}-HECHO.xlsx`;
+    a.download = `liquidacion-${rut}-Liquidación MELI.xlsx`;
     a.click();
     meliStatus1('✅ Archivo descargado');
   } catch(err) {

@@ -196,6 +196,29 @@
     margin: 8mm 10mm 8mm 10mm;
   }
 
+  /* ══ MELI LIQUIDACIÓN ══════════════════════════════════════ */
+  .meli-wrap { max-width: 860px; margin: 28px auto; display: flex; flex-direction: column; gap: 22px; }
+  .meli-titulo { font-size: 20px; font-weight: 700; color: var(--text1); margin: 0 0 4px; }
+  .meli-sub { font-size: 14px; font-weight: 600; color: var(--text1); margin: 18px 0 8px; }
+  .meli-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+  .meli-card-header { background: var(--azul-dark); color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; }
+  .meli-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.2); font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .meli-card-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .meli-row { display: flex; flex-direction: column; gap: 5px; }
+  .meli-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .meli-input { border: 1.5px solid var(--border2); border-radius: 6px; padding: 8px 11px; font-size: 13px; font-family: inherit; color: var(--text1); background: var(--card); width: 100%; max-width: 380px; box-sizing: border-box; }
+  .meli-input:focus { outline: none; border-color: var(--blue); }
+  .meli-btn-dl { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; width: fit-content; }
+  .meli-btn-dl:disabled { opacity: 0.45; cursor: not-allowed; }
+  .meli-btn-dl:not(:disabled):hover { background: var(--azul-dark); }
+  .meli-status { font-size: 12px; color: var(--text2); min-height: 18px; }
+  #meli-pivot-wrap table { border-collapse: collapse; font-size: 12px; min-width: 500px; }
+  #meli-pivot-wrap th { background: var(--azul-dark); color: #fff; padding: 7px 12px; text-align: right; white-space: nowrap; }
+  #meli-pivot-wrap th:first-child { text-align: left; }
+  #meli-pivot-wrap td { padding: 5px 12px; border-bottom: 1px solid var(--border); text-align: right; }
+  #meli-pivot-wrap td:first-child { text-align: left; font-weight: 500; }
+  #meli-pivot-wrap tr:hover td { background: rgba(0,160,223,0.07); }
+
   @media print {
     /* ── Ocultar todo excepto lo imprimible ── */
     .site-header, nav, .toolbar, #kpi-cards, .chart-wrap,
@@ -602,6 +625,7 @@
     <button onclick="showTab('graficos')">Gráficos</button>
     <button onclick="showTab('presupuesto')">Presupuesto vs Real</button>
     <button onclick="showTab('centros')">Centros de Costos</button>
+    <button onclick="showTab('meli')">MELI Liquidación</button>
   </nav>
 </div>
 
@@ -666,6 +690,59 @@
 <!-- ══════════════════ TAB: CENTROS DE COSTOS ══════════════════ -->
 <div id="tab-centros" class="tab">
   <div id="centros-content"><p style="color:var(--gris);padding:30px">Carga el archivo para ver los centros de costos.</p></div>
+</div>
+
+<!-- ══════════════════ TAB: MELI LIQUIDACIÓN ══════════════════ -->
+<div id="tab-meli" class="tab">
+  <div class="meli-wrap">
+    <h2 class="meli-titulo">Liquidación MercadoLibre</h2>
+
+    <!-- PASO 1 -->
+    <div class="meli-card" id="meli-paso1">
+      <div class="meli-card-header">
+        <span class="meli-num">1</span>
+        <span>Generar archivo HECHO (.xlsx)</span>
+      </div>
+      <div class="meli-card-body">
+        <div class="meli-row">
+          <label class="meli-label">Archivo MercadoLibre (.xlsx)</label>
+          <input type="file" accept=".xlsx" id="meli-file" onchange="meliLeerArchivo(this)">
+        </div>
+        <div class="meli-row">
+          <label class="meli-label">Rango de fechas (título)</label>
+          <input type="text" id="meli-rango" class="meli-input" placeholder="Ej: 13-07-2026 - 19-07-2026">
+        </div>
+        <button class="btn meli-btn-dl" id="meli-btn-hecho" onclick="meliGenerarHECHO()" disabled>&#8595; Descargar HECHO.xlsx</button>
+        <div id="meli-status1" class="meli-status"></div>
+      </div>
+    </div>
+
+    <!-- PASO 2 -->
+    <div class="meli-card" id="meli-paso2" style="display:none">
+      <div class="meli-card-header">
+        <span class="meli-num">2</span>
+        <span>Generar Nota de Venta para Softland</span>
+      </div>
+      <div class="meli-card-body">
+        <div class="meli-row">
+          <label class="meli-label">Número de Nota de Venta</label>
+          <input type="number" id="meli-nv-num" class="meli-input" placeholder="Ej: 128138">
+        </div>
+        <div class="meli-row">
+          <label class="meli-label">Fecha de la Nota de Venta</label>
+          <input type="date" id="meli-nv-fecha" class="meli-input">
+        </div>
+        <button class="btn meli-btn-dl" onclick="meliGenerarNV()">&#8595; Descargar Nota de Venta.xlsx</button>
+        <div id="meli-status2" class="meli-status"></div>
+      </div>
+    </div>
+
+    <!-- PREVIEW PIVOT -->
+    <div id="meli-preview" style="display:none">
+      <h3 class="meli-sub">Vista previa — Tabla dinámica (Hoja1)</h3>
+      <div class="tbl-wrap" id="meli-pivot-wrap"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════ TAB: PRESUPUESTO vs REAL ══════════════════ -->
@@ -2138,6 +2215,375 @@ async function exportExcel() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ═══════════════════════════════════════════════════════
+//  MELI LIQUIDACIÓN
+// ═══════════════════════════════════════════════════════
+
+let MELI_RAW = null;   // { sec1, sec2, sec3, meta, headers }
+
+// Índices de columna (0-based)
+const MC = {
+  num_venta:0, tipo_venta:1, cod_prod:2, sku:3, desc:4,
+  pack_id:5, variacion:6, qty:7, tipo_dev:8, fecha:9,
+  tipo_dte:10, cod_dte:11, folio:12, folio_asoc:13,
+  neto:14, iva:15, iva_ant:16, ila:17, cod_imp:18
+};
+const MELI_RUT_PROV = 77398220;
+const MELI_COL7     = 25;
+
+function meliLeerArchivo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  meliStatus1('Leyendo archivo…');
+  document.getElementById('meli-btn-hecho').disabled = true;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb   = XLSX.read(e.target.result, {type:'array'});
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const all  = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+
+      const meta    = all[1] || [];                                    // row 2
+      const headers = all[3] || [];                                    // row 4
+      const data    = all.slice(4).filter(r => r && r.some(v=>v!=null)); // rows 5+
+
+      // Auto-fill date range from metadata
+      const rango = String(meta[2] || '').replace(/\n/g,' ').trim();
+      if (rango) document.getElementById('meli-rango').value = rango;
+
+      MELI_RAW = { meta, headers, ...meliClasificar(data) };
+
+      const { sec1, sec2, sec3 } = MELI_RAW;
+      meliStatus1(`✅ ${data.length} filas — Productos: ${sec1.length} | Envíos: ${sec2.length} | Devoluciones: ${sec3.filter(r=>String(r[MC.tipo_dev]||'').toLowerCase()==='fulfillment').length} filas`);
+      document.getElementById('meli-btn-hecho').disabled = false;
+      meliRenderPivot();
+      document.getElementById('meli-preview').style.display = 'block';
+      document.getElementById('meli-paso2').style.display   = 'block';
+    } catch(err) {
+      meliStatus1('❌ Error: ' + err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function meliClasificar(rows) {
+  const sec2    = [];  // Costo de envío (todos, incluye notas crédito de envío)
+  const retProd = [];  // Devoluciones de PRODUCTOS (col9=fulfillment, no envío)
+  const normal  = [];  // Candidatos sección 1
+
+  for (const row of rows) {
+    const desc    = String(row[MC.desc]     || '').toLowerCase();
+    const tipoDev = String(row[MC.tipo_dev] || '').toLowerCase().trim();
+    const isEnvio = desc.includes('costo de env');
+    const isRet   = tipoDev === 'fulfillment';
+
+    if (isEnvio)       sec2.push(row);
+    else if (isRet)    retProd.push(row);
+    else               normal.push(row);
+  }
+
+  // Mapa folio → filas normales para emparejar devoluciones
+  const folioMap = new Map();
+  for (const row of normal) {
+    const f = row[MC.folio];
+    if (f != null) {
+      if (!folioMap.has(f)) folioMap.set(f, []);
+      folioMap.get(f).push(row);
+    }
+  }
+
+  const vendidosEnSec3 = new Set();
+  const sec3 = [];
+
+  // Ordenar devoluciones por SKU para agrupar visualmente
+  retProd.sort((a,b) => String(a[MC.sku]||'').localeCompare(String(b[MC.sku]||'')));
+
+  for (const ret of retProd) {
+    const fa      = ret[MC.folio_asoc];
+    const sku     = ret[MC.sku];
+    const retQty  = Math.abs(Number(ret[MC.qty]) || 1);
+    const vendidos = [];
+    let coveredQty = 0;
+
+    // 1) Emparejar por folio_asociado → folio (un solo match)
+    if (fa != null && folioMap.has(fa)) {
+      const cands = folioMap.get(fa).filter(r => !vendidosEnSec3.has(r));
+      if (cands.length) {
+        const v = cands[0];
+        vendidos.push(v);
+        vendidosEnSec3.add(v);
+        coveredQty += Math.abs(Number(v[MC.qty]) || 0);
+      }
+    }
+
+    // 2) Si no cubrió toda la qty de la devolución: completar con filas del mismo SKU
+    // Cubre devoluciones sin venta match y devoluciones de 2 unidades con ventas de 1
+    if (sku && coveredQty < retQty) {
+      for (const row of normal) {
+        if (coveredQty >= retQty) break;
+        if (!vendidosEnSec3.has(row) && row[MC.sku] === sku) {
+          vendidos.push(row);
+          vendidosEnSec3.add(row);
+          coveredQty += Math.abs(Number(row[MC.qty]) || 0);
+        }
+      }
+    }
+
+    for (const v of vendidos) sec3.push(v);
+    sec3.push(ret);
+  }
+
+  // Sección 1: filas normales que no fueron a sección 3, ordenadas por SKU
+  const sec1 = normal.filter(r => !vendidosEnSec3.has(r));
+  sec1.sort((a,b) => String(a[MC.sku]||'').localeCompare(String(b[MC.sku]||'')));
+
+  return { sec1, sec2, sec3 };
+}
+
+function meliCalcTotales() {
+  const { sec1, sec2, sec3 } = MELI_RAW;
+  const toN = v => { const n = Number(v); return isNaN(n) ? 0 : n; };
+  const bruto = r => toN(r[MC.neto]) + toN(r[MC.iva]);
+  const sec1_qty    = sec1.reduce((s,r) => s + toN(r[MC.qty]), 0);
+  const sec2_bruto  = sec2.reduce((s,r) => s + bruto(r), 0);
+  // Suma TODAS las filas de sec3: las vendidas (positivo) y devueltas (negativo) se cancelan ≈ 0
+  // Igual que la fórmula original: SUM(T385:T425) que incluye ambas y resulta ~0
+  const sec3_bruto  = sec3.reduce((s,r) => s + bruto(r), 0);
+  const f381 = sec1_qty > 0 ? (sec2_bruto - sec3_bruto) / sec1_qty : 0;
+  console.log('[MELI] sec1:', sec1.length, 'sec2:', sec2.length, 'sec3:', sec3.length,
+              '| qty_total:', sec1_qty, '| bruto_envíos:', sec2_bruto,
+              '| bruto_dev:', sec3_bruto, '| f381:', f381);
+  return { sec1_qty, sec2_bruto, sec3_bruto, f381 };
+}
+
+function meliPivot() {
+  const { sec1 } = MELI_RAW;
+  const { f381 } = meliCalcTotales();
+  const toN = v => { const n = Number(v); return isNaN(n) ? 0 : n; };
+  const map = new Map();
+  for (const row of sec1) {
+    const sku = String(row[MC.sku] || '');
+    if (!sku) continue;
+    if (!map.has(sku)) map.set(sku, {sku, qty:0, neto:0});
+    const e     = map.get(sku);
+    const bruto = toN(row[MC.neto]) + toN(row[MC.iva]);
+    const qty   = toN(row[MC.qty]);
+    const total = bruto + f381 * qty;
+    e.qty  += qty;
+    e.neto += total / 1.19;
+  }
+  return [...map.values()].sort((a,b) => a.sku.localeCompare(b.sku, 'es-CL', {ignorePunctuation: true}));
+}
+
+function meliRenderPivot() {
+  const pivot = meliPivot();
+  let html = `<table><thead><tr>
+    <th>SKU</th><th>Cantidad</th><th>Neto Total</th><th>Neto Unitario</th><th>Long.</th>
+  </tr></thead><tbody>`;
+  for (const p of pivot) {
+    const nu = Math.round(p.neto / p.qty);
+    html += `<tr>
+      <td>${p.sku}</td>
+      <td>${p.qty}</td>
+      <td>${Math.round(p.neto).toLocaleString('es-CL')}</td>
+      <td>${nu.toLocaleString('es-CL')}</td>
+      <td>${p.sku.length}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('meli-pivot-wrap').innerHTML = html;
+}
+
+async function meliGenerarHECHO() {
+  if (!MELI_RAW) return;
+  meliStatus1('Generando archivo…');
+  try {
+    const wb  = new ExcelJS.Workbook();
+    const wsD = wb.addWorksheet('detalles');
+    const wsP = wb.addWorksheet('Hoja1');
+    meliEscribirDetalles(wsD);
+    meliEscribirPivot(wsP);
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    const rut  = String(MELI_RAW.meta[1]||'').replace(/\D/g,'');
+    a.download = `liquidacion-${rut}-HECHO.xlsx`;
+    a.click();
+    meliStatus1('✅ Archivo descargado');
+  } catch(err) {
+    meliStatus1('❌ Error: ' + err.message);
+    console.error(err);
+  }
+}
+
+function meliEscribirDetalles(ws) {
+  const { sec1, sec2, sec3, meta, headers } = MELI_RAW;
+  const n1 = sec1.length, n2 = sec2.length, n3 = sec3.length;
+  const { f381 } = meliCalcTotales(); // Calcular en JS para evitar DIV/0 en fórmula Excel
+
+  // Filas de referencia
+  const R1s = 5,          R1e = 4 + n1,       R1sum = 5 + n1;
+  const R2s = 10 + n1,    R2e = 9 + n1 + n2,  R2sum = 10 + n1 + n2;
+  const Rf  = 11 + n1 + n2;                    // fila F381
+  const R3s = 15 + n1 + n2, R3e = 14 + n1 + n2 + n3, R3sum = 15 + n1 + n2 + n3;
+
+  // Fila 1: título
+  ws.getRow(1).getCell(2).value = 'Reporte de Liquidación de Factura';
+
+  // Fila 2: metadata
+  ['ID del Vendedor\n'+String(meta[0]||''), 'RUT\n'+String(meta[1]||''),
+   'Fecha\n'+String(meta[2]||''), 'Moneda\n'+String(meta[3]||''),
+   'Tipo de Liquidación\n'+String(meta[4]||'')
+  ].forEach((v,i) => ws.getRow(2).getCell(i+1).value = v);
+
+  // Fila 3: agrupaciones
+  ws.getRow(3).getCell(1).value  = 'Datos de la venta';
+  ws.getRow(3).getCell(10).value = 'Datos que contiene en la liquidación';
+  ws.getRow(3).getCell(15).value = 'Desglose del comprobante / Impuestos aplicados';
+
+  // Fila 4: encabezados de columna
+  const cols4 = ['Número de venta','Tipo logístico Venta','Código del producto','SKU',
+    'Descripcion Item','Pack ID','variación','Cantidad de unidades','Tipo logístico Devolución',
+    'Fecha de emisión','Tipo de DTE','Codigo DTE','Folio',
+    'Folio asociado\nAplicable para Notas de crédito',
+    'Monto neto','Importe IVA','IVA Anticipo','ILA/ABA','Código del impuesto',
+    '','bruto','neto ','iva','total'];
+  cols4.forEach((v,i) => { if(v) ws.getRow(4).getCell(i+1).value = v; });
+
+  // Índices que deben ser numéricos (qty, neto, iva, iva_ant, ila)
+  const NUM_COLS = new Set([7, 14, 15, 16, 17]);
+
+  // Escribir una fila de datos con valores calculados en JS
+  const writeRow = (rowNum, row, withCalc) => {
+    const r = ws.getRow(rowNum);
+    for (let c = 0; c < 19; c++) {
+      if (row[c] != null) {
+        r.getCell(c+1).value = NUM_COLS.has(c) ? (Number(row[c]) || 0) : row[c];
+      }
+    }
+    const bruto = (Number(row[14])||0) + (Number(row[15])||0);
+    r.getCell(20).value = bruto;
+    if (withCalc) {
+      const qty   = Number(row[7]) || 0;
+      const total = bruto + f381 * qty;
+      const neto  = total / 1.19;
+      const iva   = neto * 0.19;
+      r.getCell(21).value = Math.round(neto);
+      r.getCell(22).value = Math.round(iva);
+      r.getCell(23).value = Math.round(total);
+    }
+  };
+
+  // Sección 1
+  sec1.forEach((row, i) => writeRow(R1s + i, row, true));
+  // Fila suma sección 1
+  const s1 = ws.getRow(R1sum);
+  ['H','T','U','V','W'].forEach(col => {
+    s1.getCell(col === 'H' ? 8 : col === 'T' ? 20 : col === 'U' ? 21 : col === 'V' ? 22 : 23).value =
+      {formula: `SUM(${col}${R1s}:${col}${R1e})`};
+  });
+
+  // Sección 2
+  sec2.forEach((row, i) => writeRow(R2s + i, row, true));
+  // Fila suma sección 2 (solo bruto)
+  ws.getRow(R2sum).getCell(20).value = {formula: `SUM(T${R2s}:T${R2e})`};
+
+  // Fila F381: escribir valor pre-calculado en JS para evitar DIV/0 por tipos de datos
+  ws.getRow(Rf).getCell(20).value = f381;
+
+  // Sección 3
+  sec3.forEach((row, i) => writeRow(R3s + i, row, false));
+  // Fila suma sección 3 (solo bruto)
+  const s3formula = n3 > 0 ? `SUM(T${R3s}:T${R3e})` : '0';
+  ws.getRow(R3sum).getCell(20).value = n3 > 0 ? {formula: s3formula} : 0;
+
+  // Anchos de columna
+  [18,12,15,18,42,15,12,10,12,20,10,10,12,12,12,12,10,10,12,5,12,12,12,14]
+    .forEach((w,i) => { ws.getColumn(i+1).width = w; });
+}
+
+function meliEscribirPivot(ws) {
+  // SKUs de sec1 + vendidos en sec3 (no devoluciones), sin duplicados, ordenados
+  const { sec1, sec3 } = MELI_RAW;
+  const allSold = [
+    ...sec1,
+    ...sec3.filter(r => String(r[MC.tipo_dev]||'').toLowerCase() !== 'fulfillment')
+  ];
+  const skus = [...new Set(allSold.map(r => String(r[MC.sku]||'')).filter(s => s))]
+    .sort((a,b) => a.localeCompare(b, 'es-CL', {ignorePunctuation: true}));
+
+  // Encabezados
+  const hdr = ws.getRow(1);
+  hdr.getCell(1).value = 'Etiquetas de fila';
+  hdr.getCell(2).value = 'Suma de Cantidad de unidades';
+  hdr.getCell(3).value = 'Suma de neto';
+  hdr.getCell(4).value = 'Neto unitario';
+  hdr.getCell(5).value = 'Long.';
+
+  // Una fila por SKU — SUMIFS dinámico desde la hoja detalles
+  // Col D=SKU, Col H=qty, Col U=neto (solo filas sec1 tienen neto escrito)
+  skus.forEach((sku, i) => {
+    const r = 2 + i;
+    ws.getRow(r).getCell(1).value = sku;
+    ws.getRow(r).getCell(2).value = {formula: `SUMIFS(detalles!$H:$H,detalles!$D:$D,A${r},detalles!$U:$U,"<>")`};
+    ws.getRow(r).getCell(3).value = {formula: `SUMIF(detalles!$D:$D,A${r},detalles!$U:$U)`};
+    ws.getRow(r).getCell(4).value = {formula: `IFERROR(ROUND(C${r}/B${r},0),0)`};
+    ws.getRow(r).getCell(5).value = {formula: `LEN(A${r})`};
+  });
+  [22,14,16,14,8].forEach((w,i) => { ws.getColumn(i+1).width = w; });
+}
+
+async function meliGenerarNV() {
+  if (!MELI_RAW) return;
+  const nvNum = parseInt(document.getElementById('meli-nv-num').value);
+  const nvFecha = document.getElementById('meli-nv-fecha').value;
+  if (!nvNum || !nvFecha) { alert('Ingresa el número de NV y la fecha'); return; }
+
+  const [y,m,d] = nvFecha.split('-').map(Number);
+  const dateVal = new Date(y, m-1, d);
+
+  const pivot   = meliPivot();
+  const items   = pivot.slice(0, 30);
+
+  try {
+    const wb  = new ExcelJS.Workbook();
+    const ws  = wb.addWorksheet('Hoja3');
+    items.forEach((p, i) => {
+      const r  = i + 1;
+      const nu = Math.round(p.neto / p.qty);
+      const row = ws.getRow(r);
+      row.getCell(1).value  = nvNum;
+      const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
+      row.getCell(6).value  = MELI_RUT_PROV;
+      row.getCell(7).value  = MELI_COL7;
+      const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
+      row.getCell(36).value = p.sku;
+      row.getCell(38).value = p.qty;
+      row.getCell(39).value = nu;
+    });
+    // Anchos: cols útiles normales, cols vacías del medio muy angostas
+    [1,2,6,7,35,36,38,39].forEach(c => { ws.getColumn(c).width = c <= 7 ? 11 : c === 36 ? 22 : 10; });
+    for (let c = 8; c <= 34; c++) ws.getColumn(c).width = 2.5;
+    for (let c = 37; c <= 37; c++) ws.getColumn(c).width = 2.5;
+
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `NV${nvNum}_MELI.xlsx`;
+    a.click();
+    meliStatus2('✅ Nota de Venta descargada');
+  } catch(err) {
+    meliStatus2('❌ Error: ' + err.message);
+    console.error(err);
+  }
+}
+
+function meliStatus1(msg) { document.getElementById('meli-status1').textContent = msg; }
+function meliStatus2(msg) { document.getElementById('meli-status2').textContent = msg; }
 </script>
 </body>
 </html>

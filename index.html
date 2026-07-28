@@ -358,8 +358,10 @@
   .fkpi .fval.neg { color: #c0392b; }
 
   /* ── CHART ── */
-  .chart-wrap { background: var(--card); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 22px; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .chart-wrap { background: var(--card); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); border: 1px solid var(--border); }
   .chart-wrap h3 { color: var(--blue); margin-bottom: 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+  .chart-donut canvas { max-height: 300px; }
 
   /* ── AUDITORIA ── */
   .audit-section { background: var(--card); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
@@ -683,8 +685,14 @@
 
 <!-- ══════════════════ TAB: GRÁFICOS ══════════════════ -->
 <div id="tab-graficos" class="tab">
-  <div class="chart-wrap"><h3>Resultado Mensual (Ingresos vs Costos vs Resultado Neto)</h3><canvas id="chart-resultado" height="100"></canvas></div>
-  <div class="chart-wrap"><h3>Composición de Ingresos por Mes</h3><canvas id="chart-ingresos" height="100"></canvas></div>
+  <div class="charts-grid">
+    <div class="chart-wrap"><h3>% Margen Neto Mensual</h3><canvas id="chart-margen"></canvas></div>
+    <div class="chart-wrap"><h3>Waterfall EERR — Período</h3><canvas id="chart-waterfall"></canvas></div>
+    <div class="chart-wrap chart-donut"><h3>Distribución de Costos por Área</h3><canvas id="chart-costo-area"></canvas></div>
+    <div class="chart-wrap"><h3>Presupuesto vs Real</h3><canvas id="chart-pptovreal"></canvas></div>
+    <div class="chart-wrap"><h3>Margen Bruto vs Margen Neto</h3><canvas id="chart-margen-doble"></canvas></div>
+    <div class="chart-wrap"><h3>Costos como % de Ventas</h3><canvas id="chart-costos-pct"></canvas></div>
+  </div>
 </div>
 
 <!-- ══════════════════ TAB: CENTROS DE COSTOS ══════════════════ -->
@@ -701,7 +709,7 @@
     <div class="meli-card" id="meli-paso1">
       <div class="meli-card-header">
         <span class="meli-num">1</span>
-        <span>Generar archivo HECHO (.xlsx)</span>
+        <span>Generar archivo de Liquidación Completa</span>
       </div>
       <div class="meli-card-body">
         <div class="meli-row">
@@ -712,7 +720,7 @@
           <label class="meli-label">Rango de fechas (título)</label>
           <input type="text" id="meli-rango" class="meli-input" placeholder="Ej: 13-07-2026 - 19-07-2026">
         </div>
-        <button class="btn meli-btn-dl" id="meli-btn-hecho" onclick="meliGenerarHECHO()" disabled>&#8595; Descargar HECHO.xlsx</button>
+        <button class="btn meli-btn-dl" id="meli-btn-hecho" onclick="meliGenerarHECHO()" disabled>&#8595; Descargar Liquidación Completa</button>
         <div id="meli-status1" class="meli-status"></div>
       </div>
     </div>
@@ -1025,6 +1033,7 @@ function showTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
+  if (name === 'graficos') renderCharts();
 }
 
 function setLoading(show, msg = '') {
@@ -1057,7 +1066,6 @@ function renderAll() {
   renderEERR(meses);
   renderFechaPanel(false);
   renderAuditoria();
-  renderCharts();
   renderPresupuesto(meses);
   renderCC(meses);
 }
@@ -1521,60 +1529,159 @@ function renderCharts() {
   if (!DATA) return;
   const { cuentas } = DATA;
 
-  function sumCatMes(cats, mes) {
-    return cuentas.filter(c => cats.includes(c.cat2)).reduce((s,c) => s + (c.meses[mes]||0), 0);
-  }
-
-  const labels = MESES_FULL;
-  const ingresos = [1,2,3,4,5,6].map(m => sumCatMes(['30','31'], m));
-  const costos   = [1,2,3,4,5,6].map(m => sumCatMes(['40','41'], m));
-  const resultado= ingresos.map((v,i) => v + costos[i]);
-
-  // Destroy existing
   Object.values(charts).forEach(c => c.destroy());
   charts = {};
 
-  charts.resultado = new Chart(document.getElementById('chart-resultado'), {
+  const meses  = getMesesActivos();
+  const labels = meses.map(m => MESES_FULL[m-1]);
+  const fmtN   = v => '$' + Math.round(Math.abs(v)).toLocaleString('es-CL');
+  const fmtM   = v => '$' + (Math.abs(v)/1e6).toFixed(1) + 'M';
+  const opt    = { responsive: true, maintainAspectRatio: true };
+
+  function sumCatMes(cats, m) {
+    return cuentas.filter(c => cats.includes(c.cat2)).reduce((s,c) => s+(c.meses[m]||0), 0);
+  }
+  function sumPrefMes(pref, m) {
+    return cuentas.filter(c => c.codigo.startsWith(pref)).reduce((s,c) => s+(c.meses[m]||0), 0);
+  }
+  function sumCatCCMes(cats, cc, m) {
+    return cuentas.filter(c => cats.includes(c.cat2)).reduce((s,c) => s+((c.ccMeses[cc]||{})[m]||0), 0);
+  }
+  function sumCatCC(cats, cc) {
+    return meses.reduce((s,m) => s + sumCatCCMes(cats, cc, m), 0);
+  }
+
+  const ingresos  = meses.map(m => sumCatMes(['30','31'], m));
+  const costos    = meses.map(m => sumCatMes(['40','41'], m));
+  const resultado = ingresos.map((v,i) => v + costos[i]);
+  const margenPct = ingresos.map((v,i) => v > 0 ? (resultado[i] / v * 100) : 0);
+
+  // ── 1. % Margen Neto mensual + Resultado $ ──
+  charts.margen = new Chart(document.getElementById('chart-margen'), {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: 'Ingresos', data: ingresos, backgroundColor: 'rgba(46,117,182,.8)', borderRadius: 4 },
-        { label: 'Costos+Gastos', data: costos.map(v => Math.abs(v)), backgroundColor: 'rgba(192,57,43,.7)', borderRadius: 4 },
-        { label: 'Resultado Neto', data: resultado, type: 'line', borderColor: '#1a8a3c', backgroundColor: 'rgba(26,138,60,.15)', tension: .3, fill: true, pointRadius: 5 }
+        { label: 'Resultado $', data: resultado, backgroundColor: resultado.map(v => v>=0?'rgba(26,138,60,.25)':'rgba(192,57,43,.25)'), borderColor: resultado.map(v => v>=0?'#1a8a3c':'#c0392b'), borderWidth: 1.5, borderRadius: 4, yAxisID: 'yAbs', order: 2 },
+        { label: '% Margen', data: margenPct, type: 'line', borderColor: '#2e75b6', backgroundColor: 'rgba(46,117,182,.1)', tension: 0.35, fill: true, pointRadius: 5, pointBackgroundColor: margenPct.map(v => v>=0?'#2e75b6':'#c0392b'), yAxisID: 'yPct', order: 1 }
       ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'top' },
-        tooltip: { callbacks: { label: ctx => `$${ctx.parsed.y.toLocaleString('es-CL')}` } }
-      },
-      scales: {
-        y: { ticks: { callback: v => '$'+Number(v).toLocaleString('es-CL',{maximumFractionDigits:0}) } }
-      }
+    options: { ...opt, interaction: { mode:'index' }, plugins: { legend:{position:'top'}, tooltip:{callbacks:{label: ctx => ctx.dataset.yAxisID==='yPct'?`Margen: ${ctx.parsed.y.toFixed(1)}%`:`Resultado: ${fmtN(ctx.parsed.y)}`}} },
+      scales: { yAbs:{position:'left',ticks:{callback:v=>fmtM(v)},title:{display:true,text:'Resultado ($)'}}, yPct:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v.toFixed(0)+'%'},title:{display:true,text:'Margen %'}} } }
+  });
+
+  // ── 2. Waterfall EERR acumulado del período ──
+  const ingTot   = ingresos.reduce((s,v) => s+v, 0);
+  const c40Tot   = meses.reduce((s,m) => s+sumCatMes(['40'],m), 0);
+  const c41Tot   = meses.reduce((s,m) => s+sumCatMes(['41'],m), 0);
+  const brutTot  = ingTot + c40Tot;          // utilidad bruta
+  const resTot   = ingTot + c40Tot + c41Tot; // resultado neto
+  charts.waterfall = new Chart(document.getElementById('chart-waterfall'), {
+    type: 'bar',
+    data: {
+      labels: ['Ingresos', 'Costo Ventas', 'Utilidad Bruta', 'Gastos Financ.', 'Resultado Neto'],
+      datasets: [{
+        label: 'Monto',
+        data: [
+          [0, ingTot],
+          [brutTot, ingTot],
+          [0, brutTot],
+          [resTot, brutTot],
+          [0, resTot]
+        ],
+        backgroundColor: ['rgba(46,117,182,.8)','rgba(192,57,43,.75)','rgba(26,138,60,.75)','rgba(243,156,18,.8)', resTot>=0?'rgba(26,138,60,.9)':'rgba(192,57,43,.9)'],
+        borderRadius: 4
+      }]
+    },
+    options: { ...opt,
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label: ctx => { const [a,b]=ctx.raw; return fmtN(Math.abs(b-a)); }}} },
+      scales: { y: { ticks:{callback:v=>fmtM(v)}, grid:{color:'rgba(0,0,0,.06)'} } }
     }
   });
 
-  const ing30 = [1,2,3,4,5,6].map(m => sumCatMes(['30'], m));
-  const ing31 = [1,2,3,4,5,6].map(m => sumCatMes(['31'], m));
-  charts.ingresos = new Chart(document.getElementById('chart-ingresos'), {
+  // ── 3. Distribución de costos por área (donut) ──
+  const AREAS = [
+    {cc:'001',label:'Logística'},{cc:'002',label:'Administración'},{cc:'003',label:'Ventas'},
+    {cc:'004',label:'Gerencia'},{cc:'005',label:'RRHH'},{cc:'007',label:'CCM'},
+    {cc:'011',label:'Vendedores'},{cc:'012',label:'Reponedores'},
+    {cc:'020',label:'Sodimac'},{cc:'021',label:'Imperial'},{cc:'022',label:'Construmart'},
+    {cc:'023',label:'Mercado Libre'},{cc:'024',label:'Chile Mat'},
+  ];
+  const PAL = ['#2e75b6','#c0392b','#f39c12','#1a8a3c','#8e44ad','#16a085','#e67e22','#2c3e50','#3498db','#e74c3c','#f1c40f','#27ae60','#9b59b6'];
+  const areasData = AREAS.map((a,i) => ({...a, val: Math.abs(sumCatCC(['40','41'],a.cc)), color:PAL[i]})).filter(a=>a.val>0);
+  const totCostos = areasData.reduce((s,a) => s+a.val, 0);
+  charts.costoArea = new Chart(document.getElementById('chart-costo-area'), {
+    type: 'doughnut',
+    data: { labels: areasData.map(a=>a.label), datasets:[{data:areasData.map(a=>a.val), backgroundColor:areasData.map(a=>a.color), borderWidth:2, hoverOffset:10}] },
+    options: { ...opt, cutout:'60%', plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}, tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmtN(ctx.parsed)} (${(ctx.parsed/totCostos*100).toFixed(1)}%)`}}} }
+  });
+
+  // ── 4. Presupuesto vs Real — ingresos y resultado ──
+  const pptoIngMes = cuentas.filter(c=>['30','31'].includes(c.cat2)).reduce((s,c)=>s+(PPTO[c.codigo]||0),0) / 12;
+  const pptoResMes = Object.values(PPTO).reduce((s,v)=>s+v,0) / 12;
+  const realIng = ingresos;
+  const realRes = resultado;
+  charts.pptovreal = new Chart(document.getElementById('chart-pptovreal'), {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: 'Ingresos Operacionales (30)', data: ing30, backgroundColor: 'rgba(46,117,182,.85)', borderRadius: 4 },
-        { label: 'Otros Ingresos (31)', data: ing31, backgroundColor: 'rgba(31,56,100,.7)', borderRadius: 4 }
+        { label: 'Real Ingresos', data: realIng, backgroundColor: 'rgba(46,117,182,.7)', borderRadius: 4, yAxisID:'yIng', order:2 },
+        { label: 'Ppto Ingresos', data: meses.map(()=>pptoIngMes), type:'line', borderColor:'#2e75b6', borderDash:[5,4], borderWidth:2, pointRadius:0, yAxisID:'yIng', order:1 },
+        { label: 'Real Resultado', data: realRes, backgroundColor: realRes.map(v=>v>=0?'rgba(26,138,60,.55)':'rgba(192,57,43,.55)'), borderRadius:4, yAxisID:'yRes', order:3 },
+        { label: 'Ppto Resultado', data: meses.map(()=>pptoResMes), type:'line', borderColor:'#1a8a3c', borderDash:[5,4], borderWidth:2, pointRadius:0, yAxisID:'yRes', order:1 }
       ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'top' },
-        tooltip: { callbacks: { label: ctx => `$${ctx.parsed.y.toLocaleString('es-CL')}` } }
-      },
-      scales: {
-        x: { stacked: true },
-        y: { stacked: true, ticks: { callback: v => '$'+Number(v).toLocaleString('es-CL',{maximumFractionDigits:0}) } }
-      }
+    options: { ...opt, interaction:{mode:'index'},
+      plugins:{legend:{position:'top',labels:{boxWidth:11,font:{size:11}}}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtN(ctx.parsed.y)}`}}},
+      scales:{ yIng:{position:'left',ticks:{callback:v=>fmtM(v)},title:{display:true,text:'Ingresos'}}, yRes:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>fmtM(v)},title:{display:true,text:'Resultado'}} }
+    }
+  });
+
+  // ── 5. Margen Bruto vs Margen Neto % mensual ──
+  // Margen Bruto = (Ingresos + Costo de Ventas puro 40-01-01) / Ingresos
+  const cogsM      = meses.map(m => sumPrefMes('40-01-01', m));
+  const margenBruto = ingresos.map((v,i) => v>0 ? (v+cogsM[i])/v*100 : 0);
+  charts.margenDoble = new Chart(document.getElementById('chart-margen-doble'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: '% Margen Bruto', data: margenBruto, borderColor:'#2e75b6', backgroundColor:'rgba(46,117,182,.08)', tension:.35, fill:true, pointRadius:5, borderWidth:2 },
+        { label: '% Margen Neto',  data: margenPct,   borderColor:'#1a8a3c', backgroundColor:'rgba(26,138,60,.08)',  tension:.35, fill:true, pointRadius:5, borderWidth:2 }
+      ]
+    },
+    options: { ...opt, interaction:{mode:'index'},
+      plugins:{legend:{position:'top'}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},
+      scales:{ y:{ticks:{callback:v=>v.toFixed(0)+'%'}, title:{display:true,text:'Margen %'}} }
+    }
+  });
+
+  // ── 6. Costos como % de Ventas mensual (COGS, Logística, Remuneraciones, Otros) ──
+  const catCostosMes = (pref, m) => Math.abs(sumPrefMes(pref, m));
+  const pcts = (arr, ing) => arr.map((v,i) => ing[i]>0 ? v/ing[i]*100 : 0);
+  const cogsP   = pcts(meses.map(m=>catCostosMes('40-01-01',m)), ingresos);
+  const logP    = pcts(meses.map(m=>catCostosMes('40-01-02',m)+catCostosMes('40-01-04',m)), ingresos);
+  const remP    = pcts(meses.map(m=>catCostosMes('40-02-01',m)), ingresos);
+  const otrosP  = pcts(meses.map(m=>{
+    const tot = Math.abs(sumCatMes(['40','41'],m));
+    const sub = catCostosMes('40-01-01',m)+catCostosMes('40-01-02',m)+catCostosMes('40-01-04',m)+catCostosMes('40-02-01',m);
+    return tot-sub;
+  }), ingresos);
+  charts.costosPct = new Chart(document.getElementById('chart-costos-pct'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Costo Ventas',    data: cogsP,  backgroundColor:'rgba(192,57,43,.8)',  borderRadius:3, stack:'s' },
+        { label: 'Logística',       data: logP,   backgroundColor:'rgba(243,156,18,.8)', borderRadius:3, stack:'s' },
+        { label: 'Remuneraciones',  data: remP,   backgroundColor:'rgba(46,117,182,.8)', borderRadius:3, stack:'s' },
+        { label: 'Otros',           data: otrosP, backgroundColor:'rgba(128,128,128,.6)',borderRadius:3, stack:'s' }
+      ]
+    },
+    options: { ...opt,
+      plugins:{legend:{position:'top',labels:{boxWidth:11,font:{size:11}}}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},
+      scales:{ x:{stacked:true}, y:{stacked:true, ticks:{callback:v=>v.toFixed(0)+'%'}, title:{display:true,text:'% de Ventas'}} }
     }
   });
 }
@@ -1857,8 +1964,8 @@ const PPTO_STRUCT = [
   ['c','40-01-08-23','Mantencion Vehiculos'],
   ['c','40-01-08-24','P.circulacion Vehiculos / Seguros'],
   ['t','TOTAL COSTOS LOGISTICA Y OTROS'],
-  ['T','COSTOS DE EXPLOTACION',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
-  ['R','MARGEN DE EXPLOTACION',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
+  ['T','COSTOS DE EXPLOTACION',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
+  ['R','MARGEN DE EXPLOTACION',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
 
   // ── GASTOS DE ADMINISTRACION Y VENTAS ──────────────────
   ['S','GASTOS DE ADMINISTRACION Y VENTAS'],
@@ -2409,8 +2516,8 @@ async function meliGenerarHECHO() {
     const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const a    = document.createElement('a');
     a.href     = URL.createObjectURL(blob);
-    const rut  = String(MELI_RAW.meta[1]||'').replace(/\D/g,'');
-    a.download = `liquidacion-${rut}-Liquidación MELI.xlsx`;
+    const rango = (document.getElementById('meli-rango').value.trim() || 'periodo').replace(/\s/g,'_').replace(/\//g,'-');
+    a.download = `Liquidacion_Meli_${rango}.xlsx`;
     a.click();
     meliStatus1('✅ Archivo descargado');
   } catch(err) {

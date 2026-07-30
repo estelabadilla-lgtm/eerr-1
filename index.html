@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -218,6 +219,86 @@
   #meli-pivot-wrap td { padding: 5px 12px; border-bottom: 1px solid var(--border); text-align: right; }
   #meli-pivot-wrap td:first-child { text-align: left; font-weight: 500; }
   #meli-pivot-wrap tr:hover td { background: rgba(0,160,223,0.07); }
+
+  /* ══ SEGUROS ══════════════════════════════════════════════ */
+  .seg-wrap { display: flex; flex-direction: column; gap: 22px; }
+  .seg-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .seg-titulo { font-size: 20px; font-weight: 700; color: var(--text1); margin: 0; }
+  .seg-head-actions { display: flex; align-items: center; gap: 10px; }
+  .seg-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text2); flex-wrap: wrap; align-items: center; }
+  .seg-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .seg-section { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+  .seg-section-header { background: var(--azul-dark); color: #fff; padding: 12px 20px; font-weight: 600; font-size: 14px; }
+  .seg-table-wrap { overflow-x: auto; }
+  .seg-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 1000px; }
+  .seg-table th { background: var(--azul-row); color: var(--text2); text-align: left; padding: 7px 10px; font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  .seg-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+  .seg-table tbody tr:nth-child(even) td { background: rgba(0,100,160,0.02); }
+  .seg-table tr:hover td { background: rgba(0,160,223,0.06); }
+  .seg-empty { padding: 20px; color: var(--gris); font-style: italic; }
+  .seg-group-row td { background: var(--azul-light) !important; color: var(--azul-dark); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; padding: 5px 10px; }
+
+  /* Menú de columnas */
+  .seg-colmenu-wrap { position: relative; }
+  .seg-colmenu-btn { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; font-family: inherit; }
+  .seg-colmenu-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .seg-colmenu { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.15); padding: 10px 14px; z-index: 500; display: none; min-width: 190px; }
+  .seg-colmenu.show { display: block; }
+  .seg-colmenu label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text1); padding: 4px 0; cursor: pointer; text-transform: none; font-weight: 500; }
+  .seg-colmenu input { width: auto; }
+  .seg-pago { display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; white-space: nowrap; }
+  .seg-pago-ok   { background: rgba(30,132,73,0.12); color: var(--verde); }
+  .seg-pago-warn { background: rgba(212,172,13,0.18); color: #8A6D00; }
+  .seg-pago-late { background: rgba(192,57,43,0.13); color: var(--rojo); }
+  .seg-pago-off  { background: rgba(93,109,126,0.12); color: var(--gris); }
+  .seg-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .seg-badge-vigente   { background: rgba(30,132,73,0.12); color: var(--verde); }
+  .seg-badge-porvencer { background: rgba(212,172,13,0.18); color: #8A6D00; }
+  .seg-badge-vencida   { background: rgba(192,57,43,0.13); color: var(--rojo); }
+  .seg-docs-btn { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 4px 9px; font-size: 11px; cursor: pointer; color: var(--text2); font-family: inherit; }
+  .seg-docs-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .seg-actions { display: flex; gap: 4px; }
+  .seg-icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 3px 7px; border-radius: 5px; font-family: inherit; }
+  .seg-icon-btn:hover { background: var(--blue-dim); }
+  .seg-btn-add { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 9px 18px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .seg-btn-add:hover { background: var(--azul-dark); }
+  .seg-nota { font-size: 11px; color: var(--text3); font-style: italic; white-space: normal; max-width: 220px; }
+  .seg-docs-row td { background: var(--azul-row); border-top: none; }
+  .seg-docs-panel { padding: 10px 4px; display: flex; flex-direction: column; gap: 6px; }
+  .seg-doc-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .seg-doc-item a { color: var(--blue); text-decoration: none; }
+  .seg-doc-item a:hover { text-decoration: underline; }
+  .seg-doc-del { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 12px; }
+  .seg-doc-upload { font-size: 11px; margin-top: 4px; }
+
+  /* Columnas ocultables — activadas por el menú "Columnas" */
+  .seg-wrap.oculta-asignado     .col-asignado,
+  .seg-wrap.oculta-aseguradora  .col-aseguradora,
+  .seg-wrap.oculta-npoliza      .col-npoliza,
+  .seg-wrap.oculta-cuotas       .col-cuotas,
+  .seg-wrap.oculta-valortotal   .col-valortotal,
+  .seg-wrap.oculta-vigencia     .col-vigencia,
+  .seg-wrap.oculta-renov        .col-renov,
+  .seg-wrap.oculta-documentos   .col-documentos,
+  .seg-wrap.oculta-actualizado  .col-actualizado { display: none; }
+
+  /* Modal alta/edición */
+  .seg-modal-overlay { position: fixed; inset: 0; background: rgba(13,28,36,0.55); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+  .seg-modal-overlay.show { display: flex; }
+  .seg-modal { background: #fff; border-radius: var(--radius); box-shadow: 0 10px 40px rgba(0,0,0,0.25); width: 100%; max-width: 660px; max-height: 90vh; overflow-y: auto; }
+  .seg-modal-header { background: var(--azul-dark); color: #fff; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 14px; position: sticky; top: 0; }
+  .seg-modal-close { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; line-height: 1; }
+  .seg-modal-body { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+  .seg-form-row { display: flex; flex-direction: column; gap: 5px; }
+  .seg-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .seg-form-row label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; }
+  .seg-form-row input, .seg-form-row select, .seg-form-row textarea { border: 1.5px solid var(--border2); border-radius: 6px; padding: 8px 10px; font-size: 13px; font-family: inherit; color: var(--text1); }
+  .seg-form-row input:focus, .seg-form-row select:focus, .seg-form-row textarea:focus { outline: none; border-color: var(--blue); }
+  .seg-form-check { flex-direction: row; align-items: center; gap: 8px; }
+  .seg-form-check input { width: auto; }
+  .seg-form-sep { border-top: 1px dashed var(--border2); margin: 2px 0; }
+  .seg-modal-footer { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: #fff; }
+  .seg-btn-cancel { background: var(--gris); color: #fff; border: none; border-radius: 6px; padding: 9px 18px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
 
   @media print {
     /* ── Ocultar todo excepto lo imprimible ── */
@@ -628,6 +709,7 @@
     <button onclick="showTab('presupuesto')">Presupuesto vs Real</button>
     <button onclick="showTab('centros')">Centros de Costos</button>
     <button onclick="showTab('meli')">MELI Liquidación</button>
+    <button onclick="showTab('seguros')">Seguros</button>
   </nav>
 </div>
 
@@ -762,6 +844,133 @@
     <span style="color:var(--gris);font-size:11px">Ppto Período = Presupuesto anual prorrateado según meses seleccionados</span>
   </div>
   <div id="ppto-content"><p style="color:var(--gris);padding:30px">Carga el archivo para ver la comparación presupuestaria.</p></div>
+</div>
+
+<!-- ══════════════════ TAB: SEGUROS ══════════════════ -->
+<div id="tab-seguros" class="tab">
+  <div class="seg-wrap">
+    <div class="seg-head">
+      <h2 class="seg-titulo">Seguros — Flota y Bodega</h2>
+      <div class="seg-head-actions">
+        <div class="seg-colmenu-wrap">
+          <button type="button" class="seg-colmenu-btn" onclick="segToggleColMenu()">⚙ Columnas ▾</button>
+          <div class="seg-colmenu" id="seg-colmenu"></div>
+        </div>
+        <button class="seg-btn-add" onclick="segAbrirModal()">+ Agregar Vehículo / Póliza</button>
+      </div>
+    </div>
+    <div class="seg-legend">
+      <span><span class="dot" style="background:var(--verde)"></span>Al día</span>
+      <span><span class="dot" style="background:#D4AC0D"></span>Pago en ≤10 días</span>
+      <span><span class="dot" style="background:var(--rojo)"></span>Pago en ≤5 días / atrasado</span>
+      <span id="seg-status" style="margin-left:auto;color:var(--gris)">Cargando…</span>
+    </div>
+
+    <div class="seg-section">
+      <div class="seg-section-header">Seguro de Robo y Accidentes de Vehículos</div>
+      <div class="seg-table-wrap"><table class="seg-table" id="seg-tbl-robo_accidentes"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="seg-section">
+      <div class="seg-section-header">Robo e Incendio</div>
+      <div class="seg-table-wrap"><table class="seg-table" id="seg-tbl-robo_incendio"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="seg-section">
+      <div class="seg-section-header">Mercancía en Vehículos de la Bodega</div>
+      <div class="seg-table-wrap"><table class="seg-table" id="seg-tbl-mercancia"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: alta / edición de vehículo + póliza -->
+<div class="seg-modal-overlay" id="seg-modal-overlay">
+  <div class="seg-modal">
+    <div class="seg-modal-header">
+      <span id="seg-modal-titulo">Agregar Vehículo / Póliza</span>
+      <button type="button" class="seg-modal-close" onclick="segCerrarModal()">&times;</button>
+    </div>
+    <form id="seg-form" onsubmit="segGuardar(event)">
+      <div class="seg-modal-body">
+        <div class="seg-form-row">
+          <label>Categoría de Seguro</label>
+          <select id="seg-f-categoria" onchange="segToggleCampos()">
+            <option value="robo_accidentes">Robo y Accidentes de Vehículos</option>
+            <option value="mercancia">Mercancía en Vehículos de la Bodega</option>
+            <option value="robo_incendio">Robo e Incendio (sin vehículo, ej. bodega)</option>
+          </select>
+        </div>
+
+        <div class="seg-form-row" id="seg-f-vehiculo-row">
+          <label>Vehículo</label>
+          <select id="seg-f-vehiculo-id" onchange="segCargarVehiculoEnForm()"></select>
+        </div>
+
+        <div class="seg-form-row" id="seg-f-entidad-row" style="display:none">
+          <label>Entidad / Bien asegurado</label>
+          <input type="text" id="seg-f-entidad" placeholder="Ej: Bodega Santa Margarita 742">
+        </div>
+
+        <div id="seg-f-nuevo-vehiculo" style="display:none">
+          <div class="seg-form-sep"></div>
+          <div class="seg-nota" style="margin-top:10px">Datos del vehículo — se editan y guardan acá mismo, elijas uno existente o cargues uno nuevo.</div>
+          <div class="seg-form-grid" style="margin-top:10px">
+            <div class="seg-form-row"><label>Patente</label><input type="text" id="seg-f-patente" placeholder="Vacío si aún no la tienes"></div>
+            <div class="seg-form-row"><label>Tipo</label><input type="text" id="seg-f-tipo" placeholder="Camioneta, Furgón..."></div>
+            <div class="seg-form-row"><label>Marca</label><input type="text" id="seg-f-marca"></div>
+            <div class="seg-form-row"><label>Modelo</label><input type="text" id="seg-f-modelo"></div>
+            <div class="seg-form-row"><label>Año</label><input type="number" id="seg-f-anio"></div>
+            <div class="seg-form-row"><label>Color</label><input type="text" id="seg-f-color"></div>
+            <div class="seg-form-row"><label>N° de Motor</label><input type="text" id="seg-f-motor"></div>
+            <div class="seg-form-row"><label>N° de Chasis</label><input type="text" id="seg-f-chasis"></div>
+            <div class="seg-form-row"><label>Uso</label><input type="text" id="seg-f-uso" placeholder="Comercial / Particular"></div>
+            <div class="seg-form-row"><label>Asignado a</label><input type="text" id="seg-f-asignado"></div>
+            <div class="seg-form-row">
+              <label>Centro de Costo</label>
+              <select id="seg-f-centrocosto">
+                <option value="Logística">Logística</option>
+                <option value="Ventas">Ventas</option>
+                <option value="Gerencia">Gerencia</option>
+                <option value="Administración">Administración</option>
+                <option value="RRHH">RRHH</option>
+              </select>
+            </div>
+          </div>
+          <div class="seg-form-sep" style="margin-top:14px"></div>
+        </div>
+
+        <div class="seg-form-grid">
+          <div class="seg-form-row"><label>Corredor</label><input type="text" id="seg-f-corredor" value="Ossa Covarrubias y Cía Ltda"></div>
+          <div class="seg-form-row"><label>Aseguradora</label><input type="text" id="seg-f-aseguradora"></div>
+          <div class="seg-form-row"><label>N° de Póliza</label><input type="text" id="seg-f-npoliza"></div>
+          <div class="seg-form-row"><label>Moneda</label><input type="text" id="seg-f-moneda" value="UF"></div>
+          <div class="seg-form-row"><label>Total Cuotas</label><input type="number" id="seg-f-cuotas" oninput="segCalcularTotal()"></div>
+          <div class="seg-form-row"><label>Valor c/Cuota</label><input type="number" step="0.001" id="seg-f-valorcuota" oninput="segCalcularTotal()"></div>
+          <div class="seg-form-row"><label>Valor Total</label><input type="number" step="0.001" id="seg-f-valortotal"></div>
+          <div class="seg-form-row"><label>Día de Pago (1–31)</label><input type="number" min="1" max="31" id="seg-f-diapago"></div>
+          <div class="seg-form-row"><label>Vigencia Inicio</label><input type="date" id="seg-f-inicio"></div>
+          <div class="seg-form-row"><label>Vigencia Término</label><input type="date" id="seg-f-termino"></div>
+        </div>
+
+        <div class="seg-form-row seg-form-check">
+          <input type="checkbox" id="seg-f-renovacion" checked>
+          <label style="text-transform:none;font-size:12px">Renovación automática</label>
+        </div>
+
+        <div class="seg-form-row">
+          <label>Notas</label>
+          <textarea id="seg-f-notas" rows="2"></textarea>
+        </div>
+
+        <input type="hidden" id="seg-f-id">
+        <div id="seg-form-status" style="font-size:12px;color:var(--gris)"></div>
+      </div>
+      <div class="seg-modal-footer">
+        <button type="button" class="seg-btn-cancel" onclick="segCerrarModal()">Cancelar</button>
+        <button type="submit" class="seg-btn-add">Guardar</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -1034,6 +1243,7 @@ function showTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
   if (name === 'graficos') renderCharts();
+  if (name === 'seguros' && !SEG_LOADED) segInit();
 }
 
 function setLoading(show, msg = '') {
@@ -2691,6 +2901,481 @@ async function meliGenerarNV() {
 
 function meliStatus1(msg) { document.getElementById('meli-status1').textContent = msg; }
 function meliStatus2(msg) { document.getElementById('meli-status2').textContent = msg; }
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  SEGUROS — Flota y Bodega (Supabase)
+// ═══════════════════════════════════════════════════════
+const SEG_SUPABASE_URL = 'https://eeildclikddchxybqkyc.supabase.co';
+const SEG_SUPABASE_KEY = 'sb_publishable_-S0wswGOsmUn-jhaxHBGaQ_gzoK39Y4';
+const segClient = supabase.createClient(SEG_SUPABASE_URL, SEG_SUPABASE_KEY);
+const SEG_BUCKET = 'polizas-docs';
+
+const SEG_CATEGORIAS = {
+  robo_accidentes: { titulo: 'Seguro de Robo y Accidentes de Vehículos', conVehiculo: true },
+  robo_incendio:   { titulo: 'Robo e Incendio',                          conVehiculo: false },
+  mercancia:       { titulo: 'Mercancía en Vehículos de la Bodega',      conVehiculo: true },
+};
+
+// Mismo orden que la pestaña "Centros de Costos" del dashboard
+const SEG_CC_ORDEN = ['Logística', 'Ventas', 'Gerencia', 'Administración', 'RRHH'];
+function segOrdenCC(cc) {
+  const i = SEG_CC_ORDEN.indexOf(cc);
+  return i === -1 ? SEG_CC_ORDEN.length : i;
+}
+
+const SEG_COLUMNAS = [
+  { key: 'asignado',     label: 'Asignado' },
+  { key: 'aseguradora',  label: 'Aseguradora' },
+  { key: 'npoliza',      label: 'N° Póliza' },
+  { key: 'cuotas',       label: 'Cuotas' },
+  { key: 'valortotal',   label: 'Valor Total' },
+  { key: 'vigencia',     label: 'Vigencia' },
+  { key: 'renov',        label: 'Renovación' },
+  { key: 'documentos',   label: 'Documentos' },
+  { key: 'actualizado',  label: 'Actualizado' },
+];
+
+let SEG_LOADED = false;
+let SEG_VEHICULOS = [];
+let SEG_POLIZAS = [];
+let SEG_DOCS = {};          // poliza_id -> [documentos]
+let SEG_DOCS_ABIERTOS = new Set();
+let SEG_COLS_OCULTAS = new Set(JSON.parse(localStorage.getItem('seg_cols_ocultas') || '[]'));
+
+async function segInit() {
+  SEG_LOADED = true;
+  segRenderColMenu();
+  await segCargarDatos();
+}
+
+async function segCargarDatos() {
+  document.getElementById('seg-status').textContent = 'Cargando…';
+  try {
+    const [vRes, pRes, dRes] = await Promise.all([
+      segClient.from('seguros_vehiculos').select('*').order('patente', { ascending: true, nullsFirst: false }),
+      segClient.from('seguros_polizas').select('*').order('dia_pago', { ascending: true }),
+      segClient.from('seguros_documentos').select('*').order('uploaded_at', { ascending: false }),
+    ]);
+    if (vRes.error) throw vRes.error;
+    if (pRes.error) throw pRes.error;
+    if (dRes.error) throw dRes.error;
+
+    SEG_VEHICULOS = vRes.data || [];
+    SEG_POLIZAS = pRes.data || [];
+    SEG_DOCS = {};
+    (dRes.data || []).forEach(doc => {
+      (SEG_DOCS[doc.poliza_id] = SEG_DOCS[doc.poliza_id] || []).push(doc);
+    });
+
+    segRenderTodas();
+    document.getElementById('seg-status').textContent =
+      `${SEG_POLIZAS.length} pólizas · ${SEG_VEHICULOS.length} vehículos — actualizado ${new Date().toLocaleTimeString('es-CL')}`;
+  } catch (err) {
+    console.error('[Seguros]', err);
+    document.getElementById('seg-status').textContent = '❌ Error cargando datos: ' + err.message;
+  }
+}
+
+// ── Helpers de formato ──────────────────────────────────
+function segVehiculoPorId(id) { return SEG_VEHICULOS.find(v => v.id === id) || null; }
+
+function segVehiculoLabel(v) {
+  if (!v) return '—';
+  const patente = v.patente || '(sin patente)';
+  return `${patente} — ${[v.marca, v.modelo].filter(Boolean).join(' ')}`;
+}
+
+function segSlug(text) {
+  return (text || 'sin-patente').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'sin-patente';
+}
+
+function segFmtFecha(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}-${m}-${y}`;
+}
+
+function segFmtUF(n) {
+  if (n === null || n === undefined) return '—';
+  return Number(n).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + ' UF';
+}
+
+function segEstadoVigencia(fechaTermino) {
+  if (!fechaTermino) return { cls: 'seg-badge-vigente', label: '—' };
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const term = new Date(fechaTermino + 'T00:00:00');
+  const dias = Math.round((term - hoy) / 86400000);
+  if (dias < 0) return { cls: 'seg-badge-vencida', label: 'Vencida' };
+  if (dias <= 30) return { cls: 'seg-badge-porvencer', label: `Vence en ${dias}d` };
+  return { cls: 'seg-badge-vigente', label: 'Vigente' };
+}
+
+function segEstadoPago(diaPago, fechaInicio, fechaTermino) {
+  if (!diaPago) return { cls: 'seg-pago-off', label: '—' };
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  if (fechaTermino) {
+    const term = new Date(fechaTermino + 'T00:00:00');
+    if (term < hoy) return { cls: 'seg-pago-off', label: `Día ${diaPago} (póliza vencida)` };
+  }
+  if (fechaInicio) {
+    const ini = new Date(fechaInicio + 'T00:00:00');
+    if (ini > hoy) return { cls: 'seg-pago-off', label: `Día ${diaPago} (no vigente aún)` };
+  }
+  let prox = new Date(hoy.getFullYear(), hoy.getMonth(), diaPago);
+  if (prox < hoy) prox = new Date(hoy.getFullYear(), hoy.getMonth() + 1, diaPago);
+  const dias = Math.round((prox - hoy) / 86400000);
+  let cls = 'seg-pago-ok';
+  if (dias <= 5) cls = 'seg-pago-late';
+  else if (dias <= 10) cls = 'seg-pago-warn';
+  const label = dias <= 0 ? `Día ${diaPago} (¡hoy!)` : `Día ${diaPago} (en ${dias}d)`;
+  return { cls, label };
+}
+
+// ── Render ───────────────────────────────────────────────
+function segRenderTodas() {
+  Object.keys(SEG_CATEGORIAS).forEach(cat => segRenderTabla(cat));
+}
+
+function segRenderTabla(categoria) {
+  const cfg = SEG_CATEGORIAS[categoria];
+  const table = document.getElementById('seg-tbl-' + categoria);
+  let filas = SEG_POLIZAS.filter(p => p.categoria === categoria);
+
+  const cols = cfg.conVehiculo
+    ? [['Patente / Vehículo',null],['Asignado','asignado'],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Renov.','renov'],['Documentos','documentos'],['Actualizado','actualizado'],['',null]]
+    : [['Entidad',null],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Renov.','renov'],['Documentos','documentos'],['Actualizado','actualizado'],['',null]];
+
+  table.querySelector('thead').innerHTML = '<tr>' + cols.map(([label,key]) => `<th${key ? ` class="col-${key}"` : ''}>${label}</th>`).join('') + '</tr>';
+  const tbody = table.querySelector('tbody');
+
+  if (filas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${cols.length}" class="seg-empty">Sin registros todavía.</td></tr>`;
+    return;
+  }
+
+  if (cfg.conVehiculo) {
+    filas = filas.slice().sort((a, b) => {
+      const ccA = segVehiculoPorId(a.vehiculo_id)?.centro_costo;
+      const ccB = segVehiculoPorId(b.vehiculo_id)?.centro_costo;
+      return segOrdenCC(ccA) - segOrdenCC(ccB) || (a.dia_pago || 99) - (b.dia_pago || 99);
+    });
+    let grupoActual = null;
+    let html = '';
+    filas.forEach(p => {
+      const cc = segVehiculoPorId(p.vehiculo_id)?.centro_costo || 'Sin Centro Asignado';
+      if (cc !== grupoActual) {
+        grupoActual = cc;
+        html += `<tr class="seg-group-row"><td colspan="${cols.length}">${cc}</td></tr>`;
+      }
+      html += segFilaHTML(p, cfg, cols.length);
+    });
+    tbody.innerHTML = html;
+  } else {
+    tbody.innerHTML = filas.map(p => segFilaHTML(p, cfg, cols.length)).join('');
+  }
+}
+
+function segFilaHTML(p, cfg, colspan) {
+  const v = cfg.conVehiculo ? segVehiculoPorId(p.vehiculo_id) : null;
+  const docs = SEG_DOCS[p.id] || [];
+  const pago = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
+  const vig = segEstadoVigencia(p.fecha_termino);
+  const abierto = SEG_DOCS_ABIERTOS.has(p.id);
+  const slug = segSlug(cfg.conVehiculo ? (v ? v.patente : null) : p.entidad);
+  const rangoFechas = `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`;
+
+  const primeraCol = cfg.conVehiculo
+    ? `<td>${segVehiculoLabel(v)}${v && v.tipo ? `<div class="seg-nota">${v.tipo}${v.anio ? ' · ' + v.anio : ''}</div>` : ''}</td><td class="col-asignado">${v?.asignado || '—'}</td>`
+    : `<td>${p.entidad || '—'}</td>`;
+
+  const notaFila = p.notas ? `<tr><td colspan="${colspan}" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ${p.notas}</span></td></tr>` : '';
+
+  const docsRow = abierto ? `
+    <tr class="seg-docs-row">
+      <td colspan="${colspan}">
+        <div class="seg-docs-panel">
+          ${docs.length === 0 ? '<span class="seg-nota">Sin documentos subidos.</span>' : docs.map(d => `
+            <div class="seg-doc-item">
+              📄 <a href="${segDocUrl(d.storage_path)}" target="_blank" rel="noopener">${d.nombre_archivo}</a>
+              <span class="seg-nota">(${segFmtFecha(d.uploaded_at.slice(0,10))})</span>
+              <button type="button" class="seg-doc-del" onclick="segEliminarDocumento('${d.id}','${d.storage_path}')" title="Eliminar">🗑</button>
+            </div>`).join('')}
+          <div class="seg-doc-upload">
+            <input type="file" onchange="segSubirDocumento('${p.id}','${slug}',this)">
+          </div>
+        </div>
+      </td>
+    </tr>` : '';
+
+  return `
+    <tr>
+      ${primeraCol}
+      <td class="col-aseguradora">${p.aseguradora || '—'}</td>
+      <td class="col-npoliza">${p.n_poliza || '<span class="seg-nota">pendiente</span>'}</td>
+      <td class="col-cuotas">${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) : '—'}</td>
+      <td class="col-valortotal">${segFmtUF(p.valor_total)}</td>
+      <td><span class="seg-pago ${pago.cls}" title="${rangoFechas}">${pago.label}</span></td>
+      <td class="col-vigencia"><span class="seg-badge ${vig.cls}" title="${rangoFechas}">${vig.label}</span></td>
+      <td class="col-renov">${p.renovacion ? 'Sí' : 'No'}</td>
+      <td class="col-documentos"><button type="button" class="seg-docs-btn" onclick="segToggleDocs('${p.id}')">${abierto ? '▲' : '▼'} ${docs.length}</button></td>
+      <td class="col-actualizado">${segFmtFecha(p.updated_at.slice(0,10))}</td>
+      <td>
+        <div class="seg-actions">
+          <button type="button" class="seg-icon-btn" title="Editar" onclick="segAbrirModal('${p.id}')">✏️</button>
+          <button type="button" class="seg-icon-btn" title="Eliminar" onclick="segEliminarPoliza('${p.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+    ${notaFila}
+    ${docsRow}`;
+}
+
+// ── Menú de columnas ─────────────────────────────────────
+function segRenderColMenu() {
+  const menu = document.getElementById('seg-colmenu');
+  menu.innerHTML = SEG_COLUMNAS.map(c => `
+    <label>
+      <input type="checkbox" data-col="${c.key}" ${SEG_COLS_OCULTAS.has(c.key) ? '' : 'checked'} onchange="segToggleColumna('${c.key}', this.checked)">
+      ${c.label}
+    </label>`).join('');
+  segAplicarColumnas();
+}
+
+function segAplicarColumnas() {
+  const wrap = document.querySelector('.seg-wrap');
+  SEG_COLUMNAS.forEach(c => wrap.classList.toggle('oculta-' + c.key, SEG_COLS_OCULTAS.has(c.key)));
+}
+
+function segToggleColumna(key, visible) {
+  if (visible) SEG_COLS_OCULTAS.delete(key);
+  else SEG_COLS_OCULTAS.add(key);
+  localStorage.setItem('seg_cols_ocultas', JSON.stringify([...SEG_COLS_OCULTAS]));
+  segAplicarColumnas();
+}
+
+function segToggleColMenu() {
+  document.getElementById('seg-colmenu').classList.toggle('show');
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = e.target.closest('.seg-colmenu-wrap');
+  if (!wrap) document.getElementById('seg-colmenu')?.classList.remove('show');
+});
+
+function segDocUrl(path) {
+  const { data } = segClient.storage.from(SEG_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function segToggleDocs(polizaId) {
+  if (SEG_DOCS_ABIERTOS.has(polizaId)) SEG_DOCS_ABIERTOS.delete(polizaId);
+  else SEG_DOCS_ABIERTOS.add(polizaId);
+  segRenderTodas();
+}
+
+// ── Documentos ───────────────────────────────────────────
+async function segSubirDocumento(polizaId, slug, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const path = `${slug}/${polizaId}/${Date.now()}_${file.name}`;
+  try {
+    const { error: upErr } = await segClient.storage.from(SEG_BUCKET).upload(path, file);
+    if (upErr) throw upErr;
+    const { error: dbErr } = await segClient.from('seguros_documentos')
+      .insert({ poliza_id: polizaId, nombre_archivo: file.name, storage_path: path });
+    if (dbErr) throw dbErr;
+    await segCargarDatos();
+  } catch (err) {
+    alert('Error al subir el documento: ' + err.message);
+    console.error(err);
+  }
+}
+
+async function segEliminarDocumento(docId, storagePath) {
+  if (!confirm('¿Eliminar este documento?')) return;
+  try {
+    await segClient.storage.from(SEG_BUCKET).remove([storagePath]);
+    const { error } = await segClient.from('seguros_documentos').delete().eq('id', docId);
+    if (error) throw error;
+    await segCargarDatos();
+  } catch (err) {
+    alert('Error al eliminar el documento: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ── Modal alta / edición ─────────────────────────────────
+function segPoblarSelectVehiculos(seleccionadoId) {
+  const sel = document.getElementById('seg-f-vehiculo-id');
+  const opciones = SEG_VEHICULOS.map(v => `<option value="${v.id}">${segVehiculoLabel(v)}</option>`).join('');
+  sel.innerHTML = `<option value="__nuevo__">+ Nuevo vehículo…</option>` + opciones;
+  sel.value = seleccionadoId || '__nuevo__';
+}
+
+function segToggleCampos() {
+  const cat = document.getElementById('seg-f-categoria').value;
+  const conVehiculo = SEG_CATEGORIAS[cat].conVehiculo;
+  document.getElementById('seg-f-vehiculo-row').style.display = conVehiculo ? '' : 'none';
+  document.getElementById('seg-f-entidad-row').style.display = conVehiculo ? 'none' : '';
+  document.getElementById('seg-f-nuevo-vehiculo').style.display = conVehiculo ? '' : 'none';
+  if (conVehiculo) segCargarVehiculoEnForm();
+}
+
+// Los campos del vehículo quedan siempre visibles y editables: si se elige
+// un vehículo existente se precargan sus datos actuales (patente, centro de
+// costo, etc.) para poder corregirlos ahí mismo; si se elige "Nuevo vehículo"
+// quedan en blanco para cargarlo desde cero.
+function segCargarVehiculoEnForm() {
+  const selVal = document.getElementById('seg-f-vehiculo-id').value;
+  const v = selVal === '__nuevo__' ? null : segVehiculoPorId(selVal);
+  document.getElementById('seg-f-patente').value = v?.patente || '';
+  document.getElementById('seg-f-tipo').value = v?.tipo || '';
+  document.getElementById('seg-f-marca').value = v?.marca || '';
+  document.getElementById('seg-f-modelo').value = v?.modelo || '';
+  document.getElementById('seg-f-anio').value = v?.anio ?? '';
+  document.getElementById('seg-f-color').value = v?.color || '';
+  document.getElementById('seg-f-motor').value = v?.n_motor || '';
+  document.getElementById('seg-f-chasis').value = v?.n_chasis || '';
+  document.getElementById('seg-f-uso').value = v?.uso || '';
+  document.getElementById('seg-f-asignado').value = v?.asignado || '';
+  document.getElementById('seg-f-centrocosto').value = v?.centro_costo || 'Logística';
+}
+
+function segCalcularTotal() {
+  const cuotas = parseFloat(document.getElementById('seg-f-cuotas').value) || 0;
+  const cuota = parseFloat(document.getElementById('seg-f-valorcuota').value) || 0;
+  if (cuotas && cuota) document.getElementById('seg-f-valortotal').value = (cuotas * cuota).toFixed(3);
+}
+
+function segAbrirModal(polizaId) {
+  document.getElementById('seg-form').reset();
+  document.getElementById('seg-f-id').value = '';
+  document.getElementById('seg-form-status').textContent = '';
+  segPoblarSelectVehiculos(null);
+
+  if (polizaId) {
+    const p = SEG_POLIZAS.find(x => x.id === polizaId);
+    if (!p) return;
+    document.getElementById('seg-modal-titulo').textContent = 'Editar Póliza';
+    document.getElementById('seg-f-id').value = p.id;
+    document.getElementById('seg-f-categoria').value = p.categoria;
+    document.getElementById('seg-f-corredor').value = p.corredor || '';
+    document.getElementById('seg-f-aseguradora').value = p.aseguradora || '';
+    document.getElementById('seg-f-npoliza').value = p.n_poliza || '';
+    document.getElementById('seg-f-moneda').value = p.moneda || 'UF';
+    document.getElementById('seg-f-cuotas').value = p.total_cuotas ?? '';
+    document.getElementById('seg-f-valorcuota').value = p.valor_cuota ?? '';
+    document.getElementById('seg-f-valortotal').value = p.valor_total ?? '';
+    document.getElementById('seg-f-diapago').value = p.dia_pago ?? '';
+    document.getElementById('seg-f-inicio').value = p.fecha_inicio || '';
+    document.getElementById('seg-f-termino').value = p.fecha_termino || '';
+    document.getElementById('seg-f-renovacion').checked = !!p.renovacion;
+    document.getElementById('seg-f-notas').value = p.notas || '';
+    if (SEG_CATEGORIAS[p.categoria].conVehiculo) {
+      segPoblarSelectVehiculos(p.vehiculo_id);
+    } else {
+      document.getElementById('seg-f-entidad').value = p.entidad || '';
+    }
+  } else {
+    document.getElementById('seg-modal-titulo').textContent = 'Agregar Vehículo / Póliza';
+    document.getElementById('seg-f-corredor').value = 'Ossa Covarrubias y Cía Ltda';
+  }
+
+  segToggleCampos();
+  document.getElementById('seg-modal-overlay').classList.add('show');
+}
+
+function segCerrarModal() {
+  document.getElementById('seg-modal-overlay').classList.remove('show');
+}
+
+async function segGuardar(event) {
+  event.preventDefault();
+  const status = document.getElementById('seg-form-status');
+  status.textContent = 'Guardando…';
+  try {
+    const categoria = document.getElementById('seg-f-categoria').value;
+    const conVehiculo = SEG_CATEGORIAS[categoria].conVehiculo;
+    let vehiculoId = null;
+    let entidad = null;
+
+    if (conVehiculo) {
+      const selVal = document.getElementById('seg-f-vehiculo-id').value;
+      const datosVehiculo = {
+        patente: document.getElementById('seg-f-patente').value.trim() || null,
+        tipo: document.getElementById('seg-f-tipo').value.trim() || null,
+        anio: parseInt(document.getElementById('seg-f-anio').value) || null,
+        modelo: document.getElementById('seg-f-modelo').value.trim() || null,
+        marca: document.getElementById('seg-f-marca').value.trim() || null,
+        color: document.getElementById('seg-f-color').value.trim() || null,
+        n_motor: document.getElementById('seg-f-motor').value.trim() || null,
+        n_chasis: document.getElementById('seg-f-chasis').value.trim() || null,
+        uso: document.getElementById('seg-f-uso').value.trim() || null,
+        asignado: document.getElementById('seg-f-asignado').value.trim() || null,
+        centro_costo: document.getElementById('seg-f-centrocosto').value || null,
+      };
+      if (selVal === '__nuevo__') {
+        const { data, error } = await segClient.from('seguros_vehiculos').insert(datosVehiculo).select().single();
+        if (error) throw error;
+        vehiculoId = data.id;
+      } else {
+        vehiculoId = selVal;
+        const { error } = await segClient.from('seguros_vehiculos').update(datosVehiculo).eq('id', vehiculoId);
+        if (error) throw error;
+      }
+    } else {
+      entidad = document.getElementById('seg-f-entidad').value.trim() || null;
+    }
+
+    const payload = {
+      vehiculo_id: vehiculoId,
+      entidad,
+      categoria,
+      corredor: document.getElementById('seg-f-corredor').value.trim() || null,
+      n_poliza: document.getElementById('seg-f-npoliza').value.trim() || null,
+      aseguradora: document.getElementById('seg-f-aseguradora').value.trim() || null,
+      moneda: document.getElementById('seg-f-moneda').value.trim() || 'UF',
+      total_cuotas: parseInt(document.getElementById('seg-f-cuotas').value) || null,
+      valor_cuota: parseFloat(document.getElementById('seg-f-valorcuota').value) || null,
+      valor_total: parseFloat(document.getElementById('seg-f-valortotal').value) || null,
+      renovacion: document.getElementById('seg-f-renovacion').checked,
+      dia_pago: parseInt(document.getElementById('seg-f-diapago').value) || null,
+      fecha_inicio: document.getElementById('seg-f-inicio').value || null,
+      fecha_termino: document.getElementById('seg-f-termino').value || null,
+      notas: document.getElementById('seg-f-notas').value.trim() || null,
+    };
+
+    const polizaId = document.getElementById('seg-f-id').value;
+    const { error } = polizaId
+      ? await segClient.from('seguros_polizas').update(payload).eq('id', polizaId)
+      : await segClient.from('seguros_polizas').insert(payload);
+    if (error) throw error;
+
+    segCerrarModal();
+    await segCargarDatos();
+  } catch (err) {
+    status.textContent = '❌ Error: ' + err.message;
+    console.error(err);
+  }
+}
+
+async function segEliminarPoliza(id) {
+  if (!confirm('¿Eliminar esta póliza? También se eliminarán sus documentos.')) return;
+  try {
+    const docs = SEG_DOCS[id] || [];
+    if (docs.length) await segClient.storage.from(SEG_BUCKET).remove(docs.map(d => d.storage_path));
+    const { error } = await segClient.from('seguros_polizas').delete().eq('id', id);
+    if (error) throw error;
+    await segCargarDatos();
+  } catch (err) {
+    alert('Error al eliminar: ' + err.message);
+    console.error(err);
+  }
+}
 </script>
 </body>
 </html>

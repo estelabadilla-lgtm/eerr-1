@@ -152,3 +152,27 @@ alter table seguros_vehiculos add column if not exists centro_costo text;
 update seguros_vehiculos set centro_costo = 'Logística' where asignado = 'Bodega';
 update seguros_vehiculos set centro_costo = 'Ventas'    where asignado in ('José Pérez','Alejandra','Marcelo');
 update seguros_vehiculos set centro_costo = 'Gerencia'  where asignado = 'Cristóbal Vigil';
+
+
+-- ══════════════════════════════════════════════════════════════
+--  MIGRACIÓN — Documentos a nivel de vehículo, con categoría
+--  (antes quedaban colgados de una póliza puntual; ahora "viven" con el
+--  vehículo para que no se pierdan si se edita/borra una póliza, y para
+--  poder subir también factura de compra, permiso de circulación, etc.)
+-- ══════════════════════════════════════════════════════════════
+alter table seguros_documentos add column if not exists vehiculo_id uuid references seguros_vehiculos(id) on delete cascade;
+alter table seguros_documentos add column if not exists tipo_documento text not null default 'poliza_seguro';
+alter table seguros_documentos alter column poliza_id drop not null;
+grant select, insert, update, delete on seguros_documentos to anon, authenticated;
+
+-- Documentos ya subidos: heredan el vehículo de su póliza...
+update seguros_documentos d
+set vehiculo_id = p.vehiculo_id
+from seguros_polizas p
+where d.poliza_id = p.id and p.vehiculo_id is not null and d.vehiculo_id is null;
+
+-- ...y se desvinculan de esa póliza puntual (quedan solo del vehículo,
+-- para que sobrevivan si esa póliza se edita o se elimina).
+update seguros_documentos
+set poliza_id = null
+where vehiculo_id is not null;

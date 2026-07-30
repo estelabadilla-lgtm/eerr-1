@@ -255,6 +255,7 @@
   .seg-badge-vigente   { background: rgba(30,132,73,0.12); color: var(--verde); }
   .seg-badge-porvencer { background: rgba(212,172,13,0.18); color: #8A6D00; }
   .seg-badge-vencida   { background: rgba(192,57,43,0.13); color: var(--rojo); }
+  .seg-badge-doc       { background: var(--blue-dim2); color: var(--azul-dark); }
   .seg-docs-btn { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 4px 9px; font-size: 11px; cursor: pointer; color: var(--text2); font-family: inherit; }
   .seg-docs-btn:hover { border-color: var(--blue); color: var(--blue); }
   .seg-actions { display: flex; gap: 4px; }
@@ -278,9 +279,7 @@
   .seg-wrap.oculta-cuotas       .col-cuotas,
   .seg-wrap.oculta-valortotal   .col-valortotal,
   .seg-wrap.oculta-vigencia     .col-vigencia,
-  .seg-wrap.oculta-renov        .col-renov,
-  .seg-wrap.oculta-documentos   .col-documentos,
-  .seg-wrap.oculta-actualizado  .col-actualizado { display: none; }
+  .seg-wrap.oculta-fechatermino .col-fechatermino { display: none; }
 
   /* Modal alta/edición */
   .seg-modal-overlay { position: fixed; inset: 0; background: rgba(13,28,36,0.55); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
@@ -970,6 +969,48 @@
         <button type="submit" class="seg-btn-add">Guardar</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modal: detalle completo (solo lectura) -->
+<div class="seg-modal-overlay" id="seg-detalle-overlay">
+  <div class="seg-modal" style="max-width:620px">
+    <div class="seg-modal-header">
+      <span id="seg-detalle-titulo">Detalle</span>
+      <button type="button" class="seg-modal-close" onclick="segCerrarDetalle()">&times;</button>
+    </div>
+    <div class="seg-modal-body" id="seg-detalle-body"></div>
+  </div>
+</div>
+
+<!-- Modal: documentación por categoría -->
+<div class="seg-modal-overlay" id="seg-docs-overlay">
+  <div class="seg-modal" style="max-width:560px">
+    <div class="seg-modal-header">
+      <span id="seg-docs-titulo">Documentación</span>
+      <button type="button" class="seg-modal-close" onclick="segCerrarDocsModal()">&times;</button>
+    </div>
+    <div class="seg-modal-body">
+      <div class="seg-form-grid">
+        <div class="seg-form-row">
+          <label>Tipo de documento</label>
+          <select id="seg-docs-tipo">
+            <option value="poliza_seguro">Póliza de Seguro</option>
+            <option value="factura_compra">Factura de Compra</option>
+            <option value="permiso_circulacion">Permiso de Circulación</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="seg-form-row">
+          <label>Archivo</label>
+          <input type="file" id="seg-docs-file">
+        </div>
+      </div>
+      <button type="button" class="seg-btn-add" style="width:fit-content" onclick="segSubirDocumentoModal()">+ Subir Documento</button>
+      <div id="seg-docs-status" style="font-size:12px;color:var(--gris)"></div>
+      <div class="seg-form-sep"></div>
+      <div id="seg-docs-lista"></div>
+    </div>
   </div>
 </div>
 
@@ -2932,16 +2973,21 @@ const SEG_COLUMNAS = [
   { key: 'cuotas',       label: 'Cuotas' },
   { key: 'valortotal',   label: 'Valor Total' },
   { key: 'vigencia',     label: 'Vigencia' },
-  { key: 'renov',        label: 'Renovación' },
-  { key: 'documentos',   label: 'Documentos' },
-  { key: 'actualizado',  label: 'Actualizado' },
+  { key: 'fechatermino', label: 'Fecha Término' },
 ];
+
+const SEG_TIPOS_DOC = {
+  poliza_seguro:       'Póliza de Seguro',
+  factura_compra:      'Factura de Compra',
+  permiso_circulacion: 'Permiso de Circulación',
+  otro:                'Otro',
+};
 
 let SEG_LOADED = false;
 let SEG_VEHICULOS = [];
 let SEG_POLIZAS = [];
-let SEG_DOCS = {};          // poliza_id -> [documentos]
-let SEG_DOCS_ABIERTOS = new Set();
+let SEG_DOCS = {};          // (vehiculo_id || poliza_id) -> [documentos]
+let SEG_DOCS_CONTEXTO = null; // { ownerKey, slug, titulo } del modal de documentos abierto
 let SEG_COLS_OCULTAS = new Set(JSON.parse(localStorage.getItem('seg_cols_ocultas') || '[]'));
 
 async function segInit() {
@@ -2965,8 +3011,12 @@ async function segCargarDatos() {
     SEG_VEHICULOS = vRes.data || [];
     SEG_POLIZAS = pRes.data || [];
     SEG_DOCS = {};
+    // Los documentos "viven" con el vehículo (sobreviven a la edición/borrado
+    // de una póliza puntual); si no hay vehículo (ej. Robo e Incendio de la
+    // bodega) quedan agrupados por póliza.
     (dRes.data || []).forEach(doc => {
-      (SEG_DOCS[doc.poliza_id] = SEG_DOCS[doc.poliza_id] || []).push(doc);
+      const key = doc.vehiculo_id || doc.poliza_id;
+      (SEG_DOCS[key] = SEG_DOCS[key] || []).push(doc);
     });
 
     segRenderTodas();
@@ -3046,8 +3096,8 @@ function segRenderTabla(categoria) {
   let filas = SEG_POLIZAS.filter(p => p.categoria === categoria);
 
   const cols = cfg.conVehiculo
-    ? [['Patente / Vehículo',null],['Asignado','asignado'],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Renov.','renov'],['Documentos','documentos'],['Actualizado','actualizado'],['',null]]
-    : [['Entidad',null],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Renov.','renov'],['Documentos','documentos'],['Actualizado','actualizado'],['',null]];
+    ? [['Patente',null],['Asignado','asignado'],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Fecha Término','fechatermino'],['',null]]
+    : [['Entidad',null],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Fecha Término','fechatermino'],['',null]];
 
   table.querySelector('thead').innerHTML = '<tr>' + cols.map(([label,key]) => `<th${key ? ` class="col-${key}"` : ''}>${label}</th>`).join('') + '</tr>';
   const tbody = table.querySelector('tbody');
@@ -3081,35 +3131,15 @@ function segRenderTabla(categoria) {
 
 function segFilaHTML(p, cfg, colspan) {
   const v = cfg.conVehiculo ? segVehiculoPorId(p.vehiculo_id) : null;
-  const docs = SEG_DOCS[p.id] || [];
   const pago = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
   const vig = segEstadoVigencia(p.fecha_termino);
-  const abierto = SEG_DOCS_ABIERTOS.has(p.id);
-  const slug = segSlug(cfg.conVehiculo ? (v ? v.patente : null) : p.entidad);
   const rangoFechas = `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`;
 
   const primeraCol = cfg.conVehiculo
-    ? `<td>${segVehiculoLabel(v)}${v && v.tipo ? `<div class="seg-nota">${v.tipo}${v.anio ? ' · ' + v.anio : ''}</div>` : ''}</td><td class="col-asignado">${v?.asignado || '—'}</td>`
+    ? `<td><strong>${v?.patente || '(sin patente)'}</strong></td><td class="col-asignado">${v?.asignado || '—'}</td>`
     : `<td>${p.entidad || '—'}</td>`;
 
   const notaFila = p.notas ? `<tr><td colspan="${colspan}" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ${p.notas}</span></td></tr>` : '';
-
-  const docsRow = abierto ? `
-    <tr class="seg-docs-row">
-      <td colspan="${colspan}">
-        <div class="seg-docs-panel">
-          ${docs.length === 0 ? '<span class="seg-nota">Sin documentos subidos.</span>' : docs.map(d => `
-            <div class="seg-doc-item">
-              📄 <a href="${segDocUrl(d.storage_path)}" target="_blank" rel="noopener">${d.nombre_archivo}</a>
-              <span class="seg-nota">(${segFmtFecha(d.uploaded_at.slice(0,10))})</span>
-              <button type="button" class="seg-doc-del" onclick="segEliminarDocumento('${d.id}','${d.storage_path}')" title="Eliminar">🗑</button>
-            </div>`).join('')}
-          <div class="seg-doc-upload">
-            <input type="file" onchange="segSubirDocumento('${p.id}','${slug}',this)">
-          </div>
-        </div>
-      </td>
-    </tr>` : '';
 
   return `
     <tr>
@@ -3119,19 +3149,18 @@ function segFilaHTML(p, cfg, colspan) {
       <td class="col-cuotas">${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) : '—'}</td>
       <td class="col-valortotal">${segFmtUF(p.valor_total)}</td>
       <td><span class="seg-pago ${pago.cls}" title="${rangoFechas}">${pago.label}</span></td>
-      <td class="col-vigencia"><span class="seg-badge ${vig.cls}" title="${rangoFechas}">${vig.label}</span></td>
-      <td class="col-renov">${p.renovacion ? 'Sí' : 'No'}</td>
-      <td class="col-documentos"><button type="button" class="seg-docs-btn" onclick="segToggleDocs('${p.id}')">${abierto ? '▲' : '▼'} ${docs.length}</button></td>
-      <td class="col-actualizado">${segFmtFecha(p.updated_at.slice(0,10))}</td>
+      <td class="col-vigencia"><span class="seg-badge ${vig.cls}">${vig.label}</span></td>
+      <td class="col-fechatermino">${segFmtFecha(p.fecha_termino)}</td>
       <td>
         <div class="seg-actions">
           <button type="button" class="seg-icon-btn" title="Editar" onclick="segAbrirModal('${p.id}')">✏️</button>
           <button type="button" class="seg-icon-btn" title="Eliminar" onclick="segEliminarPoliza('${p.id}')">🗑️</button>
+          <button type="button" class="seg-icon-btn" title="Ver todo" onclick="segAbrirDetalle('${p.id}')">🔍</button>
+          <button type="button" class="seg-icon-btn" title="Documentación" onclick="segAbrirDocsModal('${p.id}')">📎</button>
         </div>
       </td>
     </tr>
-    ${notaFila}
-    ${docsRow}`;
+    ${notaFila}`;
 }
 
 // ── Menú de columnas ─────────────────────────────────────
@@ -3171,26 +3200,120 @@ function segDocUrl(path) {
   return data.publicUrl;
 }
 
-function segToggleDocs(polizaId) {
-  if (SEG_DOCS_ABIERTOS.has(polizaId)) SEG_DOCS_ABIERTOS.delete(polizaId);
-  else SEG_DOCS_ABIERTOS.add(polizaId);
-  segRenderTodas();
+// ── Modal: detalle completo (solo lectura) ────────────────
+function segAbrirDetalle(polizaId) {
+  const p = SEG_POLIZAS.find(x => x.id === polizaId);
+  if (!p) return;
+  const cfg = SEG_CATEGORIAS[p.categoria];
+  const v = cfg.conVehiculo ? segVehiculoPorId(p.vehiculo_id) : null;
+
+  document.getElementById('seg-detalle-titulo').textContent =
+    cfg.conVehiculo ? segVehiculoLabel(v) : (p.entidad || 'Detalle');
+
+  const filas = [];
+  if (v) {
+    filas.push(
+      ['Patente', v.patente || '—'], ['Tipo', v.tipo || '—'], ['Marca', v.marca || '—'], ['Modelo', v.modelo || '—'],
+      ['Año', v.anio ?? '—'], ['Color', v.color || '—'], ['N° de Motor', v.n_motor || '—'], ['N° de Chasis', v.n_chasis || '—'],
+      ['Uso', v.uso || '—'], ['Asignado a', v.asignado || '—'], ['Centro de Costo', v.centro_costo || '—'],
+    );
+  } else {
+    filas.push(['Entidad', p.entidad || '—']);
+  }
+  filas.push(
+    ['Categoría', cfg.titulo],
+    ['Corredor', p.corredor || '—'],
+    ['Aseguradora', p.aseguradora || '—'],
+    ['N° de Póliza', p.n_poliza || '—'],
+    ['Moneda', p.moneda || '—'],
+    ['Cuotas', `${p.total_cuotas ?? '—'} x ${p.valor_cuota ?? '—'}`],
+    ['Valor Total', segFmtUF(p.valor_total)],
+    ['Día de Pago', p.dia_pago ?? '—'],
+    ['Vigencia', `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`],
+    ['Renovación', p.renovacion ? 'Sí' : 'No'],
+    ['Notas', p.notas || '—'],
+    ['Actualizado', segFmtFecha(p.updated_at.slice(0, 10))],
+  );
+
+  document.getElementById('seg-detalle-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px">
+      ${filas.map(([label, val]) => `
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">${label}</div>
+          <div style="font-size:13px;color:var(--text1)">${val}</div>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('seg-detalle-overlay').classList.add('show');
+}
+
+function segCerrarDetalle() {
+  document.getElementById('seg-detalle-overlay').classList.remove('show');
+}
+
+// ── Modal: documentación por categoría ────────────────────
+function segAbrirDocsModal(polizaId) {
+  const p = SEG_POLIZAS.find(x => x.id === polizaId);
+  if (!p) return;
+  const cfg = SEG_CATEGORIAS[p.categoria];
+  const v = cfg.conVehiculo ? segVehiculoPorId(p.vehiculo_id) : null;
+  const titulo = v ? segVehiculoLabel(v) : (p.entidad || '');
+  const ownerKey = v ? v.id : p.id;
+
+  SEG_DOCS_CONTEXTO = {
+    ownerKey,
+    vehiculoId: v ? v.id : null,
+    polizaId: v ? null : p.id,
+    slug: segSlug(v ? v.patente : p.entidad),
+  };
+
+  document.getElementById('seg-docs-titulo').textContent = 'Documentación — ' + titulo;
+  document.getElementById('seg-docs-status').textContent = '';
+  document.getElementById('seg-docs-file').value = '';
+  segRenderDocsModal();
+  document.getElementById('seg-docs-overlay').classList.add('show');
+}
+
+function segCerrarDocsModal() {
+  document.getElementById('seg-docs-overlay').classList.remove('show');
+  SEG_DOCS_CONTEXTO = null;
+}
+
+function segRenderDocsModal() {
+  if (!SEG_DOCS_CONTEXTO) return;
+  const docs = SEG_DOCS[SEG_DOCS_CONTEXTO.ownerKey] || [];
+  document.getElementById('seg-docs-lista').innerHTML = docs.length === 0
+    ? '<p class="seg-nota">Sin documentos subidos todavía.</p>'
+    : docs.map(d => `
+      <div class="seg-doc-item">
+        <span class="seg-badge seg-badge-doc">${SEG_TIPOS_DOC[d.tipo_documento] || 'Otro'}</span>
+        📄 <a href="${segDocUrl(d.storage_path)}" target="_blank" rel="noopener">${d.nombre_archivo}</a>
+        <span class="seg-nota">(${segFmtFecha(d.uploaded_at.slice(0, 10))})</span>
+        <button type="button" class="seg-doc-del" onclick="segEliminarDocumento('${d.id}','${d.storage_path}')" title="Eliminar">🗑</button>
+      </div>`).join('');
 }
 
 // ── Documentos ───────────────────────────────────────────
-async function segSubirDocumento(polizaId, slug, input) {
+async function segSubirDocumentoModal() {
+  const input = document.getElementById('seg-docs-file');
   const file = input.files[0];
-  if (!file) return;
-  const path = `${slug}/${polizaId}/${Date.now()}_${file.name}`;
+  if (!file || !SEG_DOCS_CONTEXTO) return;
+  const status = document.getElementById('seg-docs-status');
+  status.textContent = 'Subiendo…';
+  const { vehiculoId, polizaId, slug, ownerKey } = SEG_DOCS_CONTEXTO;
+  const tipo = document.getElementById('seg-docs-tipo').value;
+  const path = `${slug}/${ownerKey}/${Date.now()}_${file.name}`;
   try {
     const { error: upErr } = await segClient.storage.from(SEG_BUCKET).upload(path, file);
     if (upErr) throw upErr;
     const { error: dbErr } = await segClient.from('seguros_documentos')
-      .insert({ poliza_id: polizaId, nombre_archivo: file.name, storage_path: path });
+      .insert({ vehiculo_id: vehiculoId, poliza_id: polizaId, tipo_documento: tipo, nombre_archivo: file.name, storage_path: path });
     if (dbErr) throw dbErr;
+    input.value = '';
+    status.textContent = '✅ Documento subido';
     await segCargarDatos();
+    segRenderDocsModal();
   } catch (err) {
-    alert('Error al subir el documento: ' + err.message);
+    status.textContent = '❌ Error: ' + err.message;
     console.error(err);
   }
 }
@@ -3202,6 +3325,7 @@ async function segEliminarDocumento(docId, storagePath) {
     const { error } = await segClient.from('seguros_documentos').delete().eq('id', docId);
     if (error) throw error;
     await segCargarDatos();
+    segRenderDocsModal();
   } catch (err) {
     alert('Error al eliminar el documento: ' + err.message);
     console.error(err);
@@ -3364,7 +3488,9 @@ async function segGuardar(event) {
 }
 
 async function segEliminarPoliza(id) {
-  if (!confirm('¿Eliminar esta póliza? También se eliminarán sus documentos.')) return;
+  // Los documentos quedan con el vehículo (no con la póliza), así que sobreviven
+  // salvo en Robo e Incendio (sin vehículo), donde sí están atados a esta póliza.
+  if (!confirm('¿Eliminar esta póliza? Los documentos del vehículo no se ven afectados.')) return;
   try {
     const docs = SEG_DOCS[id] || [];
     if (docs.length) await segClient.storage.from(SEG_BUCKET).remove(docs.map(d => d.storage_path));

@@ -2590,6 +2590,9 @@ const MC = {
 const MELI_RUT_PROV = 77398220;
 const MELI_COL7     = 25;
 
+// Logo MercadoLibre para la esquina superior de la hoja "detalles"
+const MELI_LOGO_B64 = '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';
+
 function meliLeerArchivo(input) {
   const file = input.files[0];
   if (!file) return;
@@ -2763,6 +2766,8 @@ async function meliGenerarHECHO() {
     const wsP = wb.addWorksheet('Hoja1');
     meliEscribirDetalles(wsD);
     meliEscribirPivot(wsP);
+    const logoId = wb.addImage({ base64: MELI_LOGO_B64, extension: 'png' });
+    wsD.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 121, height: 76 } });
     const buf  = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const a    = document.createElement('a');
@@ -2777,6 +2782,27 @@ async function meliGenerarHECHO() {
   }
 }
 
+// ── Estilos del reporte MELI (calcados del diseño de referencia) ──
+const MELI_FILL_META  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEFEFEF'} };
+const MELI_FILL_GRP1  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFE599'} }; // Datos de la venta
+const MELI_FILL_GRP2  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFA2C4C9'} }; // Datos de la liquidación
+const MELI_FILL_GRP3  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFB6D7A8'} }; // Impuestos
+const MELI_FILL_COL1  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFF2CC'} };
+const MELI_FILL_COL2  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFD0E0E3'} };
+const MELI_FILL_COL3  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFD9EAD3'} };
+const MELI_FILL_CALC  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFFF00'} };
+const MELI_FILL_TOTAL = { type:'pattern', pattern:'solid', fgColor:{argb:'FF9BBB59'} };
+const MELI_BORDER_HDR = { top:{style:'thin',color:{argb:'FFC0C0C0'}}, bottom:{style:'thin',color:{argb:'FFC0C0C0'}}, left:{style:'thin',color:{argb:'FFC0C0C0'}}, right:{style:'thin',color:{argb:'FFC0C0C0'}} };
+const MELI_BORDER_ROW = { bottom:{style:'thin',color:{argb:'FFE0E0E0'}} };
+const MELI_MONEY_FMT  = '#,##0';
+
+function meliEstiloEncabezado(cell, fill, opts) {
+  cell.fill = fill;
+  cell.font = { bold: true, size: 10, name: 'Arial', color: { argb: (opts && opts.blanco) ? 'FFFFFFFF' : 'FF1F3864' } };
+  cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  cell.border = MELI_BORDER_HDR;
+}
+
 function meliEscribirDetalles(ws) {
   const { sec1, sec2, sec3, meta, headers } = MELI_RAW;
   const n1 = sec1.length, n2 = sec2.length, n3 = sec3.length;
@@ -2788,28 +2814,53 @@ function meliEscribirDetalles(ws) {
   const Rf  = 11 + n1 + n2;                    // fila F381
   const R3s = 15 + n1 + n2, R3e = 14 + n1 + n2 + n3, R3sum = 15 + n1 + n2 + n3;
 
-  // Fila 1: título
-  ws.getRow(1).getCell(2).value = 'Reporte de Liquidación de Factura';
+  // Fila 1: título (deja la col. A libre para el logo)
+  const tituloCell = ws.getRow(1).getCell(2);
+  tituloCell.value = 'Reporte de Liquidación de Factura';
+  tituloCell.font = { bold: true, size: 14, name: 'Arial', color: { argb: 'FF1F3864' } };
+  ws.getRow(1).height = 30;
 
   // Fila 2: metadata
   ['ID del Vendedor\n'+String(meta[0]||''), 'RUT\n'+String(meta[1]||''),
    'Fecha\n'+String(meta[2]||''), 'Moneda\n'+String(meta[3]||''),
    'Tipo de Liquidación\n'+String(meta[4]||'')
   ].forEach((v,i) => ws.getRow(2).getCell(i+1).value = v);
+  for (let c = 1; c <= 19; c++) {
+    const cell = ws.getRow(2).getCell(c);
+    cell.fill = MELI_FILL_META;
+    cell.alignment = { vertical: 'middle', wrapText: true };
+    if (c <= 5) cell.font = { bold: true, size: 9, name: 'Arial' };
+  }
 
-  // Fila 3: agrupaciones
+  // Fila 3: agrupaciones (fusionadas, igual que el diseño de referencia)
+  ws.mergeCells(3, 1, 3, 9);
+  ws.mergeCells(3, 10, 3, 14);
+  ws.mergeCells(3, 15, 3, 19);
   ws.getRow(3).getCell(1).value  = 'Datos de la venta';
   ws.getRow(3).getCell(10).value = 'Datos que contiene en la liquidación';
   ws.getRow(3).getCell(15).value = 'Desglose del comprobante / Impuestos aplicados';
+  meliEstiloEncabezado(ws.getRow(3).getCell(1),  MELI_FILL_GRP1, { blanco: false });
+  meliEstiloEncabezado(ws.getRow(3).getCell(10), MELI_FILL_GRP2, { blanco: false });
+  meliEstiloEncabezado(ws.getRow(3).getCell(15), MELI_FILL_GRP3, { blanco: false });
+  ws.getRow(3).height = 20;
 
-  // Fila 4: encabezados de columna
+  // Fila 4: encabezados de columna (alineados 1 a 1 con las columnas de datos)
   const cols4 = ['Número de venta','Tipo logístico Venta','Código del producto','SKU',
     'Descripcion Item','Pack ID','variación','Cantidad de unidades','Tipo logístico Devolución',
     'Fecha de emisión','Tipo de DTE','Codigo DTE','Folio',
     'Folio asociado\nAplicable para Notas de crédito',
     'Monto neto','Importe IVA','IVA Anticipo','ILA/ABA','Código del impuesto',
-    '','bruto','neto ','iva','total'];
+    'bruto','neto','iva','total'];
   cols4.forEach((v,i) => { if(v) ws.getRow(4).getCell(i+1).value = v; });
+  for (let c = 1; c <= 9;  c++) meliEstiloEncabezado(ws.getRow(4).getCell(c), MELI_FILL_COL1);
+  for (let c = 10; c <= 14; c++) meliEstiloEncabezado(ws.getRow(4).getCell(c), MELI_FILL_COL2);
+  for (let c = 15; c <= 19; c++) meliEstiloEncabezado(ws.getRow(4).getCell(c), MELI_FILL_COL3);
+  for (let c = 20; c <= 22; c++) meliEstiloEncabezado(ws.getRow(4).getCell(c), MELI_FILL_CALC);
+  meliEstiloEncabezado(ws.getRow(4).getCell(23), MELI_FILL_TOTAL, { blanco: true });
+
+  // Formato numérico tipo contable para las columnas monetarias
+  [15,16,17,18,20,21,22,23].forEach(c => { ws.getColumn(c).numFmt = MELI_MONEY_FMT; });
+  ws.getColumn(8).numFmt = MELI_MONEY_FMT; // Cantidad de unidades
 
   // Índices que deben ser numéricos (qty, neto, iva, iva_ant, ila)
   const NUM_COLS = new Set([7, 14, 15, 16, 17]);
@@ -2833,6 +2884,19 @@ function meliEscribirDetalles(ws) {
       r.getCell(22).value = Math.round(iva);
       r.getCell(23).value = Math.round(total);
     }
+    for (let c = 1; c <= 23; c++) r.getCell(c).border = MELI_BORDER_ROW;
+    r.getCell(20).fill = MELI_FILL_CALC;
+    r.getCell(21).fill = MELI_FILL_CALC;
+    r.getCell(22).fill = MELI_FILL_CALC;
+    r.getCell(23).fill = MELI_FILL_TOTAL;
+  };
+
+  const estiloFilaSuma = (row) => {
+    for (let c = 1; c <= 23; c++) {
+      const cell = row.getCell(c);
+      cell.font = { bold: true, size: 10, name: 'Arial' };
+      cell.border = { top:{style:'thin',color:{argb:'FF999999'}}, bottom:MELI_BORDER_ROW.bottom };
+    }
   };
 
   // Sección 1
@@ -2843,11 +2907,13 @@ function meliEscribirDetalles(ws) {
     s1.getCell(col === 'H' ? 8 : col === 'T' ? 20 : col === 'U' ? 21 : col === 'V' ? 22 : 23).value =
       {formula: `SUM(${col}${R1s}:${col}${R1e})`};
   });
+  estiloFilaSuma(s1);
 
   // Sección 2
   sec2.forEach((row, i) => writeRow(R2s + i, row, true));
   // Fila suma sección 2 (solo bruto)
   ws.getRow(R2sum).getCell(20).value = {formula: `SUM(T${R2s}:T${R2e})`};
+  estiloFilaSuma(ws.getRow(R2sum));
 
   // Fila F381: escribir valor pre-calculado en JS para evitar DIV/0 por tipos de datos
   ws.getRow(Rf).getCell(20).value = f381;
@@ -2857,10 +2923,14 @@ function meliEscribirDetalles(ws) {
   // Fila suma sección 3 (solo bruto)
   const s3formula = n3 > 0 ? `SUM(T${R3s}:T${R3e})` : '0';
   ws.getRow(R3sum).getCell(20).value = n3 > 0 ? {formula: s3formula} : 0;
+  estiloFilaSuma(ws.getRow(R3sum));
 
   // Anchos de columna
-  [18,12,15,18,42,15,12,10,12,20,10,10,12,12,12,12,10,10,12,5,12,12,12,14]
+  [18,12,15,18,42,15,12,10,12,20,10,10,12,12,12,12,10,10,12,12,12,12,14]
     .forEach((w,i) => { ws.getColumn(i+1).width = w; });
+
+  // Encabezados siempre visibles al desplazarse hacia abajo
+  ws.views = [{ state: 'frozen', ySplit: 4 }];
 }
 
 function meliEscribirPivot(ws) {
@@ -2873,25 +2943,52 @@ function meliEscribirPivot(ws) {
   const skus = [...new Set(allSold.map(r => String(r[MC.sku]||'')).filter(s => s))]
     .sort((a,b) => a.localeCompare(b, 'es-CL', {ignorePunctuation: true}));
 
-  // Encabezados
+  // Encabezados (estilo equivalente al "PivotStyleLight16" del diseño de referencia)
   const hdr = ws.getRow(1);
   hdr.getCell(1).value = 'Etiquetas de fila';
   hdr.getCell(2).value = 'Suma de Cantidad de unidades';
   hdr.getCell(3).value = 'Suma de neto';
   hdr.getCell(4).value = 'Neto unitario';
   hdr.getCell(5).value = 'Long.';
+  for (let c = 1; c <= 5; c++) {
+    const cell = hdr.getCell(c);
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF4F81BD'} };
+    cell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FFFFFFFF' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = MELI_BORDER_HDR;
+  }
+  hdr.height = 28;
 
   // Una fila por SKU — SUMIFS dinámico desde la hoja detalles
   // Col D=SKU, Col H=qty, Col U=neto (solo filas sec1 tienen neto escrito)
   skus.forEach((sku, i) => {
     const r = 2 + i;
-    ws.getRow(r).getCell(1).value = sku;
-    ws.getRow(r).getCell(2).value = {formula: `SUMIFS(detalles!$H:$H,detalles!$D:$D,A${r},detalles!$U:$U,"<>")`};
-    ws.getRow(r).getCell(3).value = {formula: `SUMIF(detalles!$D:$D,A${r},detalles!$U:$U)`};
-    ws.getRow(r).getCell(4).value = {formula: `IFERROR(ROUND(C${r}/B${r},0),0)`};
-    ws.getRow(r).getCell(5).value = {formula: `LEN(A${r})`};
+    const row = ws.getRow(r);
+    row.getCell(1).value = sku;
+    row.getCell(2).value = {formula: `SUMIFS(detalles!$H:$H,detalles!$D:$D,A${r},detalles!$U:$U,"<>")`};
+    row.getCell(3).value = {formula: `SUMIF(detalles!$D:$D,A${r},detalles!$U:$U)`};
+    row.getCell(4).value = {formula: `IFERROR(ROUND(C${r}/B${r},0),0)`};
+    row.getCell(5).value = {formula: `LEN(A${r})`};
+    for (let c = 1; c <= 5; c++) row.getCell(c).border = MELI_BORDER_ROW;
   });
+
+  // Fila de total general
+  const rTotal = 2 + skus.length;
+  const totalRow = ws.getRow(rTotal);
+  totalRow.getCell(1).value = 'Total general';
+  totalRow.getCell(2).value = skus.length ? { formula: `SUM(B2:B${rTotal - 1})` } : 0;
+  totalRow.getCell(3).value = skus.length ? { formula: `SUM(C2:C${rTotal - 1})` } : 0;
+  for (let c = 1; c <= 5; c++) {
+    const cell = totalRow.getCell(c);
+    cell.font = { bold: true, size: 10, name: 'Arial' };
+    cell.border = { top:{style:'thin',color:{argb:'FF999999'}}, bottom:MELI_BORDER_ROW.bottom };
+  }
+
+  ws.getColumn(2).numFmt = MELI_MONEY_FMT;
+  ws.getColumn(3).numFmt = MELI_MONEY_FMT;
+  ws.getColumn(4).numFmt = MELI_MONEY_FMT;
   [22,14,16,14,8].forEach((w,i) => { ws.getColumn(i+1).width = w; });
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
 }
 
 async function meliGenerarNV() {

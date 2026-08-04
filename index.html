@@ -3136,7 +3136,7 @@ function segFilaHTML(p, cfg, colspan) {
   const rangoFechas = `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`;
 
   const primeraCol = cfg.conVehiculo
-    ? `<td><strong>${v?.patente || '(sin patente)'}</strong></td><td class="col-asignado">${v?.asignado || '—'}</td>`
+    ? `<td><span style="font-weight:800;font-size:13.5px;color:var(--azul-dark)">${v?.patente || '(sin patente)'}</span></td><td class="col-asignado">${v?.asignado || '—'}</td>`
     : `<td>${p.entidad || '—'}</td>`;
 
   const notaFila = p.notas ? `<tr><td colspan="${colspan}" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ${p.notas}</span></td></tr>` : '';
@@ -3146,7 +3146,7 @@ function segFilaHTML(p, cfg, colspan) {
       ${primeraCol}
       <td class="col-aseguradora">${p.aseguradora || '—'}</td>
       <td class="col-npoliza">${p.n_poliza || '<span class="seg-nota">pendiente</span>'}</td>
-      <td class="col-cuotas">${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) : '—'}</td>
+      <td class="col-cuotas">${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) + ' ' + (p.moneda || 'UF') : '—'}</td>
       <td class="col-valortotal">${segFmtUF(p.valor_total)}</td>
       <td><span class="seg-pago ${pago.cls}" title="${rangoFechas}">${pago.label}</span></td>
       <td class="col-vigencia"><span class="seg-badge ${vig.cls}">${vig.label}</span></td>

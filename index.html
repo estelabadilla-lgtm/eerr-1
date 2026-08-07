@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Financiero — Representaciones Grantt Ltda. 2026</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='20 15 150 150'%3E%3Crect x='93.2' y='79.8' fill='%2300A0DF' width='67.6' height='17.4'/%3E%3Cpath fill='%2300A0DF' d='M135.7,115c-8.9,14.2-24.6,23.7-42.6,23.7c-27.7,0-50.2-22.5-50.2-50.2c0-27.7,22.5-50.2,50.2-50.2c17.9,0,33.7,9.5,42.6,23.7h19.6C145,37.9,121,20.9,93.2,20.9c-37.3,0-67.6,30.3-67.6,67.6s30.3,67.6,67.6,67.6c27.9,0,51.8-17,62.2-41.1H135.7z'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
@@ -298,6 +299,108 @@
   .seg-form-sep { border-top: 1px dashed var(--border2); margin: 2px 0; }
   .seg-modal-footer { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: #fff; }
   .seg-btn-cancel { background: var(--gris); color: #fff; border: none; border-radius: 6px; padding: 9px 18px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+  /* ══ LOGIN / PORTADA ══════════════════════════════════════ */
+  @keyframes loginGlow {
+    0%   { background-position: 15% 20%, 85% 80%, 0% 50%; }
+    50%  { background-position: 35% 35%, 65% 65%, 100% 50%; }
+    100% { background-position: 15% 20%, 85% 80%, 0% 50%; }
+  }
+  @keyframes loginFadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes loginPopIn {
+    from { opacity: 0; transform: scale(.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes loginShake {
+    10%,90% { transform: translateX(-2px); }
+    20%,80% { transform: translateX(4px); }
+    30%,50%,70% { transform: translateX(-8px); }
+    40%,60% { transform: translateX(8px); }
+  }
+  @keyframes loginCheckPop {
+    0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60%  { transform: scale(1.2) rotate(6deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  #login-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(0,160,223,0.55), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(75,172,198,0.5), transparent 40%),
+      linear-gradient(120deg, #0D1C24, #1F3864, #0080B8, #1F3864);
+    background-size: 160% 160%, 160% 160%, 300% 300%;
+    background-repeat: no-repeat;
+    animation: loginGlow 16s ease infinite;
+    transition: opacity .5s ease, visibility .5s ease;
+  }
+  #login-screen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .login-card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 480px; margin: 20px;
+    background: rgba(255,255,255,0.97);
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+    padding: 42px 38px 34px;
+    text-align: center;
+    animation: loginPopIn .6s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .login-logo { height: 40px; width: auto; margin-bottom: 6px; animation: loginFadeUp .6s ease .05s both; }
+  .login-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--blue); animation: loginFadeUp .6s ease .1s both; }
+  .login-title { font-size: 22px; font-weight: 800; color: var(--azul-dark); margin: 4px 0 26px; animation: loginFadeUp .6s ease .16s both; }
+
+  .login-pregunta { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 14px; animation: loginFadeUp .5s ease .18s both; }
+  .login-roles { display: flex; gap: 12px; }
+  .login-role-card {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 20px 8px; border: 1.5px solid var(--border2); border-radius: 12px;
+    background: #fff; cursor: pointer; font-family: inherit;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    animation: loginFadeUp .5s ease both;
+  }
+  .login-role-card:nth-child(1) { animation-delay: .22s; }
+  .login-role-card:nth-child(2) { animation-delay: .30s; }
+  .login-role-card:nth-child(3) { animation-delay: .38s; }
+  .login-role-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,100,160,0.18); border-color: var(--blue); }
+  .login-role-icon { font-size: 26px; }
+  .login-role-label { font-size: 12.5px; font-weight: 700; color: var(--text1); }
+
+  .login-step2 { animation: loginFadeUp .35s ease both; }
+  .login-back { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; font-family: inherit; margin-bottom: 10px; padding: 4px 0; }
+  .login-back:hover { color: var(--blue); }
+  .login-role-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-dim); color: var(--azul-dark); font-weight: 700; font-size: 13px; padding: 6px 16px; border-radius: 20px; margin-bottom: 20px; }
+  .login-pass-row { display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 6px; }
+  .login-pass-row label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+  .login-pass-row input { border: 1.5px solid var(--border2); border-radius: 8px; padding: 11px 14px; font-size: 14px; font-family: inherit; }
+  .login-pass-row input:focus { outline: none; border-color: var(--blue); }
+  .login-pass-row.shake { animation: loginShake .5s; }
+  .login-error { color: var(--rojo); font-size: 12px; font-weight: 600; min-height: 16px; margin-top: 4px; }
+  .login-btn { width: 100%; margin-top: 14px; background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; }
+  .login-btn:hover { background: var(--azul-dark); }
+  .login-success { display: none; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; }
+  .login-success.show { display: flex; }
+  .login-success-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 28px; display: flex; align-items: center; justify-content: center; animation: loginCheckPop .5s cubic-bezier(.2,.9,.3,1.4); }
+
+  .role-badge-wrap { display: flex; align-items: center; gap: 10px; }
+  .role-badge { font-size: 11px; font-weight: 700; color: var(--azul-dark); background: var(--blue-dim); padding: 5px 12px; border-radius: 14px; letter-spacing: .3px; }
+  .role-logout { background: none; border: 1px solid var(--border2); color: var(--text2); font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 14px; cursor: pointer; font-family: inherit; }
+  .role-logout:hover { border-color: var(--rojo); color: var(--rojo); }
+
+  body.role-viewer .seg-btn-add,
+  body.role-viewer .seg-icon-btn[title="Editar"],
+  body.role-viewer .seg-icon-btn[title="Eliminar"],
+  body.role-viewer .seg-doc-upload,
+  body.role-viewer .seg-doc-del { display: none !important; }
+
+  @media (max-width: 560px) {
+    .login-card { padding: 30px 22px 26px; }
+    .login-roles { flex-direction: column; }
+  }
 
   @media print {
     /* ── Ocultar todo excepto lo imprimible ── */
@@ -669,6 +772,58 @@
 </head>
 <body>
 
+<!-- ══════════════════ PORTADA / LOGIN ══════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <svg class="login-logo" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="25 20 420 138">
+      <rect x="93.2" y="79.8" fill="#00A0DF" width="67.6" height="17.4"/>
+      <path fill="#00A0DF" d="M135.7,115c-8.9,14.2-24.6,23.7-42.6,23.7c-27.7,0-50.2-22.5-50.2-50.2c0-27.7,22.5-50.2,50.2-50.2c17.9,0,33.7,9.5,42.6,23.7h19.6C145,37.9,121,20.9,93.2,20.9c-37.3,0-67.6,30.3-67.6,67.6s30.3,67.6,67.6,67.6c27.9,0,51.8-17,62.2-41.1H135.7z"/>
+      <path fill="#0D1C24" d="M205.1,78.5v19.5c-9.1-1.1-20.5,3-20.5,17.2v32.3h-17.4V79.8h17.4v11.6C188,82.3,196.6,78.5,205.1,78.5z"/>
+      <path fill="#0D1C24" d="M279.6,79.8v67.5h-17.4v-8c-4.9,6.1-12.2,9.9-22,9.9c-18,0-32.8-15.5-32.8-35.7S222.2,78,240.2,78c9.9,0,17.2,3.8,22,9.9v-8H279.6z M262.2,113.6c0-11.3-8-19-18.8-19c-10.7,0-18.6,7.7-18.6,19c0,11.3,8,19,18.6,19C254.2,132.7,262.2,125,262.2,113.6z"/>
+      <path fill="#0D1C24" d="M350.2,105.9v41.5h-17.4v-39.3c0-9.2-5.5-13.9-13.4-13.9c-8.5,0-14.9,5-14.9,16.8v36.5h-17.4V79.8h17.4v7.6c4.1-6.1,11.1-9.5,20.1-9.5C339,78,350.2,88,350.2,105.9z"/>
+      <path fill="#0D1C24" d="M437.6,97.2V79.8h-15.3V60.9l-17.4,5.3v13.6h-22.6V60.9l-17.4,5.3v13.6h-11.8v17.4h11.8v27.4c0,18.2,8.2,25.4,32.7,22.7v-15.8c-10,0.5-15.3,0.4-15.3-6.9V97.2h22.6v27.4c0,18.2,8.2,25.4,32.7,22.7v-15.8c-10,0.5-15.3,0.4-15.3-6.9V97.2H437.6z"/>
+    </svg>
+    <div class="login-eyebrow">Dashboard Financiero</div>
+    <div class="login-title">Representaciones Grantt Ltda.</div>
+
+    <!-- Paso 1: elegir rol -->
+    <div id="login-step1">
+      <div class="login-pregunta">¿Cómo quieres iniciar?</div>
+      <div class="login-roles">
+        <button type="button" class="login-role-card" onclick="loginElegirRol('gerencia')">
+          <span class="login-role-icon">👔</span><span class="login-role-label">Gerencia</span>
+        </button>
+        <button type="button" class="login-role-card" onclick="loginElegirRol('contabilidad')">
+          <span class="login-role-icon">📊</span><span class="login-role-label">Contabilidad</span>
+        </button>
+        <button type="button" class="login-role-card" onclick="loginElegirRol('bodega')">
+          <span class="login-role-icon">📦</span><span class="login-role-label">Bodega</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 2: contraseña -->
+    <div id="login-step2" class="login-step2" style="display:none">
+      <button type="button" class="login-back" onclick="loginVolver()">&larr; Cambiar usuario</button>
+      <div><span class="login-role-chip" id="login-role-chip"></span></div>
+      <form onsubmit="return loginIntentar(event)">
+        <div class="login-pass-row" id="login-pass-row">
+          <label>Contraseña</label>
+          <input type="password" id="login-pass-input" autocomplete="current-password" placeholder="Ingresa tu contraseña">
+        </div>
+        <div class="login-error" id="login-error"></div>
+        <button type="submit" class="login-btn">Ingresar</button>
+      </form>
+    </div>
+
+    <!-- Confirmación -->
+    <div id="login-success" class="login-success">
+      <div class="login-success-icon">✓</div>
+      <div style="font-weight:700;color:var(--azul-dark)">Acceso concedido</div>
+    </div>
+  </div>
+</div>
+
 <div id="loading"><div class="spinner"></div><div id="loading-msg">Procesando archivo…</div></div>
 
 <div class="site-header">
@@ -698,17 +853,22 @@
       <div class="hstat"><div class="hval" id="h-resultado">—</div><div class="hlbl">Resultado</div></div>
       <div class="header-divider"></div>
       <div class="hstat"><div class="hval" id="h-margen">—</div><div class="hlbl">Margen</div></div>
+      <div class="header-divider"></div>
+      <div class="role-badge-wrap">
+        <span class="role-badge" id="role-badge">—</span>
+        <button type="button" class="role-logout" onclick="logout()">Cerrar sesión</button>
+      </div>
     </div>
   </header>
 
   <nav>
-    <button class="active" onclick="showTab('eerr')">Estado de Resultados</button>
-    <button onclick="showTab('auditoria')">Auditoría</button>
-    <button onclick="showTab('graficos')">Gráficos</button>
-    <button onclick="showTab('presupuesto')">Presupuesto vs Real</button>
-    <button onclick="showTab('centros')">Centros de Costos</button>
-    <button onclick="showTab('meli')">MELI Liquidación</button>
-    <button onclick="showTab('seguros')">Seguros</button>
+    <button class="active" data-tab="eerr" onclick="showTab('eerr')">Estado de Resultados</button>
+    <button data-tab="auditoria" onclick="showTab('auditoria')">Auditoría</button>
+    <button data-tab="graficos" onclick="showTab('graficos')">Gráficos</button>
+    <button data-tab="presupuesto" onclick="showTab('presupuesto')">Presupuesto vs Real</button>
+    <button data-tab="centros" onclick="showTab('centros')">Centros de Costos</button>
+    <button data-tab="meli" onclick="showTab('meli')">MELI Liquidación</button>
+    <button data-tab="seguros" onclick="showTab('seguros')">Seguros</button>
   </nav>
 </div>
 
@@ -1442,7 +1602,7 @@ function renderFechaPanel(mostrar) {
 
   const { cuentas } = DATA;
   const hoy = new Date();
-  const mesHoy = Math.min(hoy.getMonth() + 1, 12);
+  const mesHoy = MAX_MES_CON_DATOS; // meses con datos realmente cargados, no el mes calendario actual
   const mesesAcum = Array.from({length: mesHoy}, (_,i) => i+1);
 
   document.getElementById('fecha-sub').textContent =
@@ -1547,12 +1707,18 @@ function renderAuditoria() {
   if (!DATA) return;
   const { cuentas, rows, mesDebeTotal, mesHaberTotal } = DATA;
 
+  // Meses realmente cargados desde el mayor (no fijo a 6 = enero-junio)
+  const mesesAud = Array.from({length: MAX_MES_CON_DATOS}, (_,i) => i+1);
+  const periodoTxt = mesesAud.length === 1
+    ? MESES_FULL[mesesAud[0]-1]
+    : `${MESES_FULL[0]} a ${MESES_FULL[mesesAud[mesesAud.length-1]-1]}`;
+
   function sumCatMes(cats, mes) {
     return cuentas.filter(c => cats.includes(c.cat2))
       .reduce((s, c) => s + (c.meses[mes] || 0), 0);
   }
   function sumCat(cats) {
-    return [1,2,3,4,5,6].reduce((s, m) => s + sumCatMes(cats, m), 0);
+    return mesesAud.reduce((s, m) => s + sumCatMes(cats, m), 0);
   }
 
   const ingTotal = sumCat(['30','31']);
@@ -1562,7 +1728,7 @@ function renderAuditoria() {
   const margen   = ingTotal !== 0 ? (resTotal/ingTotal*100).toFixed(1) : 0;
 
   // Monthly volumes
-  const volMes = [1,2,3,4,5,6].map(m => ({
+  const volMes = mesesAud.map(m => ({
     mes: MESES_FULL[m-1],
     debe:  mesDebeTotal[m] || 0,
     haber: mesHaberTotal[m] || 0,
@@ -1574,7 +1740,7 @@ function renderAuditoria() {
   const swingData = cuentas
     .filter(c => EERR_CATS.includes(c.cat2))
     .map(c => {
-      const vals = [1,2,3,4,5,6].map(m => c.meses[m] || 0);
+      const vals = mesesAud.map(m => c.meses[m] || 0);
       const max = Math.max(...vals), min = Math.min(...vals);
       return { ...c, swing: max - min, vals, max, min };
     })
@@ -1582,7 +1748,7 @@ function renderAuditoria() {
     .slice(0, 15);
 
   // Best/worst months
-  const resxMes = [1,2,3,4,5,6].map(m => sumCatMes(['30','31'], m) + sumCatMes(['40','41'], m));
+  const resxMes = mesesAud.map(m => sumCatMes(['30','31'], m) + sumCatMes(['40','41'], m));
   const maxMesIdx = resxMes.indexOf(Math.max(...resxMes));
   const minMesIdx = resxMes.indexOf(Math.min(...resxMes));
 
@@ -1591,7 +1757,7 @@ function renderAuditoria() {
     const cs = cuentas.filter(c => c.cat2 === cat);
     const total = cs.reduce((s,c) => s + Object.values(c.meses).reduce((a,b)=>a+b,0), 0);
     const maxSwing = cs.map(c => {
-      const vals = [1,2,3,4,5,6].map(m => c.meses[m]||0);
+      const vals = mesesAud.map(m => c.meses[m]||0);
       return { ...c, sw: Math.max(...vals)-Math.min(...vals) };
     }).sort((a,b)=>b.sw-a.sw)[0];
     return { cat, nombre: CAT[cat], total, count: cs.length, maxSwing };
@@ -1601,7 +1767,7 @@ function renderAuditoria() {
   <!-- I: Resumen Ejecutivo -->
   <div class="audit-section">
     <h2>I. Resumen Ejecutivo</h2>
-    <p>Durante el período <strong>enero a junio de 2026</strong>, Representaciones Grantt Ltda. registró
+    <p>Durante el período <strong>${periodoTxt} de 2026</strong>, Representaciones Grantt Ltda. registró
     ingresos totales (operacionales y otros) por <strong>$${fmt(ingTotal)}</strong>, con costos y gastos operacionales
     de <strong>$(${fmt(Math.abs(cosTotal))})</strong> y gastos financieros de <strong>$(${fmt(Math.abs(finTotal))})</strong>.
     El resultado neto del ejercicio ascendió a <strong>$${fmt(resTotal)}</strong>, representando un margen sobre ingresos
@@ -1609,7 +1775,7 @@ function renderAuditoria() {
     <p>El mes de mayor resultado fue <strong>${MESES_FULL[maxMesIdx]}</strong> con $${fmt(resxMes[maxMesIdx])},
     mientras que <strong>${MESES_FULL[minMesIdx]}</strong> registró el resultado más bajo con $${fmt(resxMes[minMesIdx])}.
     El volumen contable acumulado (DEBE = HABER) alcanzó los <strong>$${fmt(volTotal)}</strong>,
-    verificando la partida doble en los seis meses.</p>
+    verificando la partida doble en los ${mesesAud.length} meses del período.</p>
     <p>Se identificaron <strong>${swingData.length}</strong> cuentas con variabilidad mensual significativa.
     La cuenta de mayor oscilación fue <strong>${swingData[0]?.nombre || 'N/D'}</strong>
     con un swing de <strong>$${fmt(swingData[0]?.swing || 0)}</strong> entre su mes más alto y más bajo.
@@ -1719,7 +1885,7 @@ function renderAuditoria() {
     </div>
     <div class="alert-box advertencia">
       <h4><span class="badge warn">ADVERTENCIA</span> Cuentas con Saldo Cero en Meses</h4>
-      <p>${cuentas.filter(c => EERR_CATS.includes(c.cat2) && Object.keys(c.meses).length < 6).length}
+      <p>${cuentas.filter(c => EERR_CATS.includes(c.cat2) && Object.keys(c.meses).length < mesesAud.length).length}
       cuentas del Estado de Resultados no presentan movimiento en todos los meses.
       Verificar si corresponde a cuentas estacionales o a registros omitidos.</p>
     </div>
@@ -1736,7 +1902,7 @@ function renderAuditoria() {
         <th>DEBE</th><th>HABER</th><th>Diferencia</th><th>Estado</th>
       </tr></thead>
       <tbody>
-        ${[1,2,3,4,5,6].map(m => {
+        ${mesesAud.map(m => {
           const d = mesDebeTotal[m] || 0;
           const h = mesHaberTotal[m] || 0;
           const diff = d - h;
@@ -1758,7 +1924,7 @@ function renderAuditoria() {
   <div class="audit-section">
     <h2>VII. Conclusiones y Recomendaciones</h2>
     <p><strong>1. Rentabilidad:</strong> El resultado del ejercicio de $${fmt(resTotal)} con margen del ${margen}%
-    indica una operación ${resTotal > 0 ? 'rentable' : 'deficitaria'} en el primer semestre 2026.
+    indica una operación ${resTotal > 0 ? 'rentable' : 'deficitaria'} en el período ${periodoTxt} de 2026.
     ${resTotal > 0 ? 'Se recomienda mantener los controles de gasto actuales y explorar oportunidades de crecimiento en ingresos.' : 'Se requiere revisión urgente de la estructura de costos.'}</p>
     <p><strong>2. Control de Gastos:</strong> Los costos de $${fmt(Math.abs(cosTotal))} representan
     ${ingTotal !== 0 ? (Math.abs(cosTotal)/ingTotal*100).toFixed(1) : 0}% de los ingresos.
@@ -3391,6 +3557,7 @@ function segRenderDocsModal() {
 
 // ── Documentos ───────────────────────────────────────────
 async function segSubirDocumentoModal() {
+  if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
   const input = document.getElementById('seg-docs-file');
   const file = input.files[0];
   if (!file || !SEG_DOCS_CONTEXTO) return;
@@ -3416,6 +3583,7 @@ async function segSubirDocumentoModal() {
 }
 
 async function segEliminarDocumento(docId, storagePath) {
+  if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
   if (!confirm('¿Eliminar este documento?')) return;
   try {
     await segClient.storage.from(SEG_BUCKET).remove([storagePath]);
@@ -3516,6 +3684,7 @@ function segCerrarModal() {
 
 async function segGuardar(event) {
   event.preventDefault();
+  if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
   const status = document.getElementById('seg-form-status');
   status.textContent = 'Guardando…';
   try {
@@ -3585,6 +3754,7 @@ async function segGuardar(event) {
 }
 
 async function segEliminarPoliza(id) {
+  if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
   // Los documentos quedan con el vehículo (no con la póliza), así que sobreviven
   // salvo en Robo e Incendio (sin vehículo), donde sí están atados a esta póliza.
   if (!confirm('¿Eliminar esta póliza? Los documentos del vehículo no se ven afectados.')) return;
@@ -3599,6 +3769,104 @@ async function segEliminarPoliza(id) {
     console.error(err);
   }
 }
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  ACCESO POR ROL
+// ═══════════════════════════════════════════════════════
+// Nota: esto es un control de acceso simple del lado del navegador
+// (pensado para que cada área vea/edite lo que le corresponde), no
+// es seguridad real contra alguien que inspeccione el código fuente.
+const ROLES = {
+  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: false },
+  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true  },
+  bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['meli','seguros','presupuesto'], canEdit: true },
+};
+
+let CURRENT_ROLE = null;
+let LOGIN_ROL_SELECCIONADO = null;
+
+function loginElegirRol(rol) {
+  LOGIN_ROL_SELECCIONADO = rol;
+  document.getElementById('login-role-chip').textContent = ROLES[rol].label;
+  document.getElementById('login-step1').style.display = 'none';
+  document.getElementById('login-step2').style.display = 'block';
+  document.getElementById('login-error').textContent = '';
+  const input = document.getElementById('login-pass-input');
+  input.value = '';
+  setTimeout(() => input.focus(), 50);
+}
+
+function loginVolver() {
+  LOGIN_ROL_SELECCIONADO = null;
+  document.getElementById('login-step2').style.display = 'none';
+  document.getElementById('login-step1').style.display = 'block';
+}
+
+function loginIntentar(event) {
+  event.preventDefault();
+  const rol = LOGIN_ROL_SELECCIONADO;
+  if (!rol) return false;
+  const pass = document.getElementById('login-pass-input').value;
+  const row = document.getElementById('login-pass-row');
+
+  if (pass !== ROLES[rol].password) {
+    document.getElementById('login-error').textContent = 'Contraseña incorrecta';
+    row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake');
+    document.getElementById('login-pass-input').value = '';
+    return false;
+  }
+
+  sessionStorage.setItem('grantt_role', rol);
+  document.getElementById('login-step2').style.display = 'none';
+  document.getElementById('login-success').classList.add('show');
+  setTimeout(() => {
+    document.getElementById('login-screen').classList.add('hide');
+    aplicarPermisos(rol);
+  }, 700);
+  return false;
+}
+
+function logout() {
+  sessionStorage.removeItem('grantt_role');
+  location.reload();
+}
+
+function aplicarPermisos(rol) {
+  CURRENT_ROLE = rol;
+  const cfg = ROLES[rol];
+  document.getElementById('role-badge').textContent = cfg.label;
+  document.body.classList.toggle('role-viewer', !cfg.canEdit);
+
+  let activeSigueVisible = false;
+  document.querySelectorAll('nav button[data-tab]').forEach(btn => {
+    const permitido = cfg.tabs.includes(btn.dataset.tab);
+    btn.style.display = permitido ? '' : 'none';
+    if (btn.classList.contains('active') && permitido) activeSigueVisible = true;
+  });
+
+  if (!activeSigueVisible) {
+    const primerTab = cfg.tabs[0];
+    const btn = document.querySelector(`nav button[data-tab="${primerTab}"]`);
+    if (btn) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + primerTab).classList.add('active');
+      btn.classList.add('active');
+      if (primerTab === 'graficos') renderCharts();
+      if (primerTab === 'seguros' && !SEG_LOADED) segInit();
+    }
+  }
+}
+
+(function loginInit() {
+  const rolGuardado = sessionStorage.getItem('grantt_role');
+  if (rolGuardado && ROLES[rolGuardado]) {
+    document.getElementById('login-screen').classList.add('hide');
+    aplicarPermisos(rolGuardado);
+  }
+})();
 </script>
 </body>
 </html>

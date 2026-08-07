@@ -873,8 +873,10 @@
 </div>
 
 <div class="toolbar">
-  <label>Actualizar:</label>
-  <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)" title="Reemplaza el archivo mayor/mayor.xlsx y vuelve a publicar, o carga uno manualmente aquí">
+  <span id="actualizar-mayor-wrap">
+    <label>Actualizar:</label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)" title="Sube un mayor.xlsx nuevo — queda guardado para todos hasta que subas otro">
+  </span>
   <div class="mes-btns" id="mes-btns">
     <span>Ver:</span>
     <button class="mes-btn btn-todos active" data-mes="0"  onclick="toggleMes(0,this)">Todos</button>
@@ -1276,22 +1278,55 @@ function handleFile(input) {
   if (!file) return;
   setLoading(true, 'Leyendo archivo Excel…');
   const reader = new FileReader();
-  reader.onload = e => processArrayBuffer(e.target.result, file.name);
+  reader.onload = e => {
+    processArrayBuffer(e.target.result, file.name);
+    if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && ROLES[CURRENT_ROLE].puedeActualizarMayor) {
+      guardarMayorEnSupabase(file);
+    }
+  };
   reader.readAsArrayBuffer(file);
 }
 
+// Guarda el mayor subido en Supabase Storage (reemplaza al anterior) para
+// que Gerencia y Bodega lo vean sin que Contabilidad tenga que tocar GitHub.
+async function guardarMayorEnSupabase(file) {
+  const status = document.getElementById('status');
+  try {
+    const { error } = await segClient.storage.from('mayor-contable').upload('actual/mayor.xlsx', file, { upsert: true });
+    if (error) throw error;
+    status.textContent += ' · guardado para todos ✅';
+  } catch (err) {
+    status.textContent += ' · ⚠ no se pudo guardar para todos: ' + err.message;
+    console.error(err);
+  }
+}
+
+async function cargarMayorDesdeSupabase() {
+  try {
+    const { data, error } = await segClient.storage.from('mayor-contable').download('actual/mayor.xlsx');
+    if (error || !data) return null;
+    return await data.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
 function autoLoadMayor() {
-  setLoading(true, 'Cargando mayor/mayor.xlsx…');
-  fetch('./mayor/mayor.xlsx')
-    .then(r => {
-      if (!r.ok) throw new Error('No encontrado');
-      return r.arrayBuffer();
-    })
-    .then(buf => processArrayBuffer(buf, 'mayor.xlsx'))
-    .catch(() => {
-      setLoading(false);
-      document.getElementById('status').textContent = 'Carga el archivo manualmente ↑';
-    });
+  setLoading(true, 'Cargando mayor…');
+  cargarMayorDesdeSupabase().then(buf => {
+    if (buf) { processArrayBuffer(buf, 'mayor.xlsx (guardado por Contabilidad)'); return; }
+    // Sin archivo guardado en Supabase todavía: usa el que viene con el sitio
+    fetch('./mayor/mayor.xlsx')
+      .then(r => {
+        if (!r.ok) throw new Error('No encontrado');
+        return r.arrayBuffer();
+      })
+      .then(b => processArrayBuffer(b, 'mayor.xlsx'))
+      .catch(() => {
+        setLoading(false);
+        document.getElementById('status').textContent = 'Carga el archivo manualmente ↑';
+      });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', autoLoadMayor);
@@ -3779,9 +3814,9 @@ async function segEliminarPoliza(id) {
 // (pensado para que cada área vea/edite lo que le corresponde), no
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
-  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: false },
-  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true  },
-  bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['meli','seguros','presupuesto'], canEdit: true },
+  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: false, puedeActualizarMayor: false },
+  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true,  puedeActualizarMayor: true  },
+  bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['meli','seguros','presupuesto'], canEdit: true, puedeActualizarMayor: false },
 };
 
 let CURRENT_ROLE = null;
@@ -3838,6 +3873,7 @@ function aplicarPermisos(rol) {
   const cfg = ROLES[rol];
   document.getElementById('role-badge').textContent = cfg.label;
   document.body.classList.toggle('role-viewer', !cfg.canEdit);
+  document.getElementById('actualizar-mayor-wrap').style.display = cfg.puedeActualizarMayor ? '' : 'none';
 
   let activeSigueVisible = false;
   document.querySelectorAll('nav button[data-tab]').forEach(btn => {

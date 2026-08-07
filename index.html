@@ -1260,10 +1260,6 @@ function processArrayBuffer(buffer, nombre) {
     DATA = parseLibroMayor(wb);
     document.getElementById('status').textContent =
       `✅ ${nombre} — ${DATA.rows.length.toLocaleString('es-CL')} movimientos cargados`;
-    const ahora = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const elUlt = document.getElementById('ultima-carga');
-    elUlt.textContent = `Actualizado al ${ahora}`;
-    elUlt.style.display = 'inline';
     actualizarBotonesMeses();
     renderAll();
   } catch(err) {
@@ -3831,7 +3827,7 @@ async function segEliminarPoliza(id) {
 const ROLES = {
   gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: false, puedeActualizarMayor: false },
   contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true,  puedeActualizarMayor: true  },
-  bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['meli','seguros','presupuesto'], canEdit: true, puedeActualizarMayor: false },
+  bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['seguros'], canEdit: true, puedeActualizarMayor: false },
 };
 
 let CURRENT_ROLE = null;

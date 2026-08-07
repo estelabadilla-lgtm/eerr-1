@@ -1305,7 +1305,16 @@ async function cargarMayorDesdeSupabase() {
   try {
     const { data, error } = await segClient.storage.from('mayor-contable').download('actual/mayor.xlsx');
     if (error || !data) return null;
-    return await data.arrayBuffer();
+    const buf = await data.arrayBuffer();
+    let fechaTxt = '';
+    try {
+      const { data: listado } = await segClient.storage.from('mayor-contable').list('actual');
+      const info = listado && listado.find(f => f.name === 'mayor.xlsx');
+      if (info && info.updated_at) {
+        fechaTxt = new Date(info.updated_at).toLocaleString('es-CL', {day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      }
+    } catch (e) { /* si falla la fecha, seguimos igual sin ella */ }
+    return { buf, fechaTxt };
   } catch {
     return null;
   }
@@ -1313,8 +1322,14 @@ async function cargarMayorDesdeSupabase() {
 
 function autoLoadMayor() {
   setLoading(true, 'Cargando mayor…');
-  cargarMayorDesdeSupabase().then(buf => {
-    if (buf) { processArrayBuffer(buf, 'mayor.xlsx (guardado por Contabilidad)'); return; }
+  cargarMayorDesdeSupabase().then(res => {
+    if (res) {
+      processArrayBuffer(res.buf, 'mayor.xlsx');
+      if (res.fechaTxt) {
+        document.getElementById('status').textContent += ` · Subido por Contabilidad el ${res.fechaTxt}`;
+      }
+      return;
+    }
     // Sin archivo guardado en Supabase todavía: usa el que viene con el sitio
     fetch('./mayor/mayor.xlsx')
       .then(r => {

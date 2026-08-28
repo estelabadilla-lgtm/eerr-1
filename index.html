@@ -609,6 +609,8 @@
   tr.ppto-total td:nth-child(2) { text-align: left; }
   tr.ppto-resultado td { background: #0D2137; color: #fff; font-weight: 900; padding: 9px 11px; text-align: right; font-size: 13px; border-top: 2px solid var(--blue); }
   tr.ppto-resultado td:nth-child(2) { text-align: left; letter-spacing: .3px; }
+  tr.ppto-pct td { background: #FFF7E0; padding: 4px 11px; text-align: right; border-bottom: 1px solid #F0E0B0; }
+  tr.ppto-pct td:nth-child(2) { text-align: left; padding-left: 28px; font-style: italic; font-size: 11px; color: var(--azul-dark); font-weight: 700; }
   .var-fav  { color: #0a8a40; font-weight: 700; }
   .var-desfav { color: #c0392b; font-weight: 700; }
   .var-neu  { color: var(--text3); }
@@ -1586,6 +1588,11 @@ function renderEERR(meses) {
     const cls = v < 0 ? 'neg-val' : 'pos-val';
     return `<span class="${cls}">${v < 0 ? '(' : ''}$${fmt(Math.abs(v))}${v < 0 ? ')' : ''}</span>`;
   }
+  function fvPct(v) {
+    if (!isFinite(v)) return '<span style="color:#aaa">-</span>';
+    const cls = v < 0 ? 'neg-val' : 'pos-val';
+    return `<span class="${cls}">${v.toFixed(1)}%</span>`;
+  }
   function cells(vals) {
     const total = vals.reduce((a,b) => a+b, 0);
     return vals.map(v => `<td>${fv(v)}</td>`).join('') +
@@ -1624,6 +1631,18 @@ function renderEERR(meses) {
     } else if (tipo === 'R') {
       const vals = sumCodsMes(row[2]);
       rows += `<tr class="ppto-resultado"><td></td><td>${row[1]}</td>${cells(vals)}</tr>`;
+    } else if (tipo === 'P') {
+      const numVals = sumCodsMes(row[2]);
+      const denVals = sumCodsMes(row[3]);
+      const abs = row[4];
+      let pctVals = numVals.map((n,i) => denVals[i] ? (n / denVals[i] * 100) : NaN);
+      if (abs) pctVals = pctVals.map(v => Math.abs(v));
+      const numTotal = numVals.reduce((a,b) => a+b, 0);
+      const denTotal = denVals.reduce((a,b) => a+b, 0);
+      let totalPct = denTotal ? (numTotal / denTotal * 100) : NaN;
+      if (abs) totalPct = Math.abs(totalPct);
+      const pctCells = pctVals.map(v => `<td>${fvPct(v)}</td>`).join('') + (showTotal ? `<td>${fvPct(totalPct)}</td>` : '');
+      rows += `<tr class="ppto-pct"><td></td><td>${row[1]}</td>${pctCells}</tr>`;
     }
   }
 
@@ -2410,6 +2429,8 @@ const PPTO_STRUCT = [
   ['c','40-02-08-01','Comision Mercadolibre Y Otros'],
   ['t','TOTAL COSTOS DE VENTAS'],
   ['R','MARGEN DE VENTAS',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01']],
+  ['P','% Costo sobre Ventas',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01'],['30-01-01-02','30-01-01-10','30-01-01-21'],true],
+  ['P','% Margen sobre Ventas',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01'],['30-01-01-02','30-01-01-10','30-01-01-21'],false],
 
   // ── COSTOS LOGISTICA Y OTROS ────────────────────────────
   ['S','COSTOS LOGISTICA Y OTROS'],
@@ -2495,7 +2516,7 @@ const PPTO_STRUCT = [
   ['t','TOTAL GASTOS NO OPERACIONALES'],
   ['R','RESULTADO NO OPERACIONAL',['30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01']],
 
-  ['R','RESULTADO ANTES DE CORREC. MONETARIA',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03','30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01']],
+  ['R','RESULTADO ANTES DE CORREC. MONETARIA',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-01-22','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03','30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01']],
 
   // ── CORRECCION MONETARIA ────────────────────────────────
   ['S','CORRECCION MONETARIA'],

@@ -4,9 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Financiero — Representaciones Grantt Ltda. 2026</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='20 15 150 150'%3E%3Crect x='93.2' y='79.8' fill='%2300A0DF' width='67.6' height='17.4'/%3E%3Cpath fill='%2300A0DF' d='M135.7,115c-8.9,14.2-24.6,23.7-42.6,23.7c-27.7,0-50.2-22.5-50.2-50.2c0-27.7,22.5-50.2,50.2-50.2c17.9,0,33.7,9.5,42.6,23.7h19.6C145,37.9,121,20.9,93.2,20.9c-37.3,0-67.6,30.3-67.6,67.6s30.3,67.6,67.6,67.6c27.9,0,51.8-17,62.2-41.1H135.7z'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<<<<<<< HEAD
+=======
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+>>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -194,6 +199,213 @@
   @page {
     size: letter landscape;
     margin: 8mm 10mm 8mm 10mm;
+<<<<<<< HEAD
+=======
+  }
+
+  /* ══ MELI LIQUIDACIÓN ══════════════════════════════════════ */
+  .meli-wrap { max-width: 860px; margin: 28px auto; display: flex; flex-direction: column; gap: 22px; }
+  .meli-titulo { font-size: 20px; font-weight: 700; color: var(--text1); margin: 0 0 4px; }
+  .meli-sub { font-size: 14px; font-weight: 600; color: var(--text1); margin: 18px 0 8px; }
+  .meli-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+  .meli-card-header { background: var(--azul-dark); color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; }
+  .meli-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.2); font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .meli-card-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .meli-row { display: flex; flex-direction: column; gap: 5px; }
+  .meli-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .meli-input { border: 1.5px solid var(--border2); border-radius: 6px; padding: 8px 11px; font-size: 13px; font-family: inherit; color: var(--text1); background: var(--card); width: 100%; max-width: 380px; box-sizing: border-box; }
+  .meli-input:focus { outline: none; border-color: var(--blue); }
+  .meli-btn-dl { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; width: fit-content; }
+  .meli-btn-dl:disabled { opacity: 0.45; cursor: not-allowed; }
+  .meli-btn-dl:not(:disabled):hover { background: var(--azul-dark); }
+  .meli-status { font-size: 12px; color: var(--text2); min-height: 18px; }
+  #meli-pivot-wrap table { border-collapse: collapse; font-size: 12px; min-width: 500px; }
+  #meli-pivot-wrap th { background: var(--azul-dark); color: #fff; padding: 7px 12px; text-align: right; white-space: nowrap; }
+  #meli-pivot-wrap th:first-child { text-align: left; }
+  #meli-pivot-wrap td { padding: 5px 12px; border-bottom: 1px solid var(--border); text-align: right; }
+  #meli-pivot-wrap td:first-child { text-align: left; font-weight: 500; }
+  #meli-pivot-wrap tr:hover td { background: rgba(0,160,223,0.07); }
+
+  /* ══ SEGUROS ══════════════════════════════════════════════ */
+  .seg-wrap { display: flex; flex-direction: column; gap: 22px; }
+  .seg-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .seg-titulo { font-size: 20px; font-weight: 700; color: var(--text1); margin: 0; }
+  .seg-head-actions { display: flex; align-items: center; gap: 10px; }
+  .seg-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text2); flex-wrap: wrap; align-items: center; }
+  .seg-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .seg-section { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+  .seg-section-header { background: var(--azul-dark); color: #fff; padding: 12px 20px; font-weight: 600; font-size: 14px; }
+  .seg-table-wrap { overflow-x: auto; }
+  .seg-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 1000px; }
+  .seg-table th { background: var(--azul-row); color: var(--text2); text-align: left; padding: 7px 10px; font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  .seg-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+  .seg-table tbody tr:nth-child(even) td { background: rgba(0,100,160,0.02); }
+  .seg-table tr:hover td { background: rgba(0,160,223,0.06); }
+  .seg-empty { padding: 20px; color: var(--gris); font-style: italic; }
+  .seg-group-row td { background: var(--azul-light) !important; color: var(--azul-dark); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; padding: 5px 10px; }
+
+  /* Menú de columnas */
+  .seg-colmenu-wrap { position: relative; }
+  .seg-colmenu-btn { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; font-family: inherit; }
+  .seg-colmenu-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .seg-colmenu { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.15); padding: 10px 14px; z-index: 500; display: none; min-width: 190px; }
+  .seg-colmenu.show { display: block; }
+  .seg-colmenu label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text1); padding: 4px 0; cursor: pointer; text-transform: none; font-weight: 500; }
+  .seg-colmenu input { width: auto; }
+  .seg-pago { display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; white-space: nowrap; }
+  .seg-pago-ok   { background: rgba(30,132,73,0.12); color: var(--verde); }
+  .seg-pago-warn { background: rgba(212,172,13,0.18); color: #8A6D00; }
+  .seg-pago-late { background: rgba(192,57,43,0.13); color: var(--rojo); }
+  .seg-pago-off  { background: rgba(93,109,126,0.12); color: var(--gris); }
+  .seg-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .seg-badge-vigente   { background: rgba(30,132,73,0.12); color: var(--verde); }
+  .seg-badge-porvencer { background: rgba(212,172,13,0.18); color: #8A6D00; }
+  .seg-badge-vencida   { background: rgba(192,57,43,0.13); color: var(--rojo); }
+  .seg-badge-doc       { background: var(--blue-dim2); color: var(--azul-dark); }
+  .seg-docs-btn { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 4px 9px; font-size: 11px; cursor: pointer; color: var(--text2); font-family: inherit; }
+  .seg-docs-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .seg-actions { display: flex; gap: 4px; }
+  .seg-icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 3px 7px; border-radius: 5px; font-family: inherit; }
+  .seg-icon-btn:hover { background: var(--blue-dim); }
+  .seg-btn-add { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 9px 18px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .seg-btn-add:hover { background: var(--azul-dark); }
+  .seg-nota { font-size: 11px; color: var(--text3); font-style: italic; white-space: normal; max-width: 220px; }
+  .seg-docs-row td { background: var(--azul-row); border-top: none; }
+  .seg-docs-panel { padding: 10px 4px; display: flex; flex-direction: column; gap: 6px; }
+  .seg-doc-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .seg-doc-item a { color: var(--blue); text-decoration: none; }
+  .seg-doc-item a:hover { text-decoration: underline; }
+  .seg-doc-del { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 12px; }
+  .seg-doc-upload { font-size: 11px; margin-top: 4px; }
+
+  /* Columnas ocultables — activadas por el menú "Columnas" */
+  .seg-wrap.oculta-asignado     .col-asignado,
+  .seg-wrap.oculta-aseguradora  .col-aseguradora,
+  .seg-wrap.oculta-npoliza      .col-npoliza,
+  .seg-wrap.oculta-cuotas       .col-cuotas,
+  .seg-wrap.oculta-valortotal   .col-valortotal,
+  .seg-wrap.oculta-vigencia     .col-vigencia,
+  .seg-wrap.oculta-fechatermino .col-fechatermino { display: none; }
+
+  /* Modal alta/edición */
+  .seg-modal-overlay { position: fixed; inset: 0; background: rgba(13,28,36,0.55); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+  .seg-modal-overlay.show { display: flex; }
+  .seg-modal { background: #fff; border-radius: var(--radius); box-shadow: 0 10px 40px rgba(0,0,0,0.25); width: 100%; max-width: 660px; max-height: 90vh; overflow-y: auto; }
+  .seg-modal-header { background: var(--azul-dark); color: #fff; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 14px; position: sticky; top: 0; }
+  .seg-modal-close { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; line-height: 1; }
+  .seg-modal-body { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+  .seg-form-row { display: flex; flex-direction: column; gap: 5px; }
+  .seg-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .seg-form-row label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; }
+  .seg-form-row input, .seg-form-row select, .seg-form-row textarea { border: 1.5px solid var(--border2); border-radius: 6px; padding: 8px 10px; font-size: 13px; font-family: inherit; color: var(--text1); }
+  .seg-form-row input:focus, .seg-form-row select:focus, .seg-form-row textarea:focus { outline: none; border-color: var(--blue); }
+  .seg-form-check { flex-direction: row; align-items: center; gap: 8px; }
+  .seg-form-check input { width: auto; }
+  .seg-form-sep { border-top: 1px dashed var(--border2); margin: 2px 0; }
+  .seg-modal-footer { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: #fff; }
+  .seg-btn-cancel { background: var(--gris); color: #fff; border: none; border-radius: 6px; padding: 9px 18px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+  /* ══ LOGIN / PORTADA ══════════════════════════════════════ */
+  @keyframes loginGlow {
+    0%   { background-position: 15% 20%, 85% 80%, 0% 50%; }
+    50%  { background-position: 35% 35%, 65% 65%, 100% 50%; }
+    100% { background-position: 15% 20%, 85% 80%, 0% 50%; }
+  }
+  @keyframes loginFadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes loginPopIn {
+    from { opacity: 0; transform: scale(.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes loginShake {
+    10%,90% { transform: translateX(-2px); }
+    20%,80% { transform: translateX(4px); }
+    30%,50%,70% { transform: translateX(-8px); }
+    40%,60% { transform: translateX(8px); }
+  }
+  @keyframes loginCheckPop {
+    0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60%  { transform: scale(1.2) rotate(6deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  #login-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(0,160,223,0.55), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(75,172,198,0.5), transparent 40%),
+      linear-gradient(120deg, #0D1C24, #1F3864, #0080B8, #1F3864);
+    background-size: 160% 160%, 160% 160%, 300% 300%;
+    background-repeat: no-repeat;
+    animation: loginGlow 16s ease infinite;
+    transition: opacity .5s ease, visibility .5s ease;
+  }
+  #login-screen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .login-card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 480px; margin: 20px;
+    background: rgba(255,255,255,0.97);
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+    padding: 42px 38px 34px;
+    text-align: center;
+    animation: loginPopIn .6s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .login-logo { height: 40px; width: auto; margin-bottom: 6px; animation: loginFadeUp .6s ease .05s both; }
+  .login-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--blue); animation: loginFadeUp .6s ease .1s both; }
+  .login-title { font-size: 22px; font-weight: 800; color: var(--azul-dark); margin: 4px 0 26px; animation: loginFadeUp .6s ease .16s both; }
+
+  .login-pregunta { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 14px; animation: loginFadeUp .5s ease .18s both; }
+  .login-roles { display: flex; gap: 12px; }
+  .login-role-card {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 20px 8px; border: 1.5px solid var(--border2); border-radius: 12px;
+    background: #fff; cursor: pointer; font-family: inherit;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    animation: loginFadeUp .5s ease both;
+  }
+  .login-role-card:nth-child(1) { animation-delay: .22s; }
+  .login-role-card:nth-child(2) { animation-delay: .30s; }
+  .login-role-card:nth-child(3) { animation-delay: .38s; }
+  .login-role-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,100,160,0.18); border-color: var(--blue); }
+  .login-role-icon { font-size: 26px; }
+  .login-role-label { font-size: 12.5px; font-weight: 700; color: var(--text1); }
+
+  .login-step2 { animation: loginFadeUp .35s ease both; }
+  .login-back { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; font-family: inherit; margin-bottom: 10px; padding: 4px 0; }
+  .login-back:hover { color: var(--blue); }
+  .login-role-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-dim); color: var(--azul-dark); font-weight: 700; font-size: 13px; padding: 6px 16px; border-radius: 20px; margin-bottom: 20px; }
+  .login-pass-row { display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 6px; }
+  .login-pass-row label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+  .login-pass-row input { border: 1.5px solid var(--border2); border-radius: 8px; padding: 11px 14px; font-size: 14px; font-family: inherit; }
+  .login-pass-row input:focus { outline: none; border-color: var(--blue); }
+  .login-pass-row.shake { animation: loginShake .5s; }
+  .login-error { color: var(--rojo); font-size: 12px; font-weight: 600; min-height: 16px; margin-top: 4px; }
+  .login-btn { width: 100%; margin-top: 14px; background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; }
+  .login-btn:hover { background: var(--azul-dark); }
+  .login-success { display: none; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; }
+  .login-success.show { display: flex; }
+  .login-success-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 28px; display: flex; align-items: center; justify-content: center; animation: loginCheckPop .5s cubic-bezier(.2,.9,.3,1.4); }
+
+  .role-badge-wrap { display: flex; align-items: center; gap: 10px; }
+  .role-badge { font-size: 11px; font-weight: 700; color: var(--azul-dark); background: var(--blue-dim); padding: 5px 12px; border-radius: 14px; letter-spacing: .3px; }
+  .role-logout { background: none; border: 1px solid var(--border2); color: var(--text2); font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 14px; cursor: pointer; font-family: inherit; }
+  .role-logout:hover { border-color: var(--rojo); color: var(--rojo); }
+
+  body.role-viewer .seg-btn-add,
+  body.role-viewer .seg-icon-btn[title="Editar"],
+  body.role-viewer .seg-icon-btn[title="Eliminar"],
+  body.role-viewer .seg-doc-upload,
+  body.role-viewer .seg-doc-del { display: none !important; }
+
+  @media (max-width: 560px) {
+    .login-card { padding: 30px 22px 26px; }
+    .login-roles { flex-direction: column; }
+>>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
   }
 
   @media print {
@@ -335,8 +547,15 @@
   .fkpi .fval.neg { color: #c0392b; }
 
   /* ── CHART ── */
+<<<<<<< HEAD
   .chart-wrap { background: var(--card); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 22px; }
   .chart-wrap h3 { color: var(--blue); margin-bottom: 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+=======
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .chart-wrap { background: var(--card); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .chart-wrap h3 { color: var(--blue); margin-bottom: 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+  .chart-donut canvas { max-height: 300px; }
+>>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
 
   /* ── AUDITORIA ── */
   .audit-section { background: var(--card); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
@@ -401,6 +620,8 @@
   tr.ppto-total td:nth-child(2) { text-align: left; }
   tr.ppto-resultado td { background: #0D2137; color: #fff; font-weight: 900; padding: 9px 11px; text-align: right; font-size: 13px; border-top: 2px solid var(--blue); }
   tr.ppto-resultado td:nth-child(2) { text-align: left; letter-spacing: .3px; }
+  tr.ppto-pct td { background: #FFF7E0; padding: 4px 11px; text-align: right; border-bottom: 1px solid #F0E0B0; }
+  tr.ppto-pct td:nth-child(2) { text-align: left; padding-left: 28px; font-style: italic; font-size: 11px; color: var(--azul-dark); font-weight: 700; }
   .var-fav  { color: #0a8a40; font-weight: 700; }
   .var-desfav { color: #c0392b; font-weight: 700; }
   .var-neu  { color: var(--text3); }
@@ -570,8 +791,21 @@
 </head>
 <body>
 
-<div id="loading"><div class="spinner"></div><div id="loading-msg">Procesando archivo…</div></div>
+<!-- ══════════════════ PORTADA / LOGIN ══════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <svg class="login-logo" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="25 20 420 138">
+      <rect x="93.2" y="79.8" fill="#00A0DF" width="67.6" height="17.4"/>
+      <path fill="#00A0DF" d="M135.7,115c-8.9,14.2-24.6,23.7-42.6,23.7c-27.7,0-50.2-22.5-50.2-50.2c0-27.7,22.5-50.2,50.2-50.2c17.9,0,33.7,9.5,42.6,23.7h19.6C145,37.9,121,20.9,93.2,20.9c-37.3,0-67.6,30.3-67.6,67.6s30.3,67.6,67.6,67.6c27.9,0,51.8-17,62.2-41.1H135.7z"/>
+      <path fill="#0D1C24" d="M205.1,78.5v19.5c-9.1-1.1-20.5,3-20.5,17.2v32.3h-17.4V79.8h17.4v11.6C188,82.3,196.6,78.5,205.1,78.5z"/>
+      <path fill="#0D1C24" d="M279.6,79.8v67.5h-17.4v-8c-4.9,6.1-12.2,9.9-22,9.9c-18,0-32.8-15.5-32.8-35.7S222.2,78,240.2,78c9.9,0,17.2,3.8,22,9.9v-8H279.6z M262.2,113.6c0-11.3-8-19-18.8-19c-10.7,0-18.6,7.7-18.6,19c0,11.3,8,19,18.6,19C254.2,132.7,262.2,125,262.2,113.6z"/>
+      <path fill="#0D1C24" d="M350.2,105.9v41.5h-17.4v-39.3c0-9.2-5.5-13.9-13.4-13.9c-8.5,0-14.9,5-14.9,16.8v36.5h-17.4V79.8h17.4v7.6c4.1-6.1,11.1-9.5,20.1-9.5C339,78,350.2,88,350.2,105.9z"/>
+      <path fill="#0D1C24" d="M437.6,97.2V79.8h-15.3V60.9l-17.4,5.3v13.6h-22.6V60.9l-17.4,5.3v13.6h-11.8v17.4h11.8v27.4c0,18.2,8.2,25.4,32.7,22.7v-15.8c-10,0.5-15.3,0.4-15.3-6.9V97.2h22.6v27.4c0,18.2,8.2,25.4,32.7,22.7v-15.8c-10,0.5-15.3,0.4-15.3-6.9V97.2H437.6z"/>
+    </svg>
+    <div class="login-eyebrow">Dashboard Financiero</div>
+    <div class="login-title">Representaciones Grantt Ltda.</div>
 
+<<<<<<< HEAD
 <div class="site-header">
   <header>
     <div class="header-left">
@@ -608,12 +842,104 @@
     <button onclick="showTab('graficos')">Gráficos</button>
     <button onclick="showTab('presupuesto')">Presupuesto vs Real</button>
     <button onclick="showTab('centros')">Centros de Costos</button>
+=======
+    <!-- Paso 1: elegir rol -->
+    <div id="login-step1">
+      <div class="login-pregunta">¿Cómo quieres iniciar?</div>
+      <div class="login-roles">
+        <button type="button" class="login-role-card" onclick="loginElegirRol('gerencia')">
+          <span class="login-role-icon">👔</span><span class="login-role-label">Gerencia</span>
+        </button>
+        <button type="button" class="login-role-card" onclick="loginElegirRol('contabilidad')">
+          <span class="login-role-icon">📊</span><span class="login-role-label">Contabilidad</span>
+        </button>
+        <button type="button" class="login-role-card" onclick="loginElegirRol('bodega')">
+          <span class="login-role-icon">📦</span><span class="login-role-label">Bodega</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 2: contraseña -->
+    <div id="login-step2" class="login-step2" style="display:none">
+      <button type="button" class="login-back" onclick="loginVolver()">&larr; Cambiar usuario</button>
+      <div><span class="login-role-chip" id="login-role-chip"></span></div>
+      <form onsubmit="return loginIntentar(event)">
+        <div class="login-pass-row" id="login-pass-row">
+          <label>Contraseña</label>
+          <input type="password" id="login-pass-input" autocomplete="current-password" placeholder="Ingresa tu contraseña">
+        </div>
+        <div class="login-error" id="login-error"></div>
+        <button type="submit" class="login-btn">Ingresar</button>
+      </form>
+    </div>
+
+    <!-- Confirmación -->
+    <div id="login-success" class="login-success">
+      <div class="login-success-icon">✓</div>
+      <div style="font-weight:700;color:var(--azul-dark)">Acceso concedido</div>
+    </div>
+  </div>
+</div>
+
+<div id="loading"><div class="spinner"></div><div id="loading-msg">Procesando archivo…</div></div>
+
+<div class="site-header">
+  <header>
+    <div class="header-left">
+      <div class="header-logo">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="25 20 420 138" style="height:38px;width:auto;">
+          <rect x="93.2" y="79.8" fill="#00A0DF" width="67.6" height="17.4"/>
+          <path fill="#00A0DF" d="M135.7,115c-8.9,14.2-24.6,23.7-42.6,23.7c-27.7,0-50.2-22.5-50.2-50.2c0-27.7,22.5-50.2,50.2-50.2c17.9,0,33.7,9.5,42.6,23.7h19.6C145,37.9,121,20.9,93.2,20.9c-37.3,0-67.6,30.3-67.6,67.6s30.3,67.6,67.6,67.6c27.9,0,51.8-17,62.2-41.1H135.7z"/>
+          <path fill="#0D1C24" d="M205.1,78.5v19.5c-9.1-1.1-20.5,3-20.5,17.2v32.3h-17.4V79.8h17.4v11.6C188,82.3,196.6,78.5,205.1,78.5z"/>
+          <path fill="#0D1C24" d="M279.6,79.8v67.5h-17.4v-8c-4.9,6.1-12.2,9.9-22,9.9c-18,0-32.8-15.5-32.8-35.7S222.2,78,240.2,78c9.9,0,17.2,3.8,22,9.9v-8H279.6z M262.2,113.6c0-11.3-8-19-18.8-19c-10.7,0-18.6,7.7-18.6,19c0,11.3,8,19,18.6,19C254.2,132.7,262.2,125,262.2,113.6z"/>
+          <path fill="#0D1C24" d="M350.2,105.9v41.5h-17.4v-39.3c0-9.2-5.5-13.9-13.4-13.9c-8.5,0-14.9,5-14.9,16.8v36.5h-17.4V79.8h17.4v7.6c4.1-6.1,11.1-9.5,20.1-9.5C339,78,350.2,88,350.2,105.9z"/>
+          <path fill="#0D1C24" d="M437.6,97.2V79.8h-15.3V60.9l-17.4,5.3v13.6h-22.6V60.9l-17.4,5.3v13.6h-11.8v17.4h11.8v27.4c0,18.2,8.2,25.4,32.7,22.7v-15.8c-10,0.5-15.3,0.4-15.3-6.9V97.2h22.6v27.4c0,18.2,8.2,25.4,32.7,22.7v-15.8c-10,0.5-15.3,0.4-15.3-6.9V97.2H437.6z"/>
+        </svg>
+      </div>
+      <div class="header-divider-v"></div>
+      <div class="header-info">
+        <span class="header-eyebrow">Dashboard Financiero</span>
+        <span class="header-title">Representaciones Grantt Ltda.</span>
+      </div>
+    </div>
+    <div class="header-right" id="header-stats">
+      <div class="hstat"><div class="hval" id="h-ingresos">—</div><div class="hlbl">Ingresos</div></div>
+      <div class="header-divider"></div>
+      <div class="hstat"><div class="hval neg" id="h-costos">—</div><div class="hlbl">Costos</div></div>
+      <div class="header-divider"></div>
+      <div class="hstat"><div class="hval" id="h-resultado">—</div><div class="hlbl">Resultado</div></div>
+      <div class="header-divider"></div>
+      <div class="hstat"><div class="hval" id="h-margen">—</div><div class="hlbl">Margen</div></div>
+      <div class="header-divider"></div>
+      <div class="role-badge-wrap">
+        <span class="role-badge" id="role-badge">—</span>
+        <button type="button" class="role-logout" onclick="logout()">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <button class="active" data-tab="eerr" onclick="showTab('eerr')">Estado de Resultados</button>
+    <button data-tab="auditoria" onclick="showTab('auditoria')">Auditoría</button>
+    <button data-tab="graficos" onclick="showTab('graficos')">Gráficos</button>
+    <button data-tab="presupuesto" onclick="showTab('presupuesto')">Presupuesto vs Real</button>
+    <button data-tab="centros" onclick="showTab('centros')">Centros de Costos</button>
+    <button data-tab="meli" onclick="showTab('meli')">MELI Liquidación</button>
+    <button data-tab="seguros" onclick="showTab('seguros')">Seguros</button>
+>>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
   </nav>
 </div>
 
 <div class="toolbar">
+<<<<<<< HEAD
   <label>Actualizar:</label>
   <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)" title="Reemplaza el archivo mayor/mayor.xlsx y vuelve a publicar, o carga uno manualmente aquí">
+=======
+  <span id="actualizar-mayor-wrap">
+    <label>Actualizar:</label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)" title="Sube un mayor.xlsx nuevo — queda guardado para todos hasta que subas otro">
+  </span>
+>>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
   <div class="mes-btns" id="mes-btns">
     <span>Ver:</span>
     <button class="mes-btn btn-todos active" data-mes="0"  onclick="toggleMes(0,this)">Todos</button>
@@ -665,13 +991,72 @@
 
 <!-- ══════════════════ TAB: GRÁFICOS ══════════════════ -->
 <div id="tab-graficos" class="tab">
-  <div class="chart-wrap"><h3>Resultado Mensual (Ingresos vs Costos vs Resultado Neto)</h3><canvas id="chart-resultado" height="100"></canvas></div>
-  <div class="chart-wrap"><h3>Composición de Ingresos por Mes</h3><canvas id="chart-ingresos" height="100"></canvas></div>
+  <div class="charts-grid">
+    <div class="chart-wrap"><h3>% Margen Neto Mensual</h3><canvas id="chart-margen"></canvas></div>
+    <div class="chart-wrap"><h3>Waterfall EERR — Período</h3><canvas id="chart-waterfall"></canvas></div>
+    <div class="chart-wrap chart-donut"><h3>Distribución de Costos por Área</h3><canvas id="chart-costo-area"></canvas></div>
+    <div class="chart-wrap"><h3>Presupuesto vs Real</h3><canvas id="chart-pptovreal"></canvas></div>
+    <div class="chart-wrap"><h3>Margen Bruto vs Margen Neto</h3><canvas id="chart-margen-doble"></canvas></div>
+    <div class="chart-wrap"><h3>Costos como % de Ventas</h3><canvas id="chart-costos-pct"></canvas></div>
+  </div>
 </div>
 
 <!-- ══════════════════ TAB: CENTROS DE COSTOS ══════════════════ -->
 <div id="tab-centros" class="tab">
   <div id="centros-content"><p style="color:var(--gris);padding:30px">Carga el archivo para ver los centros de costos.</p></div>
+</div>
+
+<!-- ══════════════════ TAB: MELI LIQUIDACIÓN ══════════════════ -->
+<div id="tab-meli" class="tab">
+  <div class="meli-wrap">
+    <h2 class="meli-titulo">Liquidación MercadoLibre</h2>
+
+    <!-- PASO 1 -->
+    <div class="meli-card" id="meli-paso1">
+      <div class="meli-card-header">
+        <span class="meli-num">1</span>
+        <span>Generar archivo de Liquidación Completa</span>
+      </div>
+      <div class="meli-card-body">
+        <div class="meli-row">
+          <label class="meli-label">Archivo MercadoLibre (.xlsx)</label>
+          <input type="file" accept=".xlsx" id="meli-file" onchange="meliLeerArchivo(this)">
+        </div>
+        <div class="meli-row">
+          <label class="meli-label">Rango de fechas (título)</label>
+          <input type="text" id="meli-rango" class="meli-input" placeholder="Ej: 13-07-2026 - 19-07-2026">
+        </div>
+        <button class="btn meli-btn-dl" id="meli-btn-hecho" onclick="meliGenerarHECHO()" disabled>&#8595; Descargar Liquidación Completa</button>
+        <div id="meli-status1" class="meli-status"></div>
+      </div>
+    </div>
+
+    <!-- PASO 2 -->
+    <div class="meli-card" id="meli-paso2" style="display:none">
+      <div class="meli-card-header">
+        <span class="meli-num">2</span>
+        <span>Generar Nota de Venta para Softland</span>
+      </div>
+      <div class="meli-card-body">
+        <div class="meli-row">
+          <label class="meli-label">Número de Nota de Venta</label>
+          <input type="number" id="meli-nv-num" class="meli-input" placeholder="Ej: 128138">
+        </div>
+        <div class="meli-row">
+          <label class="meli-label">Fecha de la Nota de Venta</label>
+          <input type="date" id="meli-nv-fecha" class="meli-input">
+        </div>
+        <button class="btn meli-btn-dl" onclick="meliGenerarNV()">&#8595; Descargar Nota de Venta.xlsx</button>
+        <div id="meli-status2" class="meli-status"></div>
+      </div>
+    </div>
+
+    <!-- PREVIEW PIVOT -->
+    <div id="meli-preview" style="display:none">
+      <h3 class="meli-sub">Vista previa — Tabla dinámica (Hoja1)</h3>
+      <div class="tbl-wrap" id="meli-pivot-wrap"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════ TAB: PRESUPUESTO vs REAL ══════════════════ -->
@@ -683,6 +1068,175 @@
     <span style="color:var(--gris);font-size:11px">Ppto Período = Presupuesto anual prorrateado según meses seleccionados</span>
   </div>
   <div id="ppto-content"><p style="color:var(--gris);padding:30px">Carga el archivo para ver la comparación presupuestaria.</p></div>
+</div>
+
+<!-- ══════════════════ TAB: SEGUROS ══════════════════ -->
+<div id="tab-seguros" class="tab">
+  <div class="seg-wrap">
+    <div class="seg-head">
+      <h2 class="seg-titulo">Seguros — Flota y Bodega</h2>
+      <div class="seg-head-actions">
+        <div class="seg-colmenu-wrap">
+          <button type="button" class="seg-colmenu-btn" onclick="segToggleColMenu()">⚙ Columnas ▾</button>
+          <div class="seg-colmenu" id="seg-colmenu"></div>
+        </div>
+        <button class="seg-btn-add" onclick="segAbrirModal()">+ Agregar Vehículo / Póliza</button>
+      </div>
+    </div>
+    <div class="seg-legend">
+      <span><span class="dot" style="background:var(--verde)"></span>Al día</span>
+      <span><span class="dot" style="background:#D4AC0D"></span>Pago en ≤10 días</span>
+      <span><span class="dot" style="background:var(--rojo)"></span>Pago en ≤5 días / atrasado</span>
+      <span id="seg-status" style="margin-left:auto;color:var(--gris)">Cargando…</span>
+    </div>
+
+    <div class="seg-section">
+      <div class="seg-section-header">Seguro de Robo y Accidentes de Vehículos</div>
+      <div class="seg-table-wrap"><table class="seg-table" id="seg-tbl-robo_accidentes"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="seg-section">
+      <div class="seg-section-header">Robo e Incendio</div>
+      <div class="seg-table-wrap"><table class="seg-table" id="seg-tbl-robo_incendio"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="seg-section">
+      <div class="seg-section-header">Mercancía en Vehículos de la Bodega</div>
+      <div class="seg-table-wrap"><table class="seg-table" id="seg-tbl-mercancia"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: alta / edición de vehículo + póliza -->
+<div class="seg-modal-overlay" id="seg-modal-overlay">
+  <div class="seg-modal">
+    <div class="seg-modal-header">
+      <span id="seg-modal-titulo">Agregar Vehículo / Póliza</span>
+      <button type="button" class="seg-modal-close" onclick="segCerrarModal()">&times;</button>
+    </div>
+    <form id="seg-form" onsubmit="segGuardar(event)">
+      <div class="seg-modal-body">
+        <div class="seg-form-row">
+          <label>Categoría de Seguro</label>
+          <select id="seg-f-categoria" onchange="segToggleCampos()">
+            <option value="robo_accidentes">Robo y Accidentes de Vehículos</option>
+            <option value="mercancia">Mercancía en Vehículos de la Bodega</option>
+            <option value="robo_incendio">Robo e Incendio (sin vehículo, ej. bodega)</option>
+          </select>
+        </div>
+
+        <div class="seg-form-row" id="seg-f-vehiculo-row">
+          <label>Vehículo</label>
+          <select id="seg-f-vehiculo-id" onchange="segCargarVehiculoEnForm()"></select>
+        </div>
+
+        <div class="seg-form-row" id="seg-f-entidad-row" style="display:none">
+          <label>Entidad / Bien asegurado</label>
+          <input type="text" id="seg-f-entidad" placeholder="Ej: Bodega Santa Margarita 742">
+        </div>
+
+        <div id="seg-f-nuevo-vehiculo" style="display:none">
+          <div class="seg-form-sep"></div>
+          <div class="seg-nota" style="margin-top:10px">Datos del vehículo — se editan y guardan acá mismo, elijas uno existente o cargues uno nuevo.</div>
+          <div class="seg-form-grid" style="margin-top:10px">
+            <div class="seg-form-row"><label>Patente</label><input type="text" id="seg-f-patente" placeholder="Vacío si aún no la tienes"></div>
+            <div class="seg-form-row"><label>Tipo</label><input type="text" id="seg-f-tipo" placeholder="Camioneta, Furgón..."></div>
+            <div class="seg-form-row"><label>Marca</label><input type="text" id="seg-f-marca"></div>
+            <div class="seg-form-row"><label>Modelo</label><input type="text" id="seg-f-modelo"></div>
+            <div class="seg-form-row"><label>Año</label><input type="number" id="seg-f-anio"></div>
+            <div class="seg-form-row"><label>Color</label><input type="text" id="seg-f-color"></div>
+            <div class="seg-form-row"><label>N° de Motor</label><input type="text" id="seg-f-motor"></div>
+            <div class="seg-form-row"><label>N° de Chasis</label><input type="text" id="seg-f-chasis"></div>
+            <div class="seg-form-row"><label>Uso</label><input type="text" id="seg-f-uso" placeholder="Comercial / Particular"></div>
+            <div class="seg-form-row"><label>Asignado a</label><input type="text" id="seg-f-asignado"></div>
+            <div class="seg-form-row">
+              <label>Centro de Costo</label>
+              <select id="seg-f-centrocosto">
+                <option value="Logística">Logística</option>
+                <option value="Ventas">Ventas</option>
+                <option value="Gerencia">Gerencia</option>
+                <option value="Administración">Administración</option>
+                <option value="RRHH">RRHH</option>
+              </select>
+            </div>
+          </div>
+          <div class="seg-form-sep" style="margin-top:14px"></div>
+        </div>
+
+        <div class="seg-form-grid">
+          <div class="seg-form-row"><label>Corredor</label><input type="text" id="seg-f-corredor" value="Ossa Covarrubias y Cía Ltda"></div>
+          <div class="seg-form-row"><label>Aseguradora</label><input type="text" id="seg-f-aseguradora"></div>
+          <div class="seg-form-row"><label>N° de Póliza</label><input type="text" id="seg-f-npoliza"></div>
+          <div class="seg-form-row"><label>Moneda</label><input type="text" id="seg-f-moneda" value="UF"></div>
+          <div class="seg-form-row"><label>Total Cuotas</label><input type="number" id="seg-f-cuotas" oninput="segCalcularTotal()"></div>
+          <div class="seg-form-row"><label>Valor c/Cuota</label><input type="number" step="0.001" id="seg-f-valorcuota" oninput="segCalcularTotal()"></div>
+          <div class="seg-form-row"><label>Valor Total</label><input type="number" step="0.001" id="seg-f-valortotal"></div>
+          <div class="seg-form-row"><label>Día de Pago (1–31)</label><input type="number" min="1" max="31" id="seg-f-diapago"></div>
+          <div class="seg-form-row"><label>Vigencia Inicio</label><input type="date" id="seg-f-inicio"></div>
+          <div class="seg-form-row"><label>Vigencia Término</label><input type="date" id="seg-f-termino"></div>
+        </div>
+
+        <div class="seg-form-row seg-form-check">
+          <input type="checkbox" id="seg-f-renovacion" checked>
+          <label style="text-transform:none;font-size:12px">Renovación automática</label>
+        </div>
+
+        <div class="seg-form-row">
+          <label>Notas</label>
+          <textarea id="seg-f-notas" rows="2"></textarea>
+        </div>
+
+        <input type="hidden" id="seg-f-id">
+        <div id="seg-form-status" style="font-size:12px;color:var(--gris)"></div>
+      </div>
+      <div class="seg-modal-footer">
+        <button type="button" class="seg-btn-cancel" onclick="segCerrarModal()">Cancelar</button>
+        <button type="submit" class="seg-btn-add">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: detalle completo (solo lectura) -->
+<div class="seg-modal-overlay" id="seg-detalle-overlay">
+  <div class="seg-modal" style="max-width:620px">
+    <div class="seg-modal-header">
+      <span id="seg-detalle-titulo">Detalle</span>
+      <button type="button" class="seg-modal-close" onclick="segCerrarDetalle()">&times;</button>
+    </div>
+    <div class="seg-modal-body" id="seg-detalle-body"></div>
+  </div>
+</div>
+
+<!-- Modal: documentación por categoría -->
+<div class="seg-modal-overlay" id="seg-docs-overlay">
+  <div class="seg-modal" style="max-width:560px">
+    <div class="seg-modal-header">
+      <span id="seg-docs-titulo">Documentación</span>
+      <button type="button" class="seg-modal-close" onclick="segCerrarDocsModal()">&times;</button>
+    </div>
+    <div class="seg-modal-body">
+      <div class="seg-form-grid">
+        <div class="seg-form-row">
+          <label>Tipo de documento</label>
+          <select id="seg-docs-tipo">
+            <option value="poliza_seguro">Póliza de Seguro</option>
+            <option value="factura_compra">Factura de Compra</option>
+            <option value="permiso_circulacion">Permiso de Circulación</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="seg-form-row">
+          <label>Archivo</label>
+          <input type="file" id="seg-docs-file">
+        </div>
+      </div>
+      <button type="button" class="seg-btn-add" style="width:fit-content" onclick="segSubirDocumentoModal()">+ Subir Documento</button>
+      <div id="seg-docs-status" style="font-size:12px;color:var(--gris)"></div>
+      <div class="seg-form-sep"></div>
+      <div id="seg-docs-lista"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -769,10 +1323,13 @@ function processArrayBuffer(buffer, nombre) {
     DATA = parseLibroMayor(wb);
     document.getElementById('status').textContent =
       `✅ ${nombre} — ${DATA.rows.length.toLocaleString('es-CL')} movimientos cargados`;
+<<<<<<< HEAD
     const ahora = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
     const elUlt = document.getElementById('ultima-carga');
     elUlt.textContent = `Actualizado al ${ahora}`;
     elUlt.style.display = 'inline';
+=======
+>>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
     actualizarBotonesMeses();
     renderAll();
   } catch(err) {
@@ -787,22 +1344,70 @@ function handleFile(input) {
   if (!file) return;
   setLoading(true, 'Leyendo archivo Excel…');
   const reader = new FileReader();
-  reader.onload = e => processArrayBuffer(e.target.result, file.name);
+  reader.onload = e => {
+    processArrayBuffer(e.target.result, file.name);
+    if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && ROLES[CURRENT_ROLE].puedeActualizarMayor) {
+      guardarMayorEnSupabase(file);
+    }
+  };
   reader.readAsArrayBuffer(file);
 }
 
+// Guarda el mayor subido en Supabase Storage (reemplaza al anterior) para
+// que Gerencia y Bodega lo vean sin que Contabilidad tenga que tocar GitHub.
+async function guardarMayorEnSupabase(file) {
+  const status = document.getElementById('status');
+  try {
+    const { error } = await segClient.storage.from('mayor-contable').upload('actual/mayor.xlsx', file, { upsert: true });
+    if (error) throw error;
+    status.textContent += ' · guardado para todos ✅';
+  } catch (err) {
+    status.textContent += ' · ⚠ no se pudo guardar para todos: ' + err.message;
+    console.error(err);
+  }
+}
+
+async function cargarMayorDesdeSupabase() {
+  try {
+    const { data, error } = await segClient.storage.from('mayor-contable').download('actual/mayor.xlsx');
+    if (error || !data) return null;
+    const buf = await data.arrayBuffer();
+    let fechaTxt = '';
+    try {
+      const { data: listado } = await segClient.storage.from('mayor-contable').list('actual');
+      const info = listado && listado.find(f => f.name === 'mayor.xlsx');
+      if (info && info.updated_at) {
+        fechaTxt = new Date(info.updated_at).toLocaleString('es-CL', {day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      }
+    } catch (e) { /* si falla la fecha, seguimos igual sin ella */ }
+    return { buf, fechaTxt };
+  } catch {
+    return null;
+  }
+}
+
 function autoLoadMayor() {
-  setLoading(true, 'Cargando mayor/mayor.xlsx…');
-  fetch('./mayor/mayor.xlsx')
-    .then(r => {
-      if (!r.ok) throw new Error('No encontrado');
-      return r.arrayBuffer();
-    })
-    .then(buf => processArrayBuffer(buf, 'mayor.xlsx'))
-    .catch(() => {
-      setLoading(false);
-      document.getElementById('status').textContent = 'Carga el archivo manualmente ↑';
-    });
+  setLoading(true, 'Cargando mayor…');
+  cargarMayorDesdeSupabase().then(res => {
+    if (res) {
+      processArrayBuffer(res.buf, 'mayor.xlsx');
+      if (res.fechaTxt) {
+        document.getElementById('status').textContent += ` · Subido por Contabilidad el ${res.fechaTxt}`;
+      }
+      return;
+    }
+    // Sin archivo guardado en Supabase todavía: usa el que viene con el sitio
+    fetch('./mayor/mayor.xlsx')
+      .then(r => {
+        if (!r.ok) throw new Error('No encontrado');
+        return r.arrayBuffer();
+      })
+      .then(b => processArrayBuffer(b, 'mayor.xlsx'))
+      .catch(() => {
+        setLoading(false);
+        document.getElementById('status').textContent = 'Carga el archivo manualmente ↑';
+      });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', autoLoadMayor);
@@ -954,6 +1559,8 @@ function showTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
+  if (name === 'graficos') renderCharts();
+  if (name === 'seguros' && !SEG_LOADED) segInit();
 }
 
 function setLoading(show, msg = '') {
@@ -986,7 +1593,6 @@ function renderAll() {
   renderEERR(meses);
   renderFechaPanel(false);
   renderAuditoria();
-  renderCharts();
   renderPresupuesto(meses);
   renderCC(meses);
 }
@@ -1050,6 +1656,11 @@ function renderEERR(meses) {
     const cls = v < 0 ? 'neg-val' : 'pos-val';
     return `<span class="${cls}">${v < 0 ? '(' : ''}$${fmt(Math.abs(v))}${v < 0 ? ')' : ''}</span>`;
   }
+  function fvPct(v) {
+    if (!isFinite(v)) return '<span style="color:#aaa">-</span>';
+    const cls = v < 0 ? 'neg-val' : 'pos-val';
+    return `<span class="${cls}">${v.toFixed(1)}%</span>`;
+  }
   function cells(vals) {
     const total = vals.reduce((a,b) => a+b, 0);
     return vals.map(v => `<td>${fv(v)}</td>`).join('') +
@@ -1088,6 +1699,18 @@ function renderEERR(meses) {
     } else if (tipo === 'R') {
       const vals = sumCodsMes(row[2]);
       rows += `<tr class="ppto-resultado"><td></td><td>${row[1]}</td>${cells(vals)}</tr>`;
+    } else if (tipo === 'P') {
+      const numVals = sumCodsMes(row[2]);
+      const denVals = sumCodsMes(row[3]);
+      const abs = row[4];
+      let pctVals = numVals.map((n,i) => denVals[i] ? (n / denVals[i] * 100) : NaN);
+      if (abs) pctVals = pctVals.map(v => Math.abs(v));
+      const numTotal = numVals.reduce((a,b) => a+b, 0);
+      const denTotal = denVals.reduce((a,b) => a+b, 0);
+      let totalPct = denTotal ? (numTotal / denTotal * 100) : NaN;
+      if (abs) totalPct = Math.abs(totalPct);
+      const pctCells = pctVals.map(v => `<td>${fvPct(v)}</td>`).join('') + (showTotal ? `<td>${fvPct(totalPct)}</td>` : '');
+      rows += `<tr class="ppto-pct"><td></td><td>${row[1]}</td>${pctCells}</tr>`;
     }
   }
 
@@ -1112,7 +1735,11 @@ function renderFechaPanel(mostrar) {
 
   const { cuentas } = DATA;
   const hoy = new Date();
+<<<<<<< HEAD
   const mesHoy = Math.min(hoy.getMonth() + 1, 12);
+=======
+  const mesHoy = MAX_MES_CON_DATOS; // meses con datos realmente cargados, no el mes calendario actual
+>>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
   const mesesAcum = Array.from({length: mesHoy}, (_,i) => i+1);
 
   document.getElementById('fecha-sub').textContent =
@@ -1217,12 +1844,18 @@ function renderAuditoria() {
   if (!DATA) return;
   const { cuentas, rows, mesDebeTotal, mesHaberTotal } = DATA;
 
+  // Meses realmente cargados desde el mayor (no fijo a 6 = enero-junio)
+  const mesesAud = Array.from({length: MAX_MES_CON_DATOS}, (_,i) => i+1);
+  const periodoTxt = mesesAud.length === 1
+    ? MESES_FULL[mesesAud[0]-1]
+    : `${MESES_FULL[0]} a ${MESES_FULL[mesesAud[mesesAud.length-1]-1]}`;
+
   function sumCatMes(cats, mes) {
     return cuentas.filter(c => cats.includes(c.cat2))
       .reduce((s, c) => s + (c.meses[mes] || 0), 0);
   }
   function sumCat(cats) {
-    return [1,2,3,4,5,6].reduce((s, m) => s + sumCatMes(cats, m), 0);
+    return mesesAud.reduce((s, m) => s + sumCatMes(cats, m), 0);
   }
 
   const ingTotal = sumCat(['30','31']);
@@ -1232,7 +1865,7 @@ function renderAuditoria() {
   const margen   = ingTotal !== 0 ? (resTotal/ingTotal*100).toFixed(1) : 0;
 
   // Monthly volumes
-  const volMes = [1,2,3,4,5,6].map(m => ({
+  const volMes = mesesAud.map(m => ({
     mes: MESES_FULL[m-1],
     debe:  mesDebeTotal[m] || 0,
     haber: mesHaberTotal[m] || 0,
@@ -1244,7 +1877,7 @@ function renderAuditoria() {
   const swingData = cuentas
     .filter(c => EERR_CATS.includes(c.cat2))
     .map(c => {
-      const vals = [1,2,3,4,5,6].map(m => c.meses[m] || 0);
+      const vals = mesesAud.map(m => c.meses[m] || 0);
       const max = Math.max(...vals), min = Math.min(...vals);
       return { ...c, swing: max - min, vals, max, min };
     })
@@ -1252,7 +1885,7 @@ function renderAuditoria() {
     .slice(0, 15);
 
   // Best/worst months
-  const resxMes = [1,2,3,4,5,6].map(m => sumCatMes(['30','31'], m) + sumCatMes(['40','41'], m));
+  const resxMes = mesesAud.map(m => sumCatMes(['30','31'], m) + sumCatMes(['40','41'], m));
   const maxMesIdx = resxMes.indexOf(Math.max(...resxMes));
   const minMesIdx = resxMes.indexOf(Math.min(...resxMes));
 
@@ -1261,7 +1894,7 @@ function renderAuditoria() {
     const cs = cuentas.filter(c => c.cat2 === cat);
     const total = cs.reduce((s,c) => s + Object.values(c.meses).reduce((a,b)=>a+b,0), 0);
     const maxSwing = cs.map(c => {
-      const vals = [1,2,3,4,5,6].map(m => c.meses[m]||0);
+      const vals = mesesAud.map(m => c.meses[m]||0);
       return { ...c, sw: Math.max(...vals)-Math.min(...vals) };
     }).sort((a,b)=>b.sw-a.sw)[0];
     return { cat, nombre: CAT[cat], total, count: cs.length, maxSwing };
@@ -1271,7 +1904,7 @@ function renderAuditoria() {
   <!-- I: Resumen Ejecutivo -->
   <div class="audit-section">
     <h2>I. Resumen Ejecutivo</h2>
-    <p>Durante el período <strong>enero a junio de 2026</strong>, Representaciones Grantt Ltda. registró
+    <p>Durante el período <strong>${periodoTxt} de 2026</strong>, Representaciones Grantt Ltda. registró
     ingresos totales (operacionales y otros) por <strong>$${fmt(ingTotal)}</strong>, con costos y gastos operacionales
     de <strong>$(${fmt(Math.abs(cosTotal))})</strong> y gastos financieros de <strong>$(${fmt(Math.abs(finTotal))})</strong>.
     El resultado neto del ejercicio ascendió a <strong>$${fmt(resTotal)}</strong>, representando un margen sobre ingresos
@@ -1279,7 +1912,7 @@ function renderAuditoria() {
     <p>El mes de mayor resultado fue <strong>${MESES_FULL[maxMesIdx]}</strong> con $${fmt(resxMes[maxMesIdx])},
     mientras que <strong>${MESES_FULL[minMesIdx]}</strong> registró el resultado más bajo con $${fmt(resxMes[minMesIdx])}.
     El volumen contable acumulado (DEBE = HABER) alcanzó los <strong>$${fmt(volTotal)}</strong>,
-    verificando la partida doble en los seis meses.</p>
+    verificando la partida doble en los ${mesesAud.length} meses del período.</p>
     <p>Se identificaron <strong>${swingData.length}</strong> cuentas con variabilidad mensual significativa.
     La cuenta de mayor oscilación fue <strong>${swingData[0]?.nombre || 'N/D'}</strong>
     con un swing de <strong>$${fmt(swingData[0]?.swing || 0)}</strong> entre su mes más alto y más bajo.
@@ -1389,7 +2022,7 @@ function renderAuditoria() {
     </div>
     <div class="alert-box advertencia">
       <h4><span class="badge warn">ADVERTENCIA</span> Cuentas con Saldo Cero en Meses</h4>
-      <p>${cuentas.filter(c => EERR_CATS.includes(c.cat2) && Object.keys(c.meses).length < 6).length}
+      <p>${cuentas.filter(c => EERR_CATS.includes(c.cat2) && Object.keys(c.meses).length < mesesAud.length).length}
       cuentas del Estado de Resultados no presentan movimiento en todos los meses.
       Verificar si corresponde a cuentas estacionales o a registros omitidos.</p>
     </div>
@@ -1406,7 +2039,7 @@ function renderAuditoria() {
         <th>DEBE</th><th>HABER</th><th>Diferencia</th><th>Estado</th>
       </tr></thead>
       <tbody>
-        ${[1,2,3,4,5,6].map(m => {
+        ${mesesAud.map(m => {
           const d = mesDebeTotal[m] || 0;
           const h = mesHaberTotal[m] || 0;
           const diff = d - h;
@@ -1428,7 +2061,7 @@ function renderAuditoria() {
   <div class="audit-section">
     <h2>VII. Conclusiones y Recomendaciones</h2>
     <p><strong>1. Rentabilidad:</strong> El resultado del ejercicio de $${fmt(resTotal)} con margen del ${margen}%
-    indica una operación ${resTotal > 0 ? 'rentable' : 'deficitaria'} en el primer semestre 2026.
+    indica una operación ${resTotal > 0 ? 'rentable' : 'deficitaria'} en el período ${periodoTxt} de 2026.
     ${resTotal > 0 ? 'Se recomienda mantener los controles de gasto actuales y explorar oportunidades de crecimiento en ingresos.' : 'Se requiere revisión urgente de la estructura de costos.'}</p>
     <p><strong>2. Control de Gastos:</strong> Los costos de $${fmt(Math.abs(cosTotal))} representan
     ${ingTotal !== 0 ? (Math.abs(cosTotal)/ingTotal*100).toFixed(1) : 0}% de los ingresos.
@@ -1450,60 +2083,159 @@ function renderCharts() {
   if (!DATA) return;
   const { cuentas } = DATA;
 
-  function sumCatMes(cats, mes) {
-    return cuentas.filter(c => cats.includes(c.cat2)).reduce((s,c) => s + (c.meses[mes]||0), 0);
-  }
-
-  const labels = MESES_FULL;
-  const ingresos = [1,2,3,4,5,6].map(m => sumCatMes(['30','31'], m));
-  const costos   = [1,2,3,4,5,6].map(m => sumCatMes(['40','41'], m));
-  const resultado= ingresos.map((v,i) => v + costos[i]);
-
-  // Destroy existing
   Object.values(charts).forEach(c => c.destroy());
   charts = {};
 
-  charts.resultado = new Chart(document.getElementById('chart-resultado'), {
+  const meses  = getMesesActivos();
+  const labels = meses.map(m => MESES_FULL[m-1]);
+  const fmtN   = v => '$' + Math.round(Math.abs(v)).toLocaleString('es-CL');
+  const fmtM   = v => '$' + (Math.abs(v)/1e6).toFixed(1) + 'M';
+  const opt    = { responsive: true, maintainAspectRatio: true };
+
+  function sumCatMes(cats, m) {
+    return cuentas.filter(c => cats.includes(c.cat2)).reduce((s,c) => s+(c.meses[m]||0), 0);
+  }
+  function sumPrefMes(pref, m) {
+    return cuentas.filter(c => c.codigo.startsWith(pref)).reduce((s,c) => s+(c.meses[m]||0), 0);
+  }
+  function sumCatCCMes(cats, cc, m) {
+    return cuentas.filter(c => cats.includes(c.cat2)).reduce((s,c) => s+((c.ccMeses[cc]||{})[m]||0), 0);
+  }
+  function sumCatCC(cats, cc) {
+    return meses.reduce((s,m) => s + sumCatCCMes(cats, cc, m), 0);
+  }
+
+  const ingresos  = meses.map(m => sumCatMes(['30','31'], m));
+  const costos    = meses.map(m => sumCatMes(['40','41'], m));
+  const resultado = ingresos.map((v,i) => v + costos[i]);
+  const margenPct = ingresos.map((v,i) => v > 0 ? (resultado[i] / v * 100) : 0);
+
+  // ── 1. % Margen Neto mensual + Resultado $ ──
+  charts.margen = new Chart(document.getElementById('chart-margen'), {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: 'Ingresos', data: ingresos, backgroundColor: 'rgba(46,117,182,.8)', borderRadius: 4 },
-        { label: 'Costos+Gastos', data: costos.map(v => Math.abs(v)), backgroundColor: 'rgba(192,57,43,.7)', borderRadius: 4 },
-        { label: 'Resultado Neto', data: resultado, type: 'line', borderColor: '#1a8a3c', backgroundColor: 'rgba(26,138,60,.15)', tension: .3, fill: true, pointRadius: 5 }
+        { label: 'Resultado $', data: resultado, backgroundColor: resultado.map(v => v>=0?'rgba(26,138,60,.25)':'rgba(192,57,43,.25)'), borderColor: resultado.map(v => v>=0?'#1a8a3c':'#c0392b'), borderWidth: 1.5, borderRadius: 4, yAxisID: 'yAbs', order: 2 },
+        { label: '% Margen', data: margenPct, type: 'line', borderColor: '#2e75b6', backgroundColor: 'rgba(46,117,182,.1)', tension: 0.35, fill: true, pointRadius: 5, pointBackgroundColor: margenPct.map(v => v>=0?'#2e75b6':'#c0392b'), yAxisID: 'yPct', order: 1 }
       ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'top' },
-        tooltip: { callbacks: { label: ctx => `$${ctx.parsed.y.toLocaleString('es-CL')}` } }
-      },
-      scales: {
-        y: { ticks: { callback: v => '$'+Number(v).toLocaleString('es-CL',{maximumFractionDigits:0}) } }
-      }
+    options: { ...opt, interaction: { mode:'index' }, plugins: { legend:{position:'top'}, tooltip:{callbacks:{label: ctx => ctx.dataset.yAxisID==='yPct'?`Margen: ${ctx.parsed.y.toFixed(1)}%`:`Resultado: ${fmtN(ctx.parsed.y)}`}} },
+      scales: { yAbs:{position:'left',ticks:{callback:v=>fmtM(v)},title:{display:true,text:'Resultado ($)'}}, yPct:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v.toFixed(0)+'%'},title:{display:true,text:'Margen %'}} } }
+  });
+
+  // ── 2. Waterfall EERR acumulado del período ──
+  const ingTot   = ingresos.reduce((s,v) => s+v, 0);
+  const c40Tot   = meses.reduce((s,m) => s+sumCatMes(['40'],m), 0);
+  const c41Tot   = meses.reduce((s,m) => s+sumCatMes(['41'],m), 0);
+  const brutTot  = ingTot + c40Tot;          // utilidad bruta
+  const resTot   = ingTot + c40Tot + c41Tot; // resultado neto
+  charts.waterfall = new Chart(document.getElementById('chart-waterfall'), {
+    type: 'bar',
+    data: {
+      labels: ['Ingresos', 'Costo Ventas', 'Utilidad Bruta', 'Gastos Financ.', 'Resultado Neto'],
+      datasets: [{
+        label: 'Monto',
+        data: [
+          [0, ingTot],
+          [brutTot, ingTot],
+          [0, brutTot],
+          [resTot, brutTot],
+          [0, resTot]
+        ],
+        backgroundColor: ['rgba(46,117,182,.8)','rgba(192,57,43,.75)','rgba(26,138,60,.75)','rgba(243,156,18,.8)', resTot>=0?'rgba(26,138,60,.9)':'rgba(192,57,43,.9)'],
+        borderRadius: 4
+      }]
+    },
+    options: { ...opt,
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label: ctx => { const [a,b]=ctx.raw; return fmtN(Math.abs(b-a)); }}} },
+      scales: { y: { ticks:{callback:v=>fmtM(v)}, grid:{color:'rgba(0,0,0,.06)'} } }
     }
   });
 
-  const ing30 = [1,2,3,4,5,6].map(m => sumCatMes(['30'], m));
-  const ing31 = [1,2,3,4,5,6].map(m => sumCatMes(['31'], m));
-  charts.ingresos = new Chart(document.getElementById('chart-ingresos'), {
+  // ── 3. Distribución de costos por área (donut) ──
+  const AREAS = [
+    {cc:'001',label:'Logística'},{cc:'002',label:'Administración'},{cc:'003',label:'Ventas'},
+    {cc:'004',label:'Gerencia'},{cc:'005',label:'RRHH'},{cc:'007',label:'CCM'},
+    {cc:'011',label:'Vendedores'},{cc:'012',label:'Reponedores'},
+    {cc:'020',label:'Sodimac'},{cc:'021',label:'Imperial'},{cc:'022',label:'Construmart'},
+    {cc:'023',label:'Mercado Libre'},{cc:'024',label:'Chile Mat'},
+  ];
+  const PAL = ['#2e75b6','#c0392b','#f39c12','#1a8a3c','#8e44ad','#16a085','#e67e22','#2c3e50','#3498db','#e74c3c','#f1c40f','#27ae60','#9b59b6'];
+  const areasData = AREAS.map((a,i) => ({...a, val: Math.abs(sumCatCC(['40','41'],a.cc)), color:PAL[i]})).filter(a=>a.val>0);
+  const totCostos = areasData.reduce((s,a) => s+a.val, 0);
+  charts.costoArea = new Chart(document.getElementById('chart-costo-area'), {
+    type: 'doughnut',
+    data: { labels: areasData.map(a=>a.label), datasets:[{data:areasData.map(a=>a.val), backgroundColor:areasData.map(a=>a.color), borderWidth:2, hoverOffset:10}] },
+    options: { ...opt, cutout:'60%', plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}, tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmtN(ctx.parsed)} (${(ctx.parsed/totCostos*100).toFixed(1)}%)`}}} }
+  });
+
+  // ── 4. Presupuesto vs Real — ingresos y resultado ──
+  const pptoIngMes = cuentas.filter(c=>['30','31'].includes(c.cat2)).reduce((s,c)=>s+(PPTO[c.codigo]||0),0) / 12;
+  const pptoResMes = Object.values(PPTO).reduce((s,v)=>s+v,0) / 12;
+  const realIng = ingresos;
+  const realRes = resultado;
+  charts.pptovreal = new Chart(document.getElementById('chart-pptovreal'), {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: 'Ingresos Operacionales (30)', data: ing30, backgroundColor: 'rgba(46,117,182,.85)', borderRadius: 4 },
-        { label: 'Otros Ingresos (31)', data: ing31, backgroundColor: 'rgba(31,56,100,.7)', borderRadius: 4 }
+        { label: 'Real Ingresos', data: realIng, backgroundColor: 'rgba(46,117,182,.7)', borderRadius: 4, yAxisID:'yIng', order:2 },
+        { label: 'Ppto Ingresos', data: meses.map(()=>pptoIngMes), type:'line', borderColor:'#2e75b6', borderDash:[5,4], borderWidth:2, pointRadius:0, yAxisID:'yIng', order:1 },
+        { label: 'Real Resultado', data: realRes, backgroundColor: realRes.map(v=>v>=0?'rgba(26,138,60,.55)':'rgba(192,57,43,.55)'), borderRadius:4, yAxisID:'yRes', order:3 },
+        { label: 'Ppto Resultado', data: meses.map(()=>pptoResMes), type:'line', borderColor:'#1a8a3c', borderDash:[5,4], borderWidth:2, pointRadius:0, yAxisID:'yRes', order:1 }
       ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'top' },
-        tooltip: { callbacks: { label: ctx => `$${ctx.parsed.y.toLocaleString('es-CL')}` } }
-      },
-      scales: {
-        x: { stacked: true },
-        y: { stacked: true, ticks: { callback: v => '$'+Number(v).toLocaleString('es-CL',{maximumFractionDigits:0}) } }
-      }
+    options: { ...opt, interaction:{mode:'index'},
+      plugins:{legend:{position:'top',labels:{boxWidth:11,font:{size:11}}}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtN(ctx.parsed.y)}`}}},
+      scales:{ yIng:{position:'left',ticks:{callback:v=>fmtM(v)},title:{display:true,text:'Ingresos'}}, yRes:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>fmtM(v)},title:{display:true,text:'Resultado'}} }
+    }
+  });
+
+  // ── 5. Margen Bruto vs Margen Neto % mensual ──
+  // Margen Bruto = (Ingresos + Costo de Ventas puro 40-01-01) / Ingresos
+  const cogsM      = meses.map(m => sumPrefMes('40-01-01', m));
+  const margenBruto = ingresos.map((v,i) => v>0 ? (v+cogsM[i])/v*100 : 0);
+  charts.margenDoble = new Chart(document.getElementById('chart-margen-doble'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: '% Margen Bruto', data: margenBruto, borderColor:'#2e75b6', backgroundColor:'rgba(46,117,182,.08)', tension:.35, fill:true, pointRadius:5, borderWidth:2 },
+        { label: '% Margen Neto',  data: margenPct,   borderColor:'#1a8a3c', backgroundColor:'rgba(26,138,60,.08)',  tension:.35, fill:true, pointRadius:5, borderWidth:2 }
+      ]
+    },
+    options: { ...opt, interaction:{mode:'index'},
+      plugins:{legend:{position:'top'}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},
+      scales:{ y:{ticks:{callback:v=>v.toFixed(0)+'%'}, title:{display:true,text:'Margen %'}} }
+    }
+  });
+
+  // ── 6. Costos como % de Ventas mensual (COGS, Logística, Remuneraciones, Otros) ──
+  const catCostosMes = (pref, m) => Math.abs(sumPrefMes(pref, m));
+  const pcts = (arr, ing) => arr.map((v,i) => ing[i]>0 ? v/ing[i]*100 : 0);
+  const cogsP   = pcts(meses.map(m=>catCostosMes('40-01-01',m)), ingresos);
+  const logP    = pcts(meses.map(m=>catCostosMes('40-01-02',m)+catCostosMes('40-01-04',m)), ingresos);
+  const remP    = pcts(meses.map(m=>catCostosMes('40-02-01',m)), ingresos);
+  const otrosP  = pcts(meses.map(m=>{
+    const tot = Math.abs(sumCatMes(['40','41'],m));
+    const sub = catCostosMes('40-01-01',m)+catCostosMes('40-01-02',m)+catCostosMes('40-01-04',m)+catCostosMes('40-02-01',m);
+    return tot-sub;
+  }), ingresos);
+  charts.costosPct = new Chart(document.getElementById('chart-costos-pct'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Costo Ventas',    data: cogsP,  backgroundColor:'rgba(192,57,43,.8)',  borderRadius:3, stack:'s' },
+        { label: 'Logística',       data: logP,   backgroundColor:'rgba(243,156,18,.8)', borderRadius:3, stack:'s' },
+        { label: 'Remuneraciones',  data: remP,   backgroundColor:'rgba(46,117,182,.8)', borderRadius:3, stack:'s' },
+        { label: 'Otros',           data: otrosP, backgroundColor:'rgba(128,128,128,.6)',borderRadius:3, stack:'s' }
+      ]
+    },
+    options: { ...opt,
+      plugins:{legend:{position:'top',labels:{boxWidth:11,font:{size:11}}}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},
+      scales:{ x:{stacked:true}, y:{stacked:true, ticks:{callback:v=>v.toFixed(0)+'%'}, title:{display:true,text:'% de Ventas'}} }
     }
   });
 }
@@ -1769,6 +2501,11 @@ const PPTO_STRUCT = [
   ['c','40-02-08-01','Comision Mercadolibre Y Otros'],
   ['t','TOTAL COSTOS DE VENTAS'],
   ['R','MARGEN DE VENTAS',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01']],
+<<<<<<< HEAD
+=======
+  ['P','% Costo sobre Ventas',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01'],['30-01-01-02','30-01-01-10','30-01-01-21'],true],
+  ['P','% Margen sobre Ventas',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01'],['30-01-01-02','30-01-01-10','30-01-01-21'],false],
+>>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
 
   // ── COSTOS LOGISTICA Y OTROS ────────────────────────────
   ['S','COSTOS LOGISTICA Y OTROS'],
@@ -1786,8 +2523,8 @@ const PPTO_STRUCT = [
   ['c','40-01-08-23','Mantencion Vehiculos'],
   ['c','40-01-08-24','P.circulacion Vehiculos / Seguros'],
   ['t','TOTAL COSTOS LOGISTICA Y OTROS'],
-  ['T','COSTOS DE EXPLOTACION',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
-  ['R','MARGEN DE EXPLOTACION',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
+  ['T','COSTOS DE EXPLOTACION',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
+  ['R','MARGEN DE EXPLOTACION',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24']],
 
   // ── GASTOS DE ADMINISTRACION Y VENTAS ──────────────────
   ['S','GASTOS DE ADMINISTRACION Y VENTAS'],
@@ -1854,7 +2591,7 @@ const PPTO_STRUCT = [
   ['t','TOTAL GASTOS NO OPERACIONALES'],
   ['R','RESULTADO NO OPERACIONAL',['30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01']],
 
-  ['R','RESULTADO ANTES DE CORREC. MONETARIA',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03','30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01']],
+  ['R','RESULTADO ANTES DE CORREC. MONETARIA',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-01-02-22','40-01-02-24','40-01-02-25','40-01-02-26','40-01-02-27','40-01-02-28','40-01-03-04','40-01-04-22','40-01-04-23','40-01-08-21','40-01-08-22','40-01-08-23','40-01-08-24','40-01-02-31','40-02-01-12','40-02-01-13','40-02-01-14','40-02-01-16','40-02-01-17','40-02-01-18','40-02-01-19','40-02-01-21','40-02-01-22','40-02-04-04','40-02-02-21','40-02-02-25','40-02-04-26','40-02-03-21','40-02-04-21','40-02-06-04','40-02-04-15','40-02-04-24','40-02-04-25','40-02-04-27','40-02-06-07','40-02-08-01','40-03-04-23','40-03-09-20','40-03-09-21','40-02-06-03','30-01-02-01','31-01-01-01','31-01-01-06','31-01-02-01','31-01-02-03','31-01-02-04','41-01-01-01','41-01-01-02','41-01-01-04','40-01-02-29','40-01-02-30','41-02-01-01','41-02-01-03','41-02-01-04','41-02-01-10','41-07-01-01']],
 
   // ── CORRECCION MONETARIA ────────────────────────────────
   ['S','CORRECCION MONETARIA'],
@@ -2144,6 +2881,1135 @@ async function exportExcel() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ═══════════════════════════════════════════════════════
+//  MELI LIQUIDACIÓN
+// ═══════════════════════════════════════════════════════
+
+let MELI_RAW = null;   // { sec1, sec2, sec3, meta, headers }
+
+// Índices de columna (0-based)
+const MC = {
+  num_venta:0, tipo_venta:1, cod_prod:2, sku:3, desc:4,
+  pack_id:5, variacion:6, qty:7, tipo_dev:8, fecha:9,
+  tipo_dte:10, cod_dte:11, folio:12, folio_asoc:13,
+  neto:14, iva:15, iva_ant:16, ila:17, cod_imp:18
+};
+const MELI_RUT_PROV = 77398220;
+const MELI_COL7     = 25;
+
+// Logo MercadoLibre para la esquina superior de la hoja "detalles"
+const MELI_LOGO_B64 = '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';
+
+function meliLeerArchivo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  meliStatus1('Leyendo archivo…');
+  document.getElementById('meli-btn-hecho').disabled = true;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb   = XLSX.read(e.target.result, {type:'array'});
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const all  = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+
+      const meta    = all[1] || [];                                    // row 2
+      const headers = all[3] || [];                                    // row 4
+      const data    = all.slice(4).filter(r => r && r.some(v=>v!=null)); // rows 5+
+
+      // Auto-fill date range from metadata
+      const rango = String(meta[2] || '').replace(/\n/g,' ').trim();
+      if (rango) document.getElementById('meli-rango').value = rango;
+
+      MELI_RAW = { meta, headers, ...meliClasificar(data) };
+
+      const { sec1, sec2, sec3 } = MELI_RAW;
+      meliStatus1(`✅ ${data.length} filas — Productos: ${sec1.length} | Envíos: ${sec2.length} | Devoluciones: ${sec3.filter(r=>String(r[MC.tipo_dev]||'').toLowerCase()==='fulfillment').length} filas`);
+      document.getElementById('meli-btn-hecho').disabled = false;
+      meliRenderPivot();
+      document.getElementById('meli-preview').style.display = 'block';
+      document.getElementById('meli-paso2').style.display   = 'block';
+    } catch(err) {
+      meliStatus1('❌ Error: ' + err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function meliClasificar(rows) {
+  const sec2    = [];  // Costo de envío (todos, incluye notas crédito de envío)
+  const retProd = [];  // Devoluciones de PRODUCTOS (col9=fulfillment, no envío)
+  const normal  = [];  // Candidatos sección 1
+
+  for (const row of rows) {
+    const desc    = String(row[MC.desc]     || '').toLowerCase();
+    const tipoDev = String(row[MC.tipo_dev] || '').toLowerCase().trim();
+    const isEnvio = desc.includes('costo de env');
+    const isRet   = tipoDev === 'fulfillment';
+
+    if (isEnvio)       sec2.push(row);
+    else if (isRet)    retProd.push(row);
+    else               normal.push(row);
+  }
+
+  // Mapa folio → filas normales para emparejar devoluciones
+  const folioMap = new Map();
+  for (const row of normal) {
+    const f = row[MC.folio];
+    if (f != null) {
+      if (!folioMap.has(f)) folioMap.set(f, []);
+      folioMap.get(f).push(row);
+    }
+  }
+
+  const vendidosEnSec3 = new Set();
+  const sec3 = [];
+
+  // Ordenar devoluciones por SKU para agrupar visualmente
+  retProd.sort((a,b) => String(a[MC.sku]||'').localeCompare(String(b[MC.sku]||'')));
+
+  for (const ret of retProd) {
+    const fa      = ret[MC.folio_asoc];
+    const sku     = ret[MC.sku];
+    const retQty  = Math.abs(Number(ret[MC.qty]) || 1);
+    const vendidos = [];
+    let coveredQty = 0;
+
+    // 1) Emparejar por folio_asociado → folio (un solo match)
+    if (fa != null && folioMap.has(fa)) {
+      const cands = folioMap.get(fa).filter(r => !vendidosEnSec3.has(r));
+      if (cands.length) {
+        const v = cands[0];
+        vendidos.push(v);
+        vendidosEnSec3.add(v);
+        coveredQty += Math.abs(Number(v[MC.qty]) || 0);
+      }
+    }
+
+    // 2) Si no cubrió toda la qty de la devolución: completar con filas del mismo SKU
+    // Cubre devoluciones sin venta match y devoluciones de 2 unidades con ventas de 1
+    if (sku && coveredQty < retQty) {
+      for (const row of normal) {
+        if (coveredQty >= retQty) break;
+        if (!vendidosEnSec3.has(row) && row[MC.sku] === sku) {
+          vendidos.push(row);
+          vendidosEnSec3.add(row);
+          coveredQty += Math.abs(Number(row[MC.qty]) || 0);
+        }
+      }
+    }
+
+    for (const v of vendidos) sec3.push(v);
+    sec3.push(ret);
+  }
+
+  // Sección 1: filas normales que no fueron a sección 3, ordenadas por SKU
+  const sec1 = normal.filter(r => !vendidosEnSec3.has(r));
+  sec1.sort((a,b) => String(a[MC.sku]||'').localeCompare(String(b[MC.sku]||'')));
+
+  return { sec1, sec2, sec3 };
+}
+
+function meliCalcTotales() {
+  const { sec1, sec2, sec3 } = MELI_RAW;
+  const toN = v => { const n = Number(v); return isNaN(n) ? 0 : n; };
+  const bruto = r => toN(r[MC.neto]) + toN(r[MC.iva]);
+  const sec1_qty    = sec1.reduce((s,r) => s + toN(r[MC.qty]), 0);
+  const sec2_bruto  = sec2.reduce((s,r) => s + bruto(r), 0);
+  // Suma TODAS las filas de sec3: las vendidas (positivo) y devueltas (negativo) se cancelan ≈ 0
+  // Igual que la fórmula original: SUM(T385:T425) que incluye ambas y resulta ~0
+  const sec3_bruto  = sec3.reduce((s,r) => s + bruto(r), 0);
+  const f381 = sec1_qty > 0 ? (sec2_bruto - sec3_bruto) / sec1_qty : 0;
+  console.log('[MELI] sec1:', sec1.length, 'sec2:', sec2.length, 'sec3:', sec3.length,
+              '| qty_total:', sec1_qty, '| bruto_envíos:', sec2_bruto,
+              '| bruto_dev:', sec3_bruto, '| f381:', f381);
+  return { sec1_qty, sec2_bruto, sec3_bruto, f381 };
+}
+
+function meliPivot() {
+  const { sec1 } = MELI_RAW;
+  const { f381 } = meliCalcTotales();
+  const toN = v => { const n = Number(v); return isNaN(n) ? 0 : n; };
+  const map = new Map();
+  for (const row of sec1) {
+    const sku = String(row[MC.sku] || '');
+    if (!sku) continue;
+    if (!map.has(sku)) map.set(sku, {sku, qty:0, neto:0});
+    const e     = map.get(sku);
+    const bruto = toN(row[MC.neto]) + toN(row[MC.iva]);
+    const qty   = toN(row[MC.qty]);
+    const total = bruto + f381 * qty;
+    e.qty  += qty;
+    e.neto += total / 1.19;
+  }
+  return [...map.values()].sort((a,b) => a.sku.localeCompare(b.sku, 'es-CL', {ignorePunctuation: true}));
+}
+
+function meliRenderPivot() {
+  const pivot = meliPivot();
+  let html = `<table><thead><tr>
+    <th>SKU</th><th>Cantidad</th><th>Neto Total</th><th>Neto Unitario</th><th>Long.</th>
+  </tr></thead><tbody>`;
+  for (const p of pivot) {
+    const nu = Math.round(p.neto / p.qty);
+    html += `<tr>
+      <td>${p.sku}</td>
+      <td>${p.qty}</td>
+      <td>${Math.round(p.neto).toLocaleString('es-CL')}</td>
+      <td>${nu.toLocaleString('es-CL')}</td>
+      <td>${p.sku.length}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('meli-pivot-wrap').innerHTML = html;
+}
+
+async function meliGenerarHECHO() {
+  if (!MELI_RAW) return;
+  meliStatus1('Generando archivo…');
+  try {
+    const wb  = new ExcelJS.Workbook();
+    const wsD = wb.addWorksheet('detalles');
+    const wsP = wb.addWorksheet('Hoja1');
+    meliEscribirDetalles(wsD);
+    meliEscribirPivot(wsP);
+    const logoId = wb.addImage({ base64: MELI_LOGO_B64, extension: 'png' });
+    wsD.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 121, height: 76 } });
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    const rango = (document.getElementById('meli-rango').value.trim() || 'periodo').replace(/\s/g,'_').replace(/\//g,'-');
+    a.download = `Liquidacion_Meli_${rango}.xlsx`;
+    a.click();
+    meliStatus1('✅ Archivo descargado');
+  } catch(err) {
+    meliStatus1('❌ Error: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ── Estilos del reporte MELI (calcados del diseño de referencia) ──
+const MELI_FILL_META  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEFEFEF'} };
+const MELI_FILL_GRP1  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFE599'} }; // Datos de la venta
+const MELI_FILL_GRP2  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFA2C4C9'} }; // Datos de la liquidación
+const MELI_FILL_GRP3  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFB6D7A8'} }; // Impuestos
+const MELI_FILL_COL1  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFF2CC'} };
+const MELI_FILL_COL2  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFD0E0E3'} };
+const MELI_FILL_COL3  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFD9EAD3'} };
+const MELI_FILL_CALC  = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFFF00'} };
+const MELI_FILL_TOTAL = { type:'pattern', pattern:'solid', fgColor:{argb:'FF9BBB59'} };
+const MELI_BORDER_HDR = { top:{style:'thin',color:{argb:'FFC0C0C0'}}, bottom:{style:'thin',color:{argb:'FFC0C0C0'}}, left:{style:'thin',color:{argb:'FFC0C0C0'}}, right:{style:'thin',color:{argb:'FFC0C0C0'}} };
+const MELI_BORDER_ROW = { bottom:{style:'thin',color:{argb:'FFE0E0E0'}} };
+const MELI_MONEY_FMT  = '#,##0';
+
+function meliEstiloEncabezado(cell, fill, opts) {
+  cell.fill = fill;
+  cell.font = { bold: true, size: 10, name: 'Arial', color: { argb: (opts && opts.blanco) ? 'FFFFFFFF' : 'FF1F3864' } };
+  cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  cell.border = MELI_BORDER_HDR;
+}
+
+function meliEscribirDetalles(ws) {
+  const { sec1, sec2, sec3, meta, headers } = MELI_RAW;
+  const n1 = sec1.length, n2 = sec2.length, n3 = sec3.length;
+  const { f381 } = meliCalcTotales(); // Calcular en JS para evitar DIV/0 en fórmula Excel
+
+  // Filas de referencia
+  const R1s = 5,          R1e = 4 + n1,       R1sum = 5 + n1;
+  const R2s = 10 + n1,    R2e = 9 + n1 + n2,  R2sum = 10 + n1 + n2;
+  const Rf  = 11 + n1 + n2;                    // fila F381
+  const R3s = 15 + n1 + n2, R3e = 14 + n1 + n2 + n3, R3sum = 15 + n1 + n2 + n3;
+
+  // Fila 1: título (deja la col. A libre para el logo)
+  const tituloCell = ws.getRow(1).getCell(2);
+  tituloCell.value = 'Reporte de Liquidación de Factura';
+  tituloCell.font = { bold: true, size: 14, name: 'Arial', color: { argb: 'FF1F3864' } };
+  ws.getRow(1).height = 30;
+
+  // Fila 2: metadata
+  ['ID del Vendedor\n'+String(meta[0]||''), 'RUT\n'+String(meta[1]||''),
+   'Fecha\n'+String(meta[2]||''), 'Moneda\n'+String(meta[3]||''),
+   'Tipo de Liquidación\n'+String(meta[4]||'')
+  ].forEach((v,i) => ws.getRow(2).getCell(i+1).value = v);
+  for (let c = 1; c <= 19; c++) {
+    const cell = ws.getRow(2).getCell(c);
+    cell.fill = MELI_FILL_META;
+    cell.alignment = { vertical: 'middle', wrapText: true };
+    if (c <= 5) cell.font = { bold: true, size: 9, name: 'Arial' };
+  }
+
+  // Fila 3: agrupaciones (fusionadas, igual que el diseño de referencia)
+  ws.mergeCells(3, 1, 3, 9);
+  ws.mergeCells(3, 10, 3, 14);
+  ws.mergeCells(3, 15, 3, 19);
+  ws.getRow(3).getCell(1).value  = 'Datos de la venta';
+  ws.getRow(3).getCell(10).value = 'Datos que contiene en la liquidación';
+  ws.getRow(3).getCell(15).value = 'Desglose del comprobante / Impuestos aplicados';
+  meliEstiloEncabezado(ws.getRow(3).getCell(1),  MELI_FILL_GRP1, { blanco: false });
+  meliEstiloEncabezado(ws.getRow(3).getCell(10), MELI_FILL_GRP2, { blanco: false });
+  meliEstiloEncabezado(ws.getRow(3).getCell(15), MELI_FILL_GRP3, { blanco: false });
+  ws.getRow(3).height = 20;
+
+  // Fila 4: encabezados de columna (alineados 1 a 1 con las columnas de datos)
+  const cols4 = ['Número de venta','Tipo logístico Venta','Código del producto','SKU',
+    'Descripcion Item','Pack ID','variación','Cantidad de unidades','Tipo logístico Devolución',
+    'Fecha de emisión','Tipo de DTE','Codigo DTE','Folio',
+    'Folio asociado\nAplicable para Notas de crédito',
+    'Monto neto','Importe IVA','IVA Anticipo','ILA/ABA','Código del impuesto',
+    'bruto','neto','iva','total'];
+  cols4.forEach((v,i) => { if(v) ws.getRow(4).getCell(i+1).value = v; });
+  for (let c = 1; c <= 9;  c++) meliEstiloEncabezado(ws.getRow(4).getCell(c), MELI_FILL_COL1);
+  for (let c = 10; c <= 14; c++) meliEstiloEncabezado(ws.getRow(4).getCell(c), MELI_FILL_COL2);
+  for (let c = 15; c <= 19; c++) meliEstiloEncabezado(ws.getRow(4).getCell(c), MELI_FILL_COL3);
+  for (let c = 20; c <= 22; c++) meliEstiloEncabezado(ws.getRow(4).getCell(c), MELI_FILL_CALC);
+  meliEstiloEncabezado(ws.getRow(4).getCell(23), MELI_FILL_TOTAL, { blanco: true });
+
+  // Formato numérico tipo contable para las columnas monetarias
+  [15,16,17,18,20,21,22,23].forEach(c => { ws.getColumn(c).numFmt = MELI_MONEY_FMT; });
+  ws.getColumn(8).numFmt = MELI_MONEY_FMT; // Cantidad de unidades
+
+  // Índices que deben ser numéricos (qty, neto, iva, iva_ant, ila)
+  const NUM_COLS = new Set([7, 14, 15, 16, 17]);
+
+  // Escribir una fila de datos con valores calculados en JS
+  const writeRow = (rowNum, row, withCalc) => {
+    const r = ws.getRow(rowNum);
+    for (let c = 0; c < 19; c++) {
+      if (row[c] != null) {
+        r.getCell(c+1).value = NUM_COLS.has(c) ? (Number(row[c]) || 0) : row[c];
+      }
+    }
+    const bruto = (Number(row[14])||0) + (Number(row[15])||0);
+    r.getCell(20).value = bruto;
+    if (withCalc) {
+      const qty   = Number(row[7]) || 0;
+      const total = bruto + f381 * qty;
+      const neto  = total / 1.19;
+      const iva   = neto * 0.19;
+      r.getCell(21).value = Math.round(neto);
+      r.getCell(22).value = Math.round(iva);
+      r.getCell(23).value = Math.round(total);
+    }
+    for (let c = 1; c <= 23; c++) r.getCell(c).border = MELI_BORDER_ROW;
+    r.getCell(20).fill = MELI_FILL_CALC;
+    r.getCell(21).fill = MELI_FILL_CALC;
+    r.getCell(22).fill = MELI_FILL_CALC;
+    r.getCell(23).fill = MELI_FILL_TOTAL;
+  };
+
+  const estiloFilaSuma = (row) => {
+    for (let c = 1; c <= 23; c++) {
+      const cell = row.getCell(c);
+      cell.font = { bold: true, size: 10, name: 'Arial' };
+      cell.border = { top:{style:'thin',color:{argb:'FF999999'}}, bottom:MELI_BORDER_ROW.bottom };
+    }
+  };
+
+  // Sección 1
+  sec1.forEach((row, i) => writeRow(R1s + i, row, true));
+  // Fila suma sección 1
+  const s1 = ws.getRow(R1sum);
+  ['H','T','U','V','W'].forEach(col => {
+    s1.getCell(col === 'H' ? 8 : col === 'T' ? 20 : col === 'U' ? 21 : col === 'V' ? 22 : 23).value =
+      {formula: `SUM(${col}${R1s}:${col}${R1e})`};
+  });
+  estiloFilaSuma(s1);
+
+  // Sección 2
+  sec2.forEach((row, i) => writeRow(R2s + i, row, true));
+  // Fila suma sección 2 (solo bruto)
+  ws.getRow(R2sum).getCell(20).value = {formula: `SUM(T${R2s}:T${R2e})`};
+  estiloFilaSuma(ws.getRow(R2sum));
+
+  // Fila F381: escribir valor pre-calculado en JS para evitar DIV/0 por tipos de datos
+  ws.getRow(Rf).getCell(20).value = f381;
+
+  // Sección 3
+  sec3.forEach((row, i) => writeRow(R3s + i, row, false));
+  // Fila suma sección 3 (solo bruto)
+  const s3formula = n3 > 0 ? `SUM(T${R3s}:T${R3e})` : '0';
+  ws.getRow(R3sum).getCell(20).value = n3 > 0 ? {formula: s3formula} : 0;
+  estiloFilaSuma(ws.getRow(R3sum));
+
+  // Anchos de columna
+  [18,12,15,18,42,15,12,10,12,20,10,10,12,12,12,12,10,10,12,12,12,12,14]
+    .forEach((w,i) => { ws.getColumn(i+1).width = w; });
+
+  // Encabezados siempre visibles al desplazarse hacia abajo
+  ws.views = [{ state: 'frozen', ySplit: 4 }];
+}
+
+function meliEscribirPivot(ws) {
+  // SKUs de sec1 + vendidos en sec3 (no devoluciones), sin duplicados, ordenados
+  const { sec1, sec3 } = MELI_RAW;
+  const allSold = [
+    ...sec1,
+    ...sec3.filter(r => String(r[MC.tipo_dev]||'').toLowerCase() !== 'fulfillment')
+  ];
+  const skus = [...new Set(allSold.map(r => String(r[MC.sku]||'')).filter(s => s))]
+    .sort((a,b) => a.localeCompare(b, 'es-CL', {ignorePunctuation: true}));
+
+  // Encabezados (estilo equivalente al "PivotStyleLight16" del diseño de referencia)
+  const hdr = ws.getRow(1);
+  hdr.getCell(1).value = 'Etiquetas de fila';
+  hdr.getCell(2).value = 'Suma de Cantidad de unidades';
+  hdr.getCell(3).value = 'Suma de neto';
+  hdr.getCell(4).value = 'Neto unitario';
+  hdr.getCell(5).value = 'Long.';
+  for (let c = 1; c <= 5; c++) {
+    const cell = hdr.getCell(c);
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF4F81BD'} };
+    cell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FFFFFFFF' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = MELI_BORDER_HDR;
+  }
+  hdr.height = 28;
+
+  // Una fila por SKU — SUMIFS dinámico desde la hoja detalles
+  // Col D=SKU, Col H=qty, Col U=neto (solo filas sec1 tienen neto escrito)
+  skus.forEach((sku, i) => {
+    const r = 2 + i;
+    const row = ws.getRow(r);
+    row.getCell(1).value = sku;
+    row.getCell(2).value = {formula: `SUMIFS(detalles!$H:$H,detalles!$D:$D,A${r},detalles!$U:$U,"<>")`};
+    row.getCell(3).value = {formula: `SUMIF(detalles!$D:$D,A${r},detalles!$U:$U)`};
+    row.getCell(4).value = {formula: `IFERROR(ROUND(C${r}/B${r},0),0)`};
+    row.getCell(5).value = {formula: `LEN(A${r})`};
+    for (let c = 1; c <= 5; c++) row.getCell(c).border = MELI_BORDER_ROW;
+  });
+
+  // Fila de total general
+  const rTotal = 2 + skus.length;
+  const totalRow = ws.getRow(rTotal);
+  totalRow.getCell(1).value = 'Total general';
+  totalRow.getCell(2).value = skus.length ? { formula: `SUM(B2:B${rTotal - 1})` } : 0;
+  totalRow.getCell(3).value = skus.length ? { formula: `SUM(C2:C${rTotal - 1})` } : 0;
+  for (let c = 1; c <= 5; c++) {
+    const cell = totalRow.getCell(c);
+    cell.font = { bold: true, size: 10, name: 'Arial' };
+    cell.border = { top:{style:'thin',color:{argb:'FF999999'}}, bottom:MELI_BORDER_ROW.bottom };
+  }
+
+  ws.getColumn(2).numFmt = MELI_MONEY_FMT;
+  ws.getColumn(3).numFmt = MELI_MONEY_FMT;
+  ws.getColumn(4).numFmt = MELI_MONEY_FMT;
+  [22,14,16,14,8].forEach((w,i) => { ws.getColumn(i+1).width = w; });
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
+}
+
+async function meliGenerarNV() {
+  if (!MELI_RAW) return;
+  const nvNum = parseInt(document.getElementById('meli-nv-num').value);
+  const nvFecha = document.getElementById('meli-nv-fecha').value;
+  if (!nvNum || !nvFecha) { alert('Ingresa el número de NV y la fecha'); return; }
+
+  const [y,m,d] = nvFecha.split('-').map(Number);
+  const dateVal = new Date(y, m-1, d);
+
+  const pivot   = meliPivot();
+  const items   = pivot.slice(0, 30);
+
+  try {
+    const wb  = new ExcelJS.Workbook();
+    const ws  = wb.addWorksheet('Hoja3');
+    items.forEach((p, i) => {
+      const r  = i + 1;
+      const nu = Math.round(p.neto / p.qty);
+      const row = ws.getRow(r);
+      row.getCell(1).value  = nvNum;
+      const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
+      row.getCell(6).value  = MELI_RUT_PROV;
+      row.getCell(7).value  = MELI_COL7;
+      const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
+      row.getCell(36).value = p.sku;
+      row.getCell(38).value = p.qty;
+      row.getCell(39).value = nu;
+    });
+    // Anchos: cols útiles normales, cols vacías del medio muy angostas
+    [1,2,6,7,35,36,38,39].forEach(c => { ws.getColumn(c).width = c <= 7 ? 11 : c === 36 ? 22 : 10; });
+    for (let c = 8; c <= 34; c++) ws.getColumn(c).width = 2.5;
+    for (let c = 37; c <= 37; c++) ws.getColumn(c).width = 2.5;
+
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `NV${nvNum}_MELI.xlsx`;
+    a.click();
+    meliStatus2('✅ Nota de Venta descargada');
+  } catch(err) {
+    meliStatus2('❌ Error: ' + err.message);
+    console.error(err);
+  }
+}
+
+function meliStatus1(msg) { document.getElementById('meli-status1').textContent = msg; }
+function meliStatus2(msg) { document.getElementById('meli-status2').textContent = msg; }
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  SEGUROS — Flota y Bodega (Supabase)
+// ═══════════════════════════════════════════════════════
+const SEG_SUPABASE_URL = 'https://eeildclikddchxybqkyc.supabase.co';
+const SEG_SUPABASE_KEY = 'sb_publishable_-S0wswGOsmUn-jhaxHBGaQ_gzoK39Y4';
+const segClient = supabase.createClient(SEG_SUPABASE_URL, SEG_SUPABASE_KEY);
+const SEG_BUCKET = 'polizas-docs';
+
+const SEG_CATEGORIAS = {
+  robo_accidentes: { titulo: 'Seguro de Robo y Accidentes de Vehículos', conVehiculo: true },
+  robo_incendio:   { titulo: 'Robo e Incendio',                          conVehiculo: false },
+  mercancia:       { titulo: 'Mercancía en Vehículos de la Bodega',      conVehiculo: true },
+};
+
+// Mismo orden que la pestaña "Centros de Costos" del dashboard
+const SEG_CC_ORDEN = ['Logística', 'Ventas', 'Gerencia', 'Administración', 'RRHH'];
+function segOrdenCC(cc) {
+  const i = SEG_CC_ORDEN.indexOf(cc);
+  return i === -1 ? SEG_CC_ORDEN.length : i;
+}
+
+const SEG_COLUMNAS = [
+  { key: 'asignado',     label: 'Asignado' },
+  { key: 'aseguradora',  label: 'Aseguradora' },
+  { key: 'npoliza',      label: 'N° Póliza' },
+  { key: 'cuotas',       label: 'Cuotas' },
+  { key: 'valortotal',   label: 'Valor Total' },
+  { key: 'vigencia',     label: 'Vigencia' },
+  { key: 'fechatermino', label: 'Fecha Término' },
+];
+
+const SEG_TIPOS_DOC = {
+  poliza_seguro:       'Póliza de Seguro',
+  factura_compra:      'Factura de Compra',
+  permiso_circulacion: 'Permiso de Circulación',
+  otro:                'Otro',
+};
+
+let SEG_LOADED = false;
+let SEG_VEHICULOS = [];
+let SEG_POLIZAS = [];
+let SEG_DOCS = {};          // (vehiculo_id || poliza_id) -> [documentos]
+let SEG_DOCS_CONTEXTO = null; // { ownerKey, slug, titulo } del modal de documentos abierto
+let SEG_COLS_OCULTAS = new Set(JSON.parse(localStorage.getItem('seg_cols_ocultas') || '[]'));
+
+async function segInit() {
+  SEG_LOADED = true;
+  segRenderColMenu();
+  await segCargarDatos();
+}
+
+async function segCargarDatos() {
+  document.getElementById('seg-status').textContent = 'Cargando…';
+  try {
+    const [vRes, pRes, dRes] = await Promise.all([
+      segClient.from('seguros_vehiculos').select('*').order('patente', { ascending: true, nullsFirst: false }),
+      segClient.from('seguros_polizas').select('*').order('dia_pago', { ascending: true }),
+      segClient.from('seguros_documentos').select('*').order('uploaded_at', { ascending: false }),
+    ]);
+    if (vRes.error) throw vRes.error;
+    if (pRes.error) throw pRes.error;
+    if (dRes.error) throw dRes.error;
+
+    SEG_VEHICULOS = vRes.data || [];
+    SEG_POLIZAS = pRes.data || [];
+    SEG_DOCS = {};
+    // Los documentos "viven" con el vehículo (sobreviven a la edición/borrado
+    // de una póliza puntual); si no hay vehículo (ej. Robo e Incendio de la
+    // bodega) quedan agrupados por póliza.
+    (dRes.data || []).forEach(doc => {
+      const key = doc.vehiculo_id || doc.poliza_id;
+      (SEG_DOCS[key] = SEG_DOCS[key] || []).push(doc);
+    });
+
+    segRenderTodas();
+    document.getElementById('seg-status').textContent =
+      `${SEG_POLIZAS.length} pólizas · ${SEG_VEHICULOS.length} vehículos — actualizado ${new Date().toLocaleTimeString('es-CL')}`;
+  } catch (err) {
+    console.error('[Seguros]', err);
+    document.getElementById('seg-status').textContent = '❌ Error cargando datos: ' + err.message;
+  }
+}
+
+// ── Helpers de formato ──────────────────────────────────
+function segVehiculoPorId(id) { return SEG_VEHICULOS.find(v => v.id === id) || null; }
+
+function segVehiculoLabel(v) {
+  if (!v) return '—';
+  const patente = v.patente || '(sin patente)';
+  return `${patente} — ${[v.marca, v.modelo].filter(Boolean).join(' ')}`;
+}
+
+function segSlug(text) {
+  return (text || 'sin-patente').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'sin-patente';
+}
+
+function segFmtFecha(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}-${m}-${y}`;
+}
+
+function segFmtUF(n) {
+  if (n === null || n === undefined) return '—';
+  return Number(n).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + ' UF';
+}
+
+function segEstadoVigencia(fechaTermino) {
+  if (!fechaTermino) return { cls: 'seg-badge-vigente', label: '—' };
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const term = new Date(fechaTermino + 'T00:00:00');
+  const dias = Math.round((term - hoy) / 86400000);
+  if (dias < 0) return { cls: 'seg-badge-vencida', label: 'Vencida' };
+  if (dias <= 30) return { cls: 'seg-badge-porvencer', label: `Vence en ${dias}d` };
+  return { cls: 'seg-badge-vigente', label: 'Vigente' };
+}
+
+function segEstadoPago(diaPago, fechaInicio, fechaTermino) {
+  if (!diaPago) return { cls: 'seg-pago-off', label: '—' };
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  if (fechaTermino) {
+    const term = new Date(fechaTermino + 'T00:00:00');
+    if (term < hoy) return { cls: 'seg-pago-off', label: `Día ${diaPago} (póliza vencida)` };
+  }
+  if (fechaInicio) {
+    const ini = new Date(fechaInicio + 'T00:00:00');
+    if (ini > hoy) return { cls: 'seg-pago-off', label: `Día ${diaPago} (no vigente aún)` };
+  }
+  let prox = new Date(hoy.getFullYear(), hoy.getMonth(), diaPago);
+  if (prox < hoy) prox = new Date(hoy.getFullYear(), hoy.getMonth() + 1, diaPago);
+  const dias = Math.round((prox - hoy) / 86400000);
+  let cls = 'seg-pago-ok';
+  if (dias <= 5) cls = 'seg-pago-late';
+  else if (dias <= 10) cls = 'seg-pago-warn';
+  const label = dias <= 0 ? `Día ${diaPago} (¡hoy!)` : `Día ${diaPago} (en ${dias}d)`;
+  return { cls, label };
+}
+
+// ── Render ───────────────────────────────────────────────
+function segRenderTodas() {
+  Object.keys(SEG_CATEGORIAS).forEach(cat => segRenderTabla(cat));
+}
+
+function segRenderTabla(categoria) {
+  const cfg = SEG_CATEGORIAS[categoria];
+  const table = document.getElementById('seg-tbl-' + categoria);
+  let filas = SEG_POLIZAS.filter(p => p.categoria === categoria);
+
+  const cols = cfg.conVehiculo
+    ? [['Patente',null],['Asignado','asignado'],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Fecha Término','fechatermino'],['',null]]
+    : [['Entidad',null],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Fecha Término','fechatermino'],['',null]];
+
+  table.querySelector('thead').innerHTML = '<tr>' + cols.map(([label,key]) => `<th${key ? ` class="col-${key}"` : ''}>${label}</th>`).join('') + '</tr>';
+  const tbody = table.querySelector('tbody');
+
+  if (filas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${cols.length}" class="seg-empty">Sin registros todavía.</td></tr>`;
+    return;
+  }
+
+  if (cfg.conVehiculo) {
+    filas = filas.slice().sort((a, b) => {
+      const ccA = segVehiculoPorId(a.vehiculo_id)?.centro_costo;
+      const ccB = segVehiculoPorId(b.vehiculo_id)?.centro_costo;
+      return segOrdenCC(ccA) - segOrdenCC(ccB) || (a.dia_pago || 99) - (b.dia_pago || 99);
+    });
+    let grupoActual = null;
+    let html = '';
+    filas.forEach(p => {
+      const cc = segVehiculoPorId(p.vehiculo_id)?.centro_costo || 'Sin Centro Asignado';
+      if (cc !== grupoActual) {
+        grupoActual = cc;
+        html += `<tr class="seg-group-row"><td colspan="${cols.length}">${cc}</td></tr>`;
+      }
+      html += segFilaHTML(p, cfg, cols.length);
+    });
+    tbody.innerHTML = html;
+  } else {
+    tbody.innerHTML = filas.map(p => segFilaHTML(p, cfg, cols.length)).join('');
+  }
+}
+
+function segFilaHTML(p, cfg, colspan) {
+  const v = cfg.conVehiculo ? segVehiculoPorId(p.vehiculo_id) : null;
+  const pago = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
+  const vig = segEstadoVigencia(p.fecha_termino);
+  const rangoFechas = `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`;
+
+  const primeraCol = cfg.conVehiculo
+    ? `<td><span style="font-weight:800;font-size:13.5px;color:var(--azul-dark)">${v?.patente || '(sin patente)'}</span></td><td class="col-asignado">${v?.asignado || '—'}</td>`
+    : `<td>${p.entidad || '—'}</td>`;
+
+  const notaFila = p.notas ? `<tr><td colspan="${colspan}" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ${p.notas}</span></td></tr>` : '';
+
+  return `
+    <tr>
+      ${primeraCol}
+      <td class="col-aseguradora">${p.aseguradora || '—'}</td>
+      <td class="col-npoliza">${p.n_poliza || '<span class="seg-nota">pendiente</span>'}</td>
+      <td class="col-cuotas">${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) + ' ' + (p.moneda || 'UF') : '—'}</td>
+      <td class="col-valortotal">${segFmtUF(p.valor_total)}</td>
+      <td><span class="seg-pago ${pago.cls}" title="${rangoFechas}">${pago.label}</span></td>
+      <td class="col-vigencia"><span class="seg-badge ${vig.cls}">${vig.label}</span></td>
+      <td class="col-fechatermino">${segFmtFecha(p.fecha_termino)}</td>
+      <td>
+        <div class="seg-actions">
+          <button type="button" class="seg-icon-btn" title="Editar" onclick="segAbrirModal('${p.id}')">✏️</button>
+          <button type="button" class="seg-icon-btn" title="Eliminar" onclick="segEliminarPoliza('${p.id}')">🗑️</button>
+          <button type="button" class="seg-icon-btn" title="Ver todo" onclick="segAbrirDetalle('${p.id}')">🔍</button>
+          <button type="button" class="seg-icon-btn" title="Documentación" onclick="segAbrirDocsModal('${p.id}')">📎</button>
+        </div>
+      </td>
+    </tr>
+    ${notaFila}`;
+}
+
+// ── Menú de columnas ─────────────────────────────────────
+function segRenderColMenu() {
+  const menu = document.getElementById('seg-colmenu');
+  menu.innerHTML = SEG_COLUMNAS.map(c => `
+    <label>
+      <input type="checkbox" data-col="${c.key}" ${SEG_COLS_OCULTAS.has(c.key) ? '' : 'checked'} onchange="segToggleColumna('${c.key}', this.checked)">
+      ${c.label}
+    </label>`).join('');
+  segAplicarColumnas();
+}
+
+function segAplicarColumnas() {
+  const wrap = document.querySelector('.seg-wrap');
+  SEG_COLUMNAS.forEach(c => wrap.classList.toggle('oculta-' + c.key, SEG_COLS_OCULTAS.has(c.key)));
+}
+
+function segToggleColumna(key, visible) {
+  if (visible) SEG_COLS_OCULTAS.delete(key);
+  else SEG_COLS_OCULTAS.add(key);
+  localStorage.setItem('seg_cols_ocultas', JSON.stringify([...SEG_COLS_OCULTAS]));
+  segAplicarColumnas();
+}
+
+function segToggleColMenu() {
+  document.getElementById('seg-colmenu').classList.toggle('show');
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = e.target.closest('.seg-colmenu-wrap');
+  if (!wrap) document.getElementById('seg-colmenu')?.classList.remove('show');
+});
+
+function segDocUrl(path) {
+  const { data } = segClient.storage.from(SEG_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// ── Modal: detalle completo (solo lectura) ────────────────
+function segAbrirDetalle(polizaId) {
+  const p = SEG_POLIZAS.find(x => x.id === polizaId);
+  if (!p) return;
+  const cfg = SEG_CATEGORIAS[p.categoria];
+  const v = cfg.conVehiculo ? segVehiculoPorId(p.vehiculo_id) : null;
+
+  document.getElementById('seg-detalle-titulo').textContent =
+    cfg.conVehiculo ? segVehiculoLabel(v) : (p.entidad || 'Detalle');
+
+  const filas = [];
+  if (v) {
+    filas.push(
+      ['Patente', v.patente || '—'], ['Tipo', v.tipo || '—'], ['Marca', v.marca || '—'], ['Modelo', v.modelo || '—'],
+      ['Año', v.anio ?? '—'], ['Color', v.color || '—'], ['N° de Motor', v.n_motor || '—'], ['N° de Chasis', v.n_chasis || '—'],
+      ['Uso', v.uso || '—'], ['Asignado a', v.asignado || '—'], ['Centro de Costo', v.centro_costo || '—'],
+    );
+  } else {
+    filas.push(['Entidad', p.entidad || '—']);
+  }
+  filas.push(
+    ['Categoría', cfg.titulo],
+    ['Corredor', p.corredor || '—'],
+    ['Aseguradora', p.aseguradora || '—'],
+    ['N° de Póliza', p.n_poliza || '—'],
+    ['Moneda', p.moneda || '—'],
+    ['Cuotas', `${p.total_cuotas ?? '—'} x ${p.valor_cuota ?? '—'}`],
+    ['Valor Total', segFmtUF(p.valor_total)],
+    ['Día de Pago', p.dia_pago ?? '—'],
+    ['Vigencia', `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`],
+    ['Renovación', p.renovacion ? 'Sí' : 'No'],
+    ['Notas', p.notas || '—'],
+    ['Actualizado', segFmtFecha(p.updated_at.slice(0, 10))],
+  );
+
+  document.getElementById('seg-detalle-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px">
+      ${filas.map(([label, val]) => `
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">${label}</div>
+          <div style="font-size:13px;color:var(--text1)">${val}</div>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('seg-detalle-overlay').classList.add('show');
+}
+
+function segCerrarDetalle() {
+  document.getElementById('seg-detalle-overlay').classList.remove('show');
+}
+
+// ── Modal: documentación por categoría ────────────────────
+function segAbrirDocsModal(polizaId) {
+  const p = SEG_POLIZAS.find(x => x.id === polizaId);
+  if (!p) return;
+  const cfg = SEG_CATEGORIAS[p.categoria];
+  const v = cfg.conVehiculo ? segVehiculoPorId(p.vehiculo_id) : null;
+  const titulo = v ? segVehiculoLabel(v) : (p.entidad || '');
+  const ownerKey = v ? v.id : p.id;
+
+  SEG_DOCS_CONTEXTO = {
+    ownerKey,
+    vehiculoId: v ? v.id : null,
+    polizaId: v ? null : p.id,
+    slug: segSlug(v ? v.patente : p.entidad),
+  };
+
+  document.getElementById('seg-docs-titulo').textContent = 'Documentación — ' + titulo;
+  document.getElementById('seg-docs-status').textContent = '';
+  document.getElementById('seg-docs-file').value = '';
+  segRenderDocsModal();
+  document.getElementById('seg-docs-overlay').classList.add('show');
+}
+
+function segCerrarDocsModal() {
+  document.getElementById('seg-docs-overlay').classList.remove('show');
+  SEG_DOCS_CONTEXTO = null;
+}
+
+function segRenderDocsModal() {
+  if (!SEG_DOCS_CONTEXTO) return;
+  const docs = SEG_DOCS[SEG_DOCS_CONTEXTO.ownerKey] || [];
+  document.getElementById('seg-docs-lista').innerHTML = docs.length === 0
+    ? '<p class="seg-nota">Sin documentos subidos todavía.</p>'
+    : docs.map(d => `
+      <div class="seg-doc-item">
+        <span class="seg-badge seg-badge-doc">${SEG_TIPOS_DOC[d.tipo_documento] || 'Otro'}</span>
+        📄 <a href="${segDocUrl(d.storage_path)}" target="_blank" rel="noopener">${d.nombre_archivo}</a>
+        <span class="seg-nota">(${segFmtFecha(d.uploaded_at.slice(0, 10))})</span>
+        <button type="button" class="seg-doc-del" onclick="segEliminarDocumento('${d.id}','${d.storage_path}')" title="Eliminar">🗑</button>
+      </div>`).join('');
+}
+
+// ── Documentos ───────────────────────────────────────────
+async function segSubirDocumentoModal() {
+  if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
+  const input = document.getElementById('seg-docs-file');
+  const file = input.files[0];
+  if (!file || !SEG_DOCS_CONTEXTO) return;
+  const status = document.getElementById('seg-docs-status');
+  status.textContent = 'Subiendo…';
+  const { vehiculoId, polizaId, slug, ownerKey } = SEG_DOCS_CONTEXTO;
+  const tipo = document.getElementById('seg-docs-tipo').value;
+  const path = `${slug}/${ownerKey}/${Date.now()}_${file.name}`;
+  try {
+    const { error: upErr } = await segClient.storage.from(SEG_BUCKET).upload(path, file);
+    if (upErr) throw upErr;
+    const { error: dbErr } = await segClient.from('seguros_documentos')
+      .insert({ vehiculo_id: vehiculoId, poliza_id: polizaId, tipo_documento: tipo, nombre_archivo: file.name, storage_path: path });
+    if (dbErr) throw dbErr;
+    input.value = '';
+    status.textContent = '✅ Documento subido';
+    await segCargarDatos();
+    segRenderDocsModal();
+  } catch (err) {
+    status.textContent = '❌ Error: ' + err.message;
+    console.error(err);
+  }
+}
+
+async function segEliminarDocumento(docId, storagePath) {
+  if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
+  if (!confirm('¿Eliminar este documento?')) return;
+  try {
+    await segClient.storage.from(SEG_BUCKET).remove([storagePath]);
+    const { error } = await segClient.from('seguros_documentos').delete().eq('id', docId);
+    if (error) throw error;
+    await segCargarDatos();
+    segRenderDocsModal();
+  } catch (err) {
+    alert('Error al eliminar el documento: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ── Modal alta / edición ─────────────────────────────────
+function segPoblarSelectVehiculos(seleccionadoId) {
+  const sel = document.getElementById('seg-f-vehiculo-id');
+  const opciones = SEG_VEHICULOS.map(v => `<option value="${v.id}">${segVehiculoLabel(v)}</option>`).join('');
+  sel.innerHTML = `<option value="__nuevo__">+ Nuevo vehículo…</option>` + opciones;
+  sel.value = seleccionadoId || '__nuevo__';
+}
+
+function segToggleCampos() {
+  const cat = document.getElementById('seg-f-categoria').value;
+  const conVehiculo = SEG_CATEGORIAS[cat].conVehiculo;
+  document.getElementById('seg-f-vehiculo-row').style.display = conVehiculo ? '' : 'none';
+  document.getElementById('seg-f-entidad-row').style.display = conVehiculo ? 'none' : '';
+  document.getElementById('seg-f-nuevo-vehiculo').style.display = conVehiculo ? '' : 'none';
+  if (conVehiculo) segCargarVehiculoEnForm();
+}
+
+// Los campos del vehículo quedan siempre visibles y editables: si se elige
+// un vehículo existente se precargan sus datos actuales (patente, centro de
+// costo, etc.) para poder corregirlos ahí mismo; si se elige "Nuevo vehículo"
+// quedan en blanco para cargarlo desde cero.
+function segCargarVehiculoEnForm() {
+  const selVal = document.getElementById('seg-f-vehiculo-id').value;
+  const v = selVal === '__nuevo__' ? null : segVehiculoPorId(selVal);
+  document.getElementById('seg-f-patente').value = v?.patente || '';
+  document.getElementById('seg-f-tipo').value = v?.tipo || '';
+  document.getElementById('seg-f-marca').value = v?.marca || '';
+  document.getElementById('seg-f-modelo').value = v?.modelo || '';
+  document.getElementById('seg-f-anio').value = v?.anio ?? '';
+  document.getElementById('seg-f-color').value = v?.color || '';
+  document.getElementById('seg-f-motor').value = v?.n_motor || '';
+  document.getElementById('seg-f-chasis').value = v?.n_chasis || '';
+  document.getElementById('seg-f-uso').value = v?.uso || '';
+  document.getElementById('seg-f-asignado').value = v?.asignado || '';
+  document.getElementById('seg-f-centrocosto').value = v?.centro_costo || 'Logística';
+}
+
+function segCalcularTotal() {
+  const cuotas = parseFloat(document.getElementById('seg-f-cuotas').value) || 0;
+  const cuota = parseFloat(document.getElementById('seg-f-valorcuota').value) || 0;
+  if (cuotas && cuota) document.getElementById('seg-f-valortotal').value = (cuotas * cuota).toFixed(3);
+}
+
+function segAbrirModal(polizaId) {
+  document.getElementById('seg-form').reset();
+  document.getElementById('seg-f-id').value = '';
+  document.getElementById('seg-form-status').textContent = '';
+  segPoblarSelectVehiculos(null);
+
+  if (polizaId) {
+    const p = SEG_POLIZAS.find(x => x.id === polizaId);
+    if (!p) return;
+    document.getElementById('seg-modal-titulo').textContent = 'Editar Póliza';
+    document.getElementById('seg-f-id').value = p.id;
+    document.getElementById('seg-f-categoria').value = p.categoria;
+    document.getElementById('seg-f-corredor').value = p.corredor || '';
+    document.getElementById('seg-f-aseguradora').value = p.aseguradora || '';
+    document.getElementById('seg-f-npoliza').value = p.n_poliza || '';
+    document.getElementById('seg-f-moneda').value = p.moneda || 'UF';
+    document.getElementById('seg-f-cuotas').value = p.total_cuotas ?? '';
+    document.getElementById('seg-f-valorcuota').value = p.valor_cuota ?? '';
+    document.getElementById('seg-f-valortotal').value = p.valor_total ?? '';
+    document.getElementById('seg-f-diapago').value = p.dia_pago ?? '';
+    document.getElementById('seg-f-inicio').value = p.fecha_inicio || '';
+    document.getElementById('seg-f-termino').value = p.fecha_termino || '';
+    document.getElementById('seg-f-renovacion').checked = !!p.renovacion;
+    document.getElementById('seg-f-notas').value = p.notas || '';
+    if (SEG_CATEGORIAS[p.categoria].conVehiculo) {
+      segPoblarSelectVehiculos(p.vehiculo_id);
+    } else {
+      document.getElementById('seg-f-entidad').value = p.entidad || '';
+    }
+  } else {
+    document.getElementById('seg-modal-titulo').textContent = 'Agregar Vehículo / Póliza';
+    document.getElementById('seg-f-corredor').value = 'Ossa Covarrubias y Cía Ltda';
+  }
+
+  segToggleCampos();
+  document.getElementById('seg-modal-overlay').classList.add('show');
+}
+
+function segCerrarModal() {
+  document.getElementById('seg-modal-overlay').classList.remove('show');
+}
+
+async function segGuardar(event) {
+  event.preventDefault();
+  if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
+  const status = document.getElementById('seg-form-status');
+  status.textContent = 'Guardando…';
+  try {
+    const categoria = document.getElementById('seg-f-categoria').value;
+    const conVehiculo = SEG_CATEGORIAS[categoria].conVehiculo;
+    let vehiculoId = null;
+    let entidad = null;
+
+    if (conVehiculo) {
+      const selVal = document.getElementById('seg-f-vehiculo-id').value;
+      const datosVehiculo = {
+        patente: document.getElementById('seg-f-patente').value.trim() || null,
+        tipo: document.getElementById('seg-f-tipo').value.trim() || null,
+        anio: parseInt(document.getElementById('seg-f-anio').value) || null,
+        modelo: document.getElementById('seg-f-modelo').value.trim() || null,
+        marca: document.getElementById('seg-f-marca').value.trim() || null,
+        color: document.getElementById('seg-f-color').value.trim() || null,
+        n_motor: document.getElementById('seg-f-motor').value.trim() || null,
+        n_chasis: document.getElementById('seg-f-chasis').value.trim() || null,
+        uso: document.getElementById('seg-f-uso').value.trim() || null,
+        asignado: document.getElementById('seg-f-asignado').value.trim() || null,
+        centro_costo: document.getElementById('seg-f-centrocosto').value || null,
+      };
+      if (selVal === '__nuevo__') {
+        const { data, error } = await segClient.from('seguros_vehiculos').insert(datosVehiculo).select().single();
+        if (error) throw error;
+        vehiculoId = data.id;
+      } else {
+        vehiculoId = selVal;
+        const { error } = await segClient.from('seguros_vehiculos').update(datosVehiculo).eq('id', vehiculoId);
+        if (error) throw error;
+      }
+    } else {
+      entidad = document.getElementById('seg-f-entidad').value.trim() || null;
+    }
+
+    const payload = {
+      vehiculo_id: vehiculoId,
+      entidad,
+      categoria,
+      corredor: document.getElementById('seg-f-corredor').value.trim() || null,
+      n_poliza: document.getElementById('seg-f-npoliza').value.trim() || null,
+      aseguradora: document.getElementById('seg-f-aseguradora').value.trim() || null,
+      moneda: document.getElementById('seg-f-moneda').value.trim() || 'UF',
+      total_cuotas: parseInt(document.getElementById('seg-f-cuotas').value) || null,
+      valor_cuota: parseFloat(document.getElementById('seg-f-valorcuota').value) || null,
+      valor_total: parseFloat(document.getElementById('seg-f-valortotal').value) || null,
+      renovacion: document.getElementById('seg-f-renovacion').checked,
+      dia_pago: parseInt(document.getElementById('seg-f-diapago').value) || null,
+      fecha_inicio: document.getElementById('seg-f-inicio').value || null,
+      fecha_termino: document.getElementById('seg-f-termino').value || null,
+      notas: document.getElementById('seg-f-notas').value.trim() || null,
+    };
+
+    const polizaId = document.getElementById('seg-f-id').value;
+    const { error } = polizaId
+      ? await segClient.from('seguros_polizas').update(payload).eq('id', polizaId)
+      : await segClient.from('seguros_polizas').insert(payload);
+    if (error) throw error;
+
+    segCerrarModal();
+    await segCargarDatos();
+  } catch (err) {
+    status.textContent = '❌ Error: ' + err.message;
+    console.error(err);
+  }
+}
+
+async function segEliminarPoliza(id) {
+  if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
+  // Los documentos quedan con el vehículo (no con la póliza), así que sobreviven
+  // salvo en Robo e Incendio (sin vehículo), donde sí están atados a esta póliza.
+  if (!confirm('¿Eliminar esta póliza? Los documentos del vehículo no se ven afectados.')) return;
+  try {
+    const docs = SEG_DOCS[id] || [];
+    if (docs.length) await segClient.storage.from(SEG_BUCKET).remove(docs.map(d => d.storage_path));
+    const { error } = await segClient.from('seguros_polizas').delete().eq('id', id);
+    if (error) throw error;
+    await segCargarDatos();
+  } catch (err) {
+    alert('Error al eliminar: ' + err.message);
+    console.error(err);
+  }
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  ACCESO POR ROL
+// ═══════════════════════════════════════════════════════
+// Nota: esto es un control de acceso simple del lado del navegador
+// (pensado para que cada área vea/edite lo que le corresponde), no
+// es seguridad real contra alguien que inspeccione el código fuente.
+const ROLES = {
+  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: false, puedeActualizarMayor: false },
+  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true,  puedeActualizarMayor: true  },
+  bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['seguros'], canEdit: true, puedeActualizarMayor: false },
+};
+
+let CURRENT_ROLE = null;
+let LOGIN_ROL_SELECCIONADO = null;
+
+function loginElegirRol(rol) {
+  LOGIN_ROL_SELECCIONADO = rol;
+  document.getElementById('login-role-chip').textContent = ROLES[rol].label;
+  document.getElementById('login-step1').style.display = 'none';
+  document.getElementById('login-step2').style.display = 'block';
+  document.getElementById('login-error').textContent = '';
+  const input = document.getElementById('login-pass-input');
+  input.value = '';
+  setTimeout(() => input.focus(), 50);
+}
+
+function loginVolver() {
+  LOGIN_ROL_SELECCIONADO = null;
+  document.getElementById('login-step2').style.display = 'none';
+  document.getElementById('login-step1').style.display = 'block';
+}
+
+function loginIntentar(event) {
+  event.preventDefault();
+  const rol = LOGIN_ROL_SELECCIONADO;
+  if (!rol) return false;
+  const pass = document.getElementById('login-pass-input').value;
+  const row = document.getElementById('login-pass-row');
+
+  if (pass !== ROLES[rol].password) {
+    document.getElementById('login-error').textContent = 'Contraseña incorrecta';
+    row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake');
+    document.getElementById('login-pass-input').value = '';
+    return false;
+  }
+
+  sessionStorage.setItem('grantt_role', rol);
+  document.getElementById('login-step2').style.display = 'none';
+  document.getElementById('login-success').classList.add('show');
+  setTimeout(() => {
+    document.getElementById('login-screen').classList.add('hide');
+    aplicarPermisos(rol);
+  }, 700);
+  return false;
+}
+
+function logout() {
+  sessionStorage.removeItem('grantt_role');
+  location.reload();
+}
+
+function aplicarPermisos(rol) {
+  CURRENT_ROLE = rol;
+  const cfg = ROLES[rol];
+  document.getElementById('role-badge').textContent = cfg.label;
+  document.body.classList.toggle('role-viewer', !cfg.canEdit);
+  document.getElementById('actualizar-mayor-wrap').style.display = cfg.puedeActualizarMayor ? '' : 'none';
+
+  let activeSigueVisible = false;
+  document.querySelectorAll('nav button[data-tab]').forEach(btn => {
+    const permitido = cfg.tabs.includes(btn.dataset.tab);
+    btn.style.display = permitido ? '' : 'none';
+    if (btn.classList.contains('active') && permitido) activeSigueVisible = true;
+  });
+
+  if (!activeSigueVisible) {
+    const primerTab = cfg.tabs[0];
+    const btn = document.querySelector(`nav button[data-tab="${primerTab}"]`);
+    if (btn) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + primerTab).classList.add('active');
+      btn.classList.add('active');
+      if (primerTab === 'graficos') renderCharts();
+      if (primerTab === 'seguros' && !SEG_LOADED) segInit();
+    }
+  }
+}
+
+(function loginInit() {
+  const rolGuardado = sessionStorage.getItem('grantt_role');
+  if (rolGuardado && ROLES[rolGuardado]) {
+    document.getElementById('login-screen').classList.add('hide');
+    aplicarPermisos(rolGuardado);
+  }
+})();
 </script>
 </body>
 </html>

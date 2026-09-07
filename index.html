@@ -4028,7 +4028,7 @@ async function segEliminarPoliza(id) {
 // (pensado para que cada área vea/edite lo que le corresponde), no
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
-  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: false, puedeActualizarMayor: false },
+  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true,  puedeActualizarMayor: false },
   contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true,  puedeActualizarMayor: true  },
   bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['seguros'], canEdit: true, puedeActualizarMayor: false },
 };

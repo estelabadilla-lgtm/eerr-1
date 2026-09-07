@@ -1155,19 +1155,22 @@
 
 <!-- Modal: documentación por categoría -->
 <div class="seg-modal-overlay" id="seg-docs-overlay">
-  <div class="seg-modal" style="max-width:560px">
+  <div class="seg-modal" style="max-width:600px">
     <div class="seg-modal-header">
       <span id="seg-docs-titulo">Documentación</span>
       <button type="button" class="seg-modal-close" onclick="segCerrarDocsModal()">&times;</button>
     </div>
     <div class="seg-modal-body">
       <div class="seg-form-grid">
-        <div class="seg-form-row">
+        <div class="seg-form-row" style="grid-column:1/-1">
           <label>Tipo de documento</label>
-          <select id="seg-docs-tipo">
-            <option value="poliza_seguro">Póliza de Seguro</option>
+          <select id="seg-docs-tipo" onchange="segDocsTipoChange()">
             <option value="factura_compra">Factura de Compra</option>
+            <option value="primera_inscripcion">Primera Inscripción</option>
             <option value="permiso_circulacion">Permiso de Circulación</option>
+            <option value="soap">SOAP</option>
+            <option value="revision_tecnica_gases">Revisión Técnica Gases</option>
+            <option value="revision_tecnica_contaminantes">Revisión Técnica Contaminantes</option>
             <option value="otro">Otro</option>
           </select>
         </div>
@@ -1175,8 +1178,21 @@
           <label>Archivo</label>
           <input type="file" id="seg-docs-file">
         </div>
+        <div class="seg-form-row"></div>
+        <div id="seg-docs-fechas" style="display:none;grid-column:1/-1">
+          <div class="seg-form-grid" style="margin-top:4px">
+            <div class="seg-form-row">
+              <label>Fecha de Inicio</label>
+              <input type="date" id="seg-docs-finicio">
+            </div>
+            <div class="seg-form-row">
+              <label>Fecha de Término</label>
+              <input type="date" id="seg-docs-ftermino">
+            </div>
+          </div>
+        </div>
       </div>
-      <button type="button" class="seg-btn-add" style="width:fit-content" onclick="segSubirDocumentoModal()">+ Subir Documento</button>
+      <button type="button" class="seg-btn-add" style="width:fit-content;margin-top:8px" onclick="segSubirDocumentoModal()">+ Subir Documento</button>
       <div id="seg-docs-status" style="font-size:12px;color:var(--gris)"></div>
       <div class="seg-form-sep"></div>
       <div id="seg-docs-lista"></div>
@@ -3314,11 +3330,18 @@ const SEG_COLUMNAS = [
 ];
 
 const SEG_TIPOS_DOC = {
-  poliza_seguro:       'Póliza de Seguro',
-  factura_compra:      'Factura de Compra',
-  permiso_circulacion: 'Permiso de Circulación',
-  otro:                'Otro',
+  factura_compra:             'Factura de Compra',
+  primera_inscripcion:        'Primera Inscripción',
+  permiso_circulacion:        'Permiso de Circulación',
+  soap:                       'SOAP',
+  revision_tecnica_gases:     'Revisión Técnica Gases',
+  revision_tecnica_contaminantes: 'Revisión Técnica Contaminantes',
+  otro:                       'Otro',
 };
+// Tipos que requieren fecha de inicio y término
+const SEG_TIPOS_CON_FECHA = new Set([
+  'permiso_circulacion','soap','revision_tecnica_gases','revision_tecnica_contaminantes','otro'
+]);
 
 let SEG_LOADED = false;
 let SEG_VEHICULOS = [];
@@ -3357,6 +3380,7 @@ async function segCargarDatos() {
     });
 
     segRenderTodas();
+    segVerificarVencimientos(SEG_DOCS);
     document.getElementById('seg-status').textContent =
       `${SEG_POLIZAS.length} pólizas · ${SEG_VEHICULOS.length} vehículos — actualizado ${new Date().toLocaleTimeString('es-CL')}`;
   } catch (err) {
@@ -3656,6 +3680,11 @@ function segCerrarDetalle() {
 }
 
 // ── Modal: documentación por categoría ────────────────────
+function segDocsTipoChange() {
+  const tipo = document.getElementById('seg-docs-tipo').value;
+  document.getElementById('seg-docs-fechas').style.display = SEG_TIPOS_CON_FECHA.has(tipo) ? '' : 'none';
+}
+
 function segAbrirDocsModal(polizaId) {
   const p = SEG_POLIZAS.find(x => x.id === polizaId);
   if (!p) return;
@@ -3674,6 +3703,10 @@ function segAbrirDocsModal(polizaId) {
   document.getElementById('seg-docs-titulo').textContent = 'Documentación — ' + titulo;
   document.getElementById('seg-docs-status').textContent = '';
   document.getElementById('seg-docs-file').value = '';
+  document.getElementById('seg-docs-finicio').value = '';
+  document.getElementById('seg-docs-ftermino').value = '';
+  document.getElementById('seg-docs-tipo').value = 'factura_compra';
+  segDocsTipoChange();
   segRenderDocsModal();
   document.getElementById('seg-docs-overlay').classList.add('show');
 }
@@ -3683,18 +3716,61 @@ function segCerrarDocsModal() {
   SEG_DOCS_CONTEXTO = null;
 }
 
+function segDocVencimientoInfo(d) {
+  // Devuelve { diasRestantes, badge } o null si no aplica
+  if (!d.fecha_termino) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const term = new Date(d.fecha_termino + 'T00:00:00');
+  const dias = Math.round((term - hoy) / 86400000);
+  if (dias < 0) return { dias, badge: `<span class="seg-badge seg-badge-vencida">⚠ Vencido</span>` };
+  if (dias <= 30) return { dias, badge: `<span class="seg-badge seg-badge-porvencer">⚠ Vence en ${dias}d</span>` };
+  return { dias, badge: `<span class="seg-badge seg-badge-vigente">Vigente</span>` };
+}
+
 function segRenderDocsModal() {
   if (!SEG_DOCS_CONTEXTO) return;
   const docs = SEG_DOCS[SEG_DOCS_CONTEXTO.ownerKey] || [];
   document.getElementById('seg-docs-lista').innerHTML = docs.length === 0
     ? '<p class="seg-nota">Sin documentos subidos todavía.</p>'
-    : docs.map(d => `
-      <div class="seg-doc-item">
-        <span class="seg-badge seg-badge-doc">${SEG_TIPOS_DOC[d.tipo_documento] || 'Otro'}</span>
-        📄 <a href="${segDocUrl(d.storage_path)}" target="_blank" rel="noopener">${d.nombre_archivo}</a>
-        <span class="seg-nota">(${segFmtFecha(d.uploaded_at.slice(0, 10))})</span>
-        <button type="button" class="seg-doc-del" onclick="segEliminarDocumento('${d.id}','${d.storage_path}')" title="Eliminar">🗑</button>
-      </div>`).join('');
+    : docs.map(d => {
+        const label = SEG_TIPOS_DOC[d.tipo_documento] || 'Otro';
+        const info = segDocVencimientoInfo(d);
+        const fechaRng = (d.fecha_inicio || d.fecha_termino)
+          ? `<span class="seg-nota">${d.fecha_inicio ? segFmtFecha(d.fecha_inicio) : '?'} → ${d.fecha_termino ? segFmtFecha(d.fecha_termino) : '?'}</span>`
+          : '';
+        const vBadge = info ? info.badge : '';
+        return `<div class="seg-doc-item" style="flex-wrap:wrap;gap:6px;padding:4px 0">
+          <span class="seg-badge seg-badge-doc">${label}</span>
+          ${vBadge}
+          📄 <a href="${segDocUrl(d.storage_path)}" target="_blank" rel="noopener">${d.nombre_archivo}</a>
+          ${fechaRng}
+          <span class="seg-nota">(subido ${segFmtFecha(d.uploaded_at.slice(0,10))})</span>
+          <button type="button" class="seg-doc-del" onclick="segEliminarDocumento('${d.id}','${d.storage_path}')" title="Eliminar">🗑</button>
+        </div>`;
+      }).join('');
+}
+
+// ── Alertas de vencimiento al cargar ─────────────────────
+function segVerificarVencimientos(docs) {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const alertas = [];
+  const allDocs = [].concat(...Object.values(docs));
+  allDocs.forEach(d => {
+    if (!d.fecha_termino) return;
+    const term = new Date(d.fecha_termino + 'T00:00:00');
+    const dias = Math.round((term - hoy) / 86400000);
+    if (dias >= 0 && dias <= 30) {
+      // Buscar el vehículo asociado
+      const v = SEG_VEHICULOS.find(x => x.id === d.vehiculo_id);
+      const quien = v ? `${v.patente || ''} ${v.marca || ''} ${v.modelo || ''}`.trim() : (d.poliza_id || '');
+      alertas.push(`• ${SEG_TIPOS_DOC[d.tipo_documento] || d.tipo_documento} — ${quien}: vence en ${dias} día${dias!==1?'s':''} (${segFmtFecha(d.fecha_termino)})`);
+    }
+  });
+  if (alertas.length > 0) {
+    setTimeout(() => {
+      alert(`⚠️ DOCUMENTOS POR VENCER (en los próximos 30 días):\n\n${alertas.join('\n')}\n\nGestiona su renovación a tiempo.`);
+    }, 1200);
+  }
 }
 
 // ── Documentos ───────────────────────────────────────────
@@ -3708,13 +3784,20 @@ async function segSubirDocumentoModal() {
   const { vehiculoId, polizaId, slug, ownerKey } = SEG_DOCS_CONTEXTO;
   const tipo = document.getElementById('seg-docs-tipo').value;
   const path = `${slug}/${ownerKey}/${Date.now()}_${file.name}`;
+  const conFecha = SEG_TIPOS_CON_FECHA.has(tipo);
+  const finicio  = conFecha ? (document.getElementById('seg-docs-finicio').value || null) : null;
+  const ftermino = conFecha ? (document.getElementById('seg-docs-ftermino').value || null) : null;
   try {
     const { error: upErr } = await segClient.storage.from(SEG_BUCKET).upload(path, file);
     if (upErr) throw upErr;
     const { error: dbErr } = await segClient.from('seguros_documentos')
-      .insert({ vehiculo_id: vehiculoId, poliza_id: polizaId, tipo_documento: tipo, nombre_archivo: file.name, storage_path: path });
+      .insert({ vehiculo_id: vehiculoId, poliza_id: polizaId, tipo_documento: tipo,
+                nombre_archivo: file.name, storage_path: path,
+                fecha_inicio: finicio, fecha_termino: ftermino });
     if (dbErr) throw dbErr;
     input.value = '';
+    document.getElementById('seg-docs-finicio').value = '';
+    document.getElementById('seg-docs-ftermino').value = '';
     status.textContent = '✅ Documento subido';
     await segCargarDatos();
     segRenderDocsModal();

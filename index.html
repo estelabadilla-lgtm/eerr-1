@@ -1171,12 +1171,13 @@
         <div class="seg-form-row" style="grid-column:1/-1">
           <label>Tipo de documento</label>
           <select id="seg-docs-tipo" onchange="segDocsTipoChange()">
-            <option value="poliza_seguro_accidentes">Póliza Seguro Accidentes</option>
+            <option value="poliza_seguro_accidentes">Póliza de Seguro</option>
             <option value="factura_compra">Factura de Compra</option>
+            <option value="padron">Padrón</option>
             <option value="primera_inscripcion">Primera Inscripción</option>
             <option value="permiso_circulacion">Permiso de Circulación</option>
             <option value="soap">SOAP</option>
-            <option value="revision_tecnica_gases">Revisión Técnica Gases</option>
+            <option value="revision_tecnica">Revisión Técnica</option>
             <option value="revision_tecnica_contaminantes">Revisión Técnica Contaminantes</option>
             <option value="otro">Otro</option>
           </select>
@@ -3338,18 +3339,19 @@ const SEG_COLUMNAS = [
 ];
 
 const SEG_TIPOS_DOC = {
-  poliza_seguro_accidentes:   'Póliza Seguro Accidentes',
+  poliza_seguro_accidentes:   'Póliza de Seguro',
   factura_compra:             'Factura de Compra',
+  padron:                     'Padrón',
   primera_inscripcion:        'Primera Inscripción',
   permiso_circulacion:        'Permiso de Circulación',
   soap:                       'SOAP',
-  revision_tecnica_gases:     'Revisión Técnica Gases',
+  revision_tecnica:           'Revisión Técnica',
   revision_tecnica_contaminantes: 'Revisión Técnica Contaminantes',
   otro:                       'Otro',
 };
 // Tipos que requieren fecha de inicio y término
 const SEG_TIPOS_CON_FECHA = new Set([
-  'permiso_circulacion','soap','revision_tecnica_gases','revision_tecnica_contaminantes'
+  'poliza_seguro_accidentes','permiso_circulacion','soap','revision_tecnica','revision_tecnica_contaminantes'
 ]);
 
 let SEG_LOADED = false;

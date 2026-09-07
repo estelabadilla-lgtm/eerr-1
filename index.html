@@ -391,9 +391,15 @@
   .role-logout { background: none; border: 1px solid var(--border2); color: var(--text2); font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 14px; cursor: pointer; font-family: inherit; }
   .role-logout:hover { border-color: var(--rojo); color: var(--rojo); }
 
-  body.role-viewer .seg-btn-add,
-  body.role-viewer .seg-icon-btn[title="Editar"],
-  body.role-viewer .seg-icon-btn[title="Eliminar"],
+  /* Editar/Eliminar solo para Gerencia */
+  .seg-icon-btn[title="Editar"],
+  .seg-icon-btn[title="Eliminar"],
+  .seg-btn-add { display: none !important; }
+
+  body.role-gerencia .seg-icon-btn[title="Editar"],
+  body.role-gerencia .seg-icon-btn[title="Eliminar"],
+  body.role-gerencia .seg-btn-add { display: inline-flex !important; }
+
   body.role-viewer .seg-doc-upload,
   body.role-viewer .seg-doc-del { display: none !important; }
 
@@ -4080,7 +4086,8 @@ function aplicarPermisos(rol) {
   CURRENT_ROLE = rol;
   const cfg = ROLES[rol];
   document.getElementById('role-badge').textContent = cfg.label;
-  document.body.classList.toggle('role-viewer', !cfg.canEdit);
+  document.body.classList.toggle('role-viewer',   !cfg.canEdit);
+  document.body.classList.toggle('role-gerencia', rol === 'gerencia');
   document.getElementById('actualizar-mayor-wrap').style.display = cfg.puedeActualizarMayor ? '' : 'none';
 
   let activeSigueVisible = false;

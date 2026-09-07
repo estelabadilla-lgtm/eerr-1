@@ -1177,6 +1177,7 @@
         <div class="seg-form-row">
           <label>Archivo</label>
           <input type="file" id="seg-docs-file">
+          <span id="seg-docs-file-hint" style="font-size:11px;color:var(--gris);display:none">Puedes seleccionar varios archivos a la vez</span>
         </div>
         <div class="seg-form-row"></div>
         <div id="seg-docs-fechas" style="display:none;grid-column:1/-1">
@@ -3340,7 +3341,7 @@ const SEG_TIPOS_DOC = {
 };
 // Tipos que requieren fecha de inicio y término
 const SEG_TIPOS_CON_FECHA = new Set([
-  'permiso_circulacion','soap','revision_tecnica_gases','revision_tecnica_contaminantes','otro'
+  'permiso_circulacion','soap','revision_tecnica_gases','revision_tecnica_contaminantes'
 ]);
 
 let SEG_LOADED = false;
@@ -3682,7 +3683,17 @@ function segCerrarDetalle() {
 // ── Modal: documentación por categoría ────────────────────
 function segDocsTipoChange() {
   const tipo = document.getElementById('seg-docs-tipo').value;
-  document.getElementById('seg-docs-fechas').style.display = SEG_TIPOS_CON_FECHA.has(tipo) ? '' : 'none';
+  const conFecha = SEG_TIPOS_CON_FECHA.has(tipo);
+  const esOtro   = tipo === 'otro';
+  document.getElementById('seg-docs-fechas').style.display = conFecha ? '' : 'none';
+  const fileInput = document.getElementById('seg-docs-file');
+  if (esOtro) {
+    fileInput.setAttribute('multiple', 'multiple');
+    document.getElementById('seg-docs-file-hint').style.display = '';
+  } else {
+    fileInput.removeAttribute('multiple');
+    document.getElementById('seg-docs-file-hint').style.display = 'none';
+  }
 }
 
 function segAbrirDocsModal(polizaId) {
@@ -3777,34 +3788,41 @@ function segVerificarVencimientos(docs) {
 async function segSubirDocumentoModal() {
   if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE && !ROLES[CURRENT_ROLE].canEdit) { alert('Tu usuario no tiene permiso para editar.'); return; }
   const input = document.getElementById('seg-docs-file');
-  const file = input.files[0];
-  if (!file || !SEG_DOCS_CONTEXTO) return;
+  const files = Array.from(input.files || []);
+  if (!files.length || !SEG_DOCS_CONTEXTO) return;
   const status = document.getElementById('seg-docs-status');
-  status.textContent = 'Subiendo…';
   const { vehiculoId, polizaId, slug, ownerKey } = SEG_DOCS_CONTEXTO;
   const tipo = document.getElementById('seg-docs-tipo').value;
-  const path = `${slug}/${ownerKey}/${Date.now()}_${file.name}`;
   const conFecha = SEG_TIPOS_CON_FECHA.has(tipo);
   const finicio  = conFecha ? (document.getElementById('seg-docs-finicio').value || null) : null;
   const ftermino = conFecha ? (document.getElementById('seg-docs-ftermino').value || null) : null;
-  try {
-    const { error: upErr } = await segClient.storage.from(SEG_BUCKET).upload(path, file);
-    if (upErr) throw upErr;
-    const { error: dbErr } = await segClient.from('seguros_documentos')
-      .insert({ vehiculo_id: vehiculoId, poliza_id: polizaId, tipo_documento: tipo,
-                nombre_archivo: file.name, storage_path: path,
-                fecha_inicio: finicio, fecha_termino: ftermino });
-    if (dbErr) throw dbErr;
-    input.value = '';
-    document.getElementById('seg-docs-finicio').value = '';
-    document.getElementById('seg-docs-ftermino').value = '';
-    status.textContent = '✅ Documento subido';
-    await segCargarDatos();
-    segRenderDocsModal();
-  } catch (err) {
-    status.textContent = '❌ Error: ' + err.message;
-    console.error(err);
+  status.textContent = files.length > 1 ? `Subiendo 0 de ${files.length}…` : 'Subiendo…';
+  let subidos = 0, errores = 0;
+  for (const file of files) {
+    const path = `${slug}/${ownerKey}/${Date.now()}_${file.name}`;
+    try {
+      const { error: upErr } = await segClient.storage.from(SEG_BUCKET).upload(path, file);
+      if (upErr) throw upErr;
+      const { error: dbErr } = await segClient.from('seguros_documentos')
+        .insert({ vehiculo_id: vehiculoId, poliza_id: polizaId, tipo_documento: tipo,
+                  nombre_archivo: file.name, storage_path: path,
+                  fecha_inicio: finicio, fecha_termino: ftermino });
+      if (dbErr) throw dbErr;
+      subidos++;
+      if (files.length > 1) status.textContent = `Subiendo ${subidos} de ${files.length}…`;
+    } catch (err) {
+      errores++;
+      console.error('Error subiendo', file.name, err);
+    }
   }
+  input.value = '';
+  document.getElementById('seg-docs-finicio').value = '';
+  document.getElementById('seg-docs-ftermino').value = '';
+  status.textContent = errores === 0
+    ? `✅ ${subidos} documento${subidos!==1?'s':''} subido${subidos!==1?'s':''}`
+    : `⚠ ${subidos} subido${subidos!==1?'s':''}, ${errores} con error`;
+  await segCargarDatos();
+  segRenderDocsModal();
 }
 
 async function segEliminarDocumento(docId, storagePath) {

@@ -3811,10 +3811,11 @@ async function segSubirDocumentoModal() {
     try {
       const { error: upErr } = await segClient.storage.from(SEG_BUCKET).upload(path, file);
       if (upErr) throw upErr;
-      const { error: dbErr } = await segClient.from('seguros_documentos')
-        .insert({ vehiculo_id: vehiculoId, poliza_id: polizaId, tipo_documento: tipo,
-                  nombre_archivo: file.name, storage_path: path,
-                  fecha_inicio: finicio, fecha_termino: ftermino });
+      const docData = { vehiculo_id: vehiculoId, poliza_id: polizaId, tipo_documento: tipo,
+                        nombre_archivo: file.name, storage_path: path };
+      if (finicio)  docData.fecha_inicio  = finicio;
+      if (ftermino) docData.fecha_termino = ftermino;
+      const { error: dbErr } = await segClient.from('seguros_documentos').insert(docData);
       if (dbErr) throw dbErr;
       subidos++;
       if (files.length > 1) status.textContent = `Subiendo ${subidos} de ${files.length}…`;

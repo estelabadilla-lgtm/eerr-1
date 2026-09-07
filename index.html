@@ -3461,16 +3461,40 @@ function segRenderTodas() {
   ['robo_incendio', 'mercancia'].forEach(cat => segRenderTabla(cat));
 }
 
+// Estado de documentación de un vehículo (basado en fecha_termino de sus docs)
+function segEstadoDocVehiculo(vehiculoId) {
+  const docs = SEG_DOCS[vehiculoId] || [];
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const conFecha = docs.filter(d => d.fecha_termino);
+  if (conFecha.length === 0) {
+    const total = docs.length;
+    return total > 0
+      ? { cls: 'seg-badge-doc',       label: `${total} doc${total!==1?'s':''}`, title: 'Sin fechas de vencimiento' }
+      : { cls: 'seg-badge-porvencer', label: 'Sin docs',                         title: 'No hay documentos subidos' };
+  }
+  let vencidos = 0, porVencer = 0;
+  conFecha.forEach(d => {
+    const term = new Date(d.fecha_termino + 'T00:00:00');
+    const dias = Math.round((term - hoy) / 86400000);
+    if (dias < 0)       vencidos++;
+    else if (dias <= 30) porVencer++;
+  });
+  if (vencidos > 0)   return { cls: 'seg-badge-vencida',   label: `⚠ ${vencidos} vencido${vencidos!==1?'s':''}`,     title: 'Hay documentos vencidos' };
+  if (porVencer > 0)  return { cls: 'seg-badge-porvencer', label: `⚠ ${porVencer} por vencer`,                        title: 'Documentos próximos a vencer' };
+  return               { cls: 'seg-badge-vigente',   label: `✓ Al día (${conFecha.length})`,                           title: 'Toda la documentación vigente' };
+}
+
 // Nueva tabla para "Robo y Accidentes de Vehículos" con columnas completas
 function segRenderRoboAccidentes() {
-  const NCOLS = 14;
+  const NCOLS = 15;
   const table = document.getElementById('seg-tbl-robo_accidentes');
   if (!table) return;
 
   table.querySelector('thead').innerHTML = `<tr>
     <th>PATENTE</th><th>Tipo Vehículo</th><th>MARCA</th><th>MODELO</th><th>AÑO</th>
     <th>ASIGNADO</th><th>ASEGURADORA</th><th>N° PÓLIZA</th><th>CUOTAS</th>
-    <th>VALOR TOTAL</th><th>DÍA DE PAGO</th><th>VIGENCIA</th><th>FECHA TÉRMINO</th><th></th>
+    <th>VALOR TOTAL</th><th>DÍA DE PAGO</th><th>VIGENCIA</th><th>FECHA TÉRMINO</th>
+    <th>DOCS</th><th></th>
   </tr>`;
 
   const filas = SEG_POLIZAS.filter(p => p.categoria === 'robo_accidentes');
@@ -3495,9 +3519,10 @@ function segRenderRoboAccidentes() {
       grupoActual = cc;
       html += `<tr class="seg-group-row"><td colspan="${NCOLS}">${cc.toUpperCase()}</td></tr>`;
     }
-    const pago = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
-    const vig  = segEstadoVigencia(p.fecha_termino);
-    const cuotas = `${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:3}) + ' ' + (p.moneda||'UF') : '—'}`;
+    const pago    = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
+    const vig     = segEstadoVigencia(p.fecha_termino);
+    const docEst  = segEstadoDocVehiculo(v?.id);
+    const cuotas  = `${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:3}) + ' ' + (p.moneda||'UF') : '—'}`;
     const notaFila = p.notas ? `<tr><td colspan="${NCOLS}" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ${p.notas}</span></td></tr>` : '';
     html += `<tr>
       <td><span style="font-weight:800;font-size:13px;color:var(--azul-dark)">${v?.patente||'—'}</span></td>
@@ -3513,6 +3538,7 @@ function segRenderRoboAccidentes() {
       <td><span class="seg-pago ${pago.cls}">${pago.label}</span></td>
       <td><span class="seg-badge ${vig.cls}">${vig.label}</span></td>
       <td>${segFmtFecha(p.fecha_termino)}</td>
+      <td><span class="seg-badge ${docEst.cls}" title="${docEst.title}">${docEst.label}</span></td>
       <td>
         <div class="seg-actions">
           <button type="button" class="seg-icon-btn" title="Ver todo" onclick="segAbrirDetalle('${p.id}')">🔍</button>
@@ -3822,14 +3848,18 @@ async function segSubirDocumentoModal() {
     } catch (err) {
       errores++;
       console.error('Error subiendo', file.name, err);
+      status.textContent = `❌ Error: ${err.message || JSON.stringify(err)}`;
     }
   }
   input.value = '';
   document.getElementById('seg-docs-finicio').value = '';
   document.getElementById('seg-docs-ftermino').value = '';
-  status.textContent = errores === 0
-    ? `✅ ${subidos} documento${subidos!==1?'s':''} subido${subidos!==1?'s':''}`
-    : `⚠ ${subidos} subido${subidos!==1?'s':''}, ${errores} con error`;
+  if (errores === 0)
+    status.textContent = `✅ ${subidos} documento${subidos!==1?'s':''} subido${subidos!==1?'s':''}`;
+  else if (subidos === 0)
+    status.textContent = `❌ Error al subir — revisa que las columnas fecha_inicio/fecha_termino existan en Supabase (ver instrucciones)`;
+  else
+    status.textContent = `⚠ ${subidos} subido${subidos!==1?'s':''}, ${errores} con error`;
   await segCargarDatos();
   segRenderDocsModal();
 }

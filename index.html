@@ -8,10 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
-<<<<<<< HEAD
-=======
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
->>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -199,8 +196,6 @@
   @page {
     size: letter landscape;
     margin: 8mm 10mm 8mm 10mm;
-<<<<<<< HEAD
-=======
   }
 
   /* ══ MELI LIQUIDACIÓN ══════════════════════════════════════ */
@@ -405,7 +400,6 @@
   @media (max-width: 560px) {
     .login-card { padding: 30px 22px 26px; }
     .login-roles { flex-direction: column; }
->>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
   }
 
   @media print {
@@ -547,15 +541,10 @@
   .fkpi .fval.neg { color: #c0392b; }
 
   /* ── CHART ── */
-<<<<<<< HEAD
-  .chart-wrap { background: var(--card); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 22px; }
-  .chart-wrap h3 { color: var(--blue); margin-bottom: 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
-=======
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
   .chart-wrap { background: var(--card); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); border: 1px solid var(--border); }
   .chart-wrap h3 { color: var(--blue); margin-bottom: 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
   .chart-donut canvas { max-height: 300px; }
->>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
 
   /* ── AUDITORIA ── */
   .audit-section { background: var(--card); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
@@ -805,44 +794,6 @@
     <div class="login-eyebrow">Dashboard Financiero</div>
     <div class="login-title">Representaciones Grantt Ltda.</div>
 
-<<<<<<< HEAD
-<div class="site-header">
-  <header>
-    <div class="header-left">
-      <div class="header-logo">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="25 20 420 138" style="height:38px;width:auto;">
-          <rect x="93.2" y="79.8" fill="#00A0DF" width="67.6" height="17.4"/>
-          <path fill="#00A0DF" d="M135.7,115c-8.9,14.2-24.6,23.7-42.6,23.7c-27.7,0-50.2-22.5-50.2-50.2c0-27.7,22.5-50.2,50.2-50.2c17.9,0,33.7,9.5,42.6,23.7h19.6C145,37.9,121,20.9,93.2,20.9c-37.3,0-67.6,30.3-67.6,67.6s30.3,67.6,67.6,67.6c27.9,0,51.8-17,62.2-41.1H135.7z"/>
-          <path fill="#0D1C24" d="M205.1,78.5v19.5c-9.1-1.1-20.5,3-20.5,17.2v32.3h-17.4V79.8h17.4v11.6C188,82.3,196.6,78.5,205.1,78.5z"/>
-          <path fill="#0D1C24" d="M279.6,79.8v67.5h-17.4v-8c-4.9,6.1-12.2,9.9-22,9.9c-18,0-32.8-15.5-32.8-35.7S222.2,78,240.2,78c9.9,0,17.2,3.8,22,9.9v-8H279.6z M262.2,113.6c0-11.3-8-19-18.8-19c-10.7,0-18.6,7.7-18.6,19c0,11.3,8,19,18.6,19C254.2,132.7,262.2,125,262.2,113.6z"/>
-          <path fill="#0D1C24" d="M350.2,105.9v41.5h-17.4v-39.3c0-9.2-5.5-13.9-13.4-13.9c-8.5,0-14.9,5-14.9,16.8v36.5h-17.4V79.8h17.4v7.6c4.1-6.1,11.1-9.5,20.1-9.5C339,78,350.2,88,350.2,105.9z"/>
-          <path fill="#0D1C24" d="M437.6,97.2V79.8h-15.3V60.9l-17.4,5.3v13.6h-22.6V60.9l-17.4,5.3v13.6h-11.8v17.4h11.8v27.4c0,18.2,8.2,25.4,32.7,22.7v-15.8c-10,0.5-15.3,0.4-15.3-6.9V97.2h22.6v27.4c0,18.2,8.2,25.4,32.7,22.7v-15.8c-10,0.5-15.3,0.4-15.3-6.9V97.2H437.6z"/>
-        </svg>
-      </div>
-      <div class="header-divider-v"></div>
-      <div class="header-info">
-        <span class="header-eyebrow">Dashboard Financiero</span>
-        <span class="header-title">Representaciones Grantt Ltda.</span>
-      </div>
-    </div>
-    <div class="header-right" id="header-stats">
-      <div class="hstat"><div class="hval" id="h-ingresos">—</div><div class="hlbl">Ingresos</div></div>
-      <div class="header-divider"></div>
-      <div class="hstat"><div class="hval neg" id="h-costos">—</div><div class="hlbl">Costos</div></div>
-      <div class="header-divider"></div>
-      <div class="hstat"><div class="hval" id="h-resultado">—</div><div class="hlbl">Resultado</div></div>
-      <div class="header-divider"></div>
-      <div class="hstat"><div class="hval" id="h-margen">—</div><div class="hlbl">Margen</div></div>
-    </div>
-  </header>
-
-  <nav>
-    <button class="active" onclick="showTab('eerr')">Estado de Resultados</button>
-    <button onclick="showTab('auditoria')">Auditoría</button>
-    <button onclick="showTab('graficos')">Gráficos</button>
-    <button onclick="showTab('presupuesto')">Presupuesto vs Real</button>
-    <button onclick="showTab('centros')">Centros de Costos</button>
-=======
     <!-- Paso 1: elegir rol -->
     <div id="login-step1">
       <div class="login-pregunta">¿Cómo quieres iniciar?</div>
@@ -926,20 +877,14 @@
     <button data-tab="centros" onclick="showTab('centros')">Centros de Costos</button>
     <button data-tab="meli" onclick="showTab('meli')">MELI Liquidación</button>
     <button data-tab="seguros" onclick="showTab('seguros')">Seguros</button>
->>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
   </nav>
 </div>
 
 <div class="toolbar">
-<<<<<<< HEAD
-  <label>Actualizar:</label>
-  <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)" title="Reemplaza el archivo mayor/mayor.xlsx y vuelve a publicar, o carga uno manualmente aquí">
-=======
   <span id="actualizar-mayor-wrap">
     <label>Actualizar:</label>
     <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)" title="Sube un mayor.xlsx nuevo — queda guardado para todos hasta que subas otro">
   </span>
->>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
   <div class="mes-btns" id="mes-btns">
     <span>Ver:</span>
     <button class="mes-btn btn-todos active" data-mes="0"  onclick="toggleMes(0,this)">Todos</button>
@@ -1323,13 +1268,9 @@ function processArrayBuffer(buffer, nombre) {
     DATA = parseLibroMayor(wb);
     document.getElementById('status').textContent =
       `✅ ${nombre} — ${DATA.rows.length.toLocaleString('es-CL')} movimientos cargados`;
-<<<<<<< HEAD
     const ahora = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
     const elUlt = document.getElementById('ultima-carga');
-    elUlt.textContent = `Actualizado al ${ahora}`;
-    elUlt.style.display = 'inline';
-=======
->>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
+    if (elUlt) { elUlt.textContent = `Actualizado al ${ahora}`; elUlt.style.display = 'inline'; }
     actualizarBotonesMeses();
     renderAll();
   } catch(err) {
@@ -1735,11 +1676,7 @@ function renderFechaPanel(mostrar) {
 
   const { cuentas } = DATA;
   const hoy = new Date();
-<<<<<<< HEAD
-  const mesHoy = Math.min(hoy.getMonth() + 1, 12);
-=======
   const mesHoy = MAX_MES_CON_DATOS; // meses con datos realmente cargados, no el mes calendario actual
->>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
   const mesesAcum = Array.from({length: mesHoy}, (_,i) => i+1);
 
   document.getElementById('fecha-sub').textContent =
@@ -2501,11 +2438,6 @@ const PPTO_STRUCT = [
   ['c','40-02-08-01','Comision Mercadolibre Y Otros'],
   ['t','TOTAL COSTOS DE VENTAS'],
   ['R','MARGEN DE VENTAS',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01']],
-<<<<<<< HEAD
-=======
-  ['P','% Costo sobre Ventas',['40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01'],['30-01-01-02','30-01-01-10','30-01-01-21'],true],
-  ['P','% Margen sobre Ventas',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01'],['30-01-01-02','30-01-01-10','30-01-01-21'],false],
->>>>>>> 013a0ae2e853ebc09123d1a390b33bbec54dbb0f
 
   // ── COSTOS LOGISTICA Y OTROS ────────────────────────────
   ['S','COSTOS LOGISTICA Y OTROS'],

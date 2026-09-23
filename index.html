@@ -1531,6 +1531,7 @@ function showTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
+  document.querySelector('.toolbar').style.display = name === 'flujo_caja' ? 'none' : '';
   if (name === 'graficos') renderCharts();
   if (name === 'seguros' && !SEG_LOADED) segInit();
 }

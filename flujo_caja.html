@@ -1,0 +1,1715 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Flujo de Caja · Grantt</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg:#f0f4f8; --surface:#fff; --surface2:#f8fafc; --border:#e2e8f0;
+    --text-primary:#0f172a; --text-secondary:#475569; --text-muted:#94a3b8;
+    --accent:#0f766e; --accent-light:#ccfbf1; --accent-mid:#14b8a6;
+    --blue:#1e40af; --blue-light:#dbeafe;
+    --green:#059669; --green-light:#d1fae5;
+    --red:#dc2626; --red-light:#fee2e2;
+    --amber:#d97706; --amber-light:#fef3c7;
+    --purple:#7c3aed; --purple-light:#ede9fe;
+    --shadow:0 4px 6px -1px rgba(0,0,0,.07),0 2px 4px -1px rgba(0,0,0,.04);
+    --shadow-lg:0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -2px rgba(0,0,0,.04);
+    --radius:12px; --radius-sm:8px;
+  }
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0b1120;--surface:#131c2e;--surface2:#1a2540;--border:#1e2d45;
+    --text-primary:#f0f6ff;--text-secondary:#94a3b8;--text-muted:#4a6080;
+    --accent:#14b8a6;--accent-light:#134e4a;--accent-mid:#2dd4bf;
+    --blue:#3b82f6;--blue-light:#1e3a6e;
+    --green:#10b981;--green-light:#064e3b;
+    --red:#ef4444;--red-light:#450a0a;
+    --amber:#f59e0b;--amber-light:#451a03;
+    --purple:#a78bfa;--purple-light:#2e1065;
+    --shadow:0 4px 6px -1px rgba(0,0,0,.4);
+    --shadow-lg:0 10px 15px -3px rgba(0,0,0,.5);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0b1120;--surface:#131c2e;--surface2:#1a2540;--border:#1e2d45;
+    --text-primary:#f0f6ff;--text-secondary:#94a3b8;--text-muted:#4a6080;
+    --accent:#14b8a6;--accent-light:#134e4a;--accent-mid:#2dd4bf;
+    --blue:#3b82f6;--blue-light:#1e3a6e;
+    --green:#10b981;--green-light:#064e3b;
+    --red:#ef4444;--red-light:#450a0a;
+    --amber:#f59e0b;--amber-light:#451a03;
+    --purple:#a78bfa;--purple-light:#2e1065;
+    --shadow:0 4px 6px -1px rgba(0,0,0,.4);
+    --shadow-lg:0 10px 15px -3px rgba(0,0,0,.5);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text-primary);
+    font-size:14px;line-height:1.5;padding-inline:20px;padding-block:24px;min-height:100%}
+
+  /* HEADER */
+  .header{background:linear-gradient(135deg,#065f46 0%,#0f766e 50%,#0891b2 100%);
+    border-radius:var(--radius);padding:28px 32px;margin-bottom:24px;
+    box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;
+    border-radius:50%;background:rgba(255,255,255,.05)}
+  .header::after{content:'';position:absolute;bottom:-40px;left:30%;width:160px;height:160px;
+    border-radius:50%;background:rgba(255,255,255,.04)}
+  .header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .header h1{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px}
+  .header-sub{font-size:13px;color:rgba(255,255,255,.75);margin-top:4px}
+  .badge-date{background:rgba(255,255,255,.15);color:#fff;font-size:12px;font-weight:600;
+    padding:6px 14px;border-radius:20px;white-space:nowrap;
+    backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.2)}
+  .header-note{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15);
+    font-size:12px;color:rgba(255,255,255,.65);display:flex;gap:20px;flex-wrap:wrap}
+  .header-note span{display:flex;align-items:center;gap:6px}
+  .dot-sm{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+  /* KPI GRID */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  @media(max-width:860px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:480px){.kpi-grid{grid-template-columns:1fr}}
+  .kpi-card{background:var(--surface);border-radius:var(--radius);padding:18px 20px;
+    box-shadow:var(--shadow);border:1px solid var(--border);position:relative;overflow:hidden}
+  .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
+  .kpi-card.k-teal::before{background:var(--accent-mid)}
+  .kpi-card.k-red::before{background:var(--red)}
+  .kpi-card.k-blue::before{background:var(--blue)}
+  .kpi-card.k-amber::before{background:var(--amber)}
+  .kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;
+    color:var(--text-muted);margin-bottom:6px}
+  .kpi-val{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;
+    font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+  .kpi-val.k-teal{color:var(--accent)}
+  .kpi-val.k-red{color:var(--red)}
+  .kpi-val.k-blue{color:var(--blue)}
+  .kpi-val.k-amber{color:var(--amber)}
+  .kpi-sub{font-size:10px;color:var(--text-muted);margin-top:4px}
+
+  /* CARD */
+  .card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+    border:1px solid var(--border);overflow:hidden;margin-bottom:20px}
+  .card-header{padding:14px 20px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .card-title{font-size:12px;font-weight:600;color:var(--text-primary);
+    text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+  .card-body{padding:20px}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+  /* GRID */
+  .main-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+  @media(max-width:900px){.main-grid{grid-template-columns:1fr}}
+
+  /* TIMELINE */
+  .timeline{display:flex;flex-direction:column;gap:0}
+  .tl-group{}
+  .tl-week-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+    color:var(--text-muted);padding:10px 0 6px;display:flex;align-items:center;gap:8px}
+  .tl-week-label::after{content:'';flex:1;height:1px;background:var(--border)}
+  .tl-item{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px 12px;
+    align-items:center;padding:8px 10px;border-radius:var(--radius-sm);
+    margin-bottom:4px;border:1px solid transparent;transition:background .15s}
+  .tl-item:hover{background:var(--surface2)}
+  .tl-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;
+    justify-content:center;font-size:13px;flex-shrink:0}
+  .tl-name{font-size:12px;font-weight:500;color:var(--text-secondary)}
+  .tl-bank{font-size:10px;color:var(--text-muted)}
+  .tl-date{font-size:10px;color:var(--text-muted);white-space:nowrap;text-align:right}
+  .tl-amount{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .tl-amount.neg{color:var(--red)}
+  .tl-amount.usd{color:var(--purple)}
+  .badge-urgente{font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;
+    background:var(--red-light);color:var(--red);letter-spacing:.3px}
+  .badge-prox{font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;
+    background:var(--amber-light);color:var(--amber)}
+  .badge-usd{font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;
+    background:var(--purple-light);color:var(--purple)}
+  .tl-subtotal{display:flex;justify-content:space-between;align-items:center;
+    padding:6px 10px;margin-bottom:4px;border-radius:var(--radius-sm);
+    background:var(--surface2);font-size:11px;color:var(--text-secondary)}
+  .tl-subtotal strong{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+  /* COMEX TABLE */
+  .comex-table{width:100%;border-collapse:collapse;font-size:11px}
+  .comex-table th{background:var(--surface2);color:var(--text-muted);font-weight:600;
+    text-transform:uppercase;letter-spacing:.5px;padding:7px 10px;text-align:left;
+    border-bottom:1px solid var(--border)}
+  .comex-table td{padding:7px 10px;border-bottom:1px solid var(--border);
+    color:var(--text-secondary);font-variant-numeric:tabular-nums}
+  .comex-table tr:last-child td{border-bottom:none}
+  .comex-table .num{text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600}
+  .comex-table .bank-tag{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;
+    display:inline-block}
+  .tag-itau{background:#dbeafe;color:#1e40af}
+  .tag-chile{background:#fef9c3;color:#713f12}
+  .tag-security{background:#f0fdf4;color:#166534}
+  .tag-scotia{background:#fdf4ff;color:#6b21a8}
+  .comex-total{display:flex;justify-content:space-between;align-items:center;
+    margin-top:12px;padding-top:10px;border-top:2px solid var(--border)}
+  /* COMEX TC input */
+  .comex-tc-wrap{display:flex;align-items:center;gap:8px;padding:8px 16px;
+    background:var(--purple-light);border-bottom:1px solid var(--border)}
+  .comex-tc-wrap label{font-size:11px;font-weight:600;color:var(--purple);white-space:nowrap}
+  .comex-tc-input{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    width:110px;padding:5px 9px;border:1.5px solid var(--purple);border-radius:7px;
+    background:var(--surface);color:var(--purple);text-align:right;outline:none}
+  .comex-tc-input:focus{box-shadow:0 0 0 3px rgba(124,58,237,.15)}
+  /* COMEX action buttons */
+  .comex-act-btn{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);
+    background:transparent;cursor:pointer;font-size:10px;color:var(--text-muted);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transition:opacity .15s,background .15s,color .15s;flex-shrink:0}
+  .comex-table tr:hover .comex-act-btn{opacity:1}
+  .comex-edit-btn:hover{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
+  .comex-del-btn:hover{background:#fef2f2;border-color:#fca5a5;color:var(--red)}
+  .comex-add-row{display:flex;align-items:center;gap:6px;padding:8px 16px;
+    cursor:pointer;opacity:.55;transition:opacity .15s;font-size:12px;
+    color:var(--purple);border-top:1px solid var(--border)}
+  .comex-add-row:hover{opacity:1;background:var(--purple-light)}
+
+  /* SUMMARY SIDE */
+  .summary-row{display:flex;justify-content:space-between;align-items:center;
+    padding:9px 0;border-bottom:1px solid var(--border);font-size:12px}
+  .summary-row:last-child{border-bottom:none}
+  .summary-row .lbl{color:var(--text-secondary)}
+  .summary-row .val{font-family:'IBM Plex Mono',monospace;font-weight:600;
+    font-variant-numeric:tabular-nums}
+
+  /* BALANCE BAR */
+  .balance-section{margin-bottom:16px}
+  .balance-bar-wrap{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;
+    display:flex;margin-bottom:12px}
+  .balance-bar-seg{height:100%;transition:width .4s}
+  .balance-legend{display:flex;flex-direction:column;gap:6px}
+  .balance-leg-row{display:flex;align-items:center;justify-content:space-between;
+    font-size:11px;gap:8px}
+  .balance-leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+  .balance-leg-label{color:var(--text-secondary);flex:1}
+  .balance-leg-val{font-family:'IBM Plex Mono',monospace;font-weight:600;
+    font-size:11px;font-variant-numeric:tabular-nums;color:var(--text-primary)}
+
+  /* NET SUMMARY */
+  .net-card{background:linear-gradient(135deg,#065f46,#0f766e);border-radius:var(--radius);
+    padding:20px;margin-top:20px;box-shadow:var(--shadow-lg)}
+  .net-card .n-label{font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;
+    letter-spacing:.6px;margin-bottom:4px}
+  .net-card .n-val{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;
+    color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .net-card .n-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:6px}
+  .net-divider{border-top:1px solid rgba(255,255,255,.15);margin:14px 0}
+  .net-row{display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.75);margin-bottom:6px}
+  .net-row strong{color:#fff;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+  /* FOOTER */
+  .footer{margin-top:24px;text-align:center;font-size:11px;color:var(--text-muted)}
+
+  /* UPLOAD BUTTON */
+  .upload-btn{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;
+    color:var(--accent);background:var(--surface2);border:1px dashed var(--accent);
+    border-radius:6px;padding:4px 10px;cursor:pointer;letter-spacing:.3px;transition:all .15s}
+  .upload-btn:hover{background:var(--accent);color:#fff;border-style:solid}
+  .upload-btn input[type=file]{display:none}
+  .upload-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#1e293b;color:#fff;padding:10px 20px;border-radius:10px;font-size:12px;
+    font-weight:500;z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none;
+    box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw;text-align:center}
+  .upload-toast.show{opacity:1}
+
+  /* SODIMAC INGRESOS ROWS */
+  .sod-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px 12px;
+    padding:9px 12px;border-radius:8px;align-items:center;transition:background .15s;
+    cursor:pointer;border:1px solid transparent}
+  .sod-row:hover{background:var(--surface2);border-color:var(--green)}
+  .sod-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+    justify-content:center;font-size:15px;flex-shrink:0;background:#16a34a22}
+  .sod-name{font-size:13px;font-weight:600;color:var(--text-primary)}
+  .sod-sub{font-size:10px;color:var(--text-muted);margin-top:1px}
+  .sod-date{font-size:11px;color:var(--text-muted);font-weight:500;text-align:right}
+  .sod-amount{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--green);
+    font-size:13px;font-variant-numeric:tabular-nums;text-align:right}
+  .sod-hint{font-size:9px;color:var(--green);font-weight:600;letter-spacing:.3px;margin-top:2px}
+
+  /* SODIMAC MODAL — invoice week table */
+  .sod-week-head{display:flex;align-items:center;gap:10px;padding:10px 14px;
+    background:var(--surface2);border-bottom:1px solid var(--border)}
+  .sod-week-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;
+    background:#16a34a22;color:var(--green);letter-spacing:.3px;flex-shrink:0}
+  .sod-week-title{font-size:12px;font-weight:600;color:var(--text-primary);flex:1}
+  .sod-week-total{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--green)}
+  .sod-inv-table{width:100%;border-collapse:collapse;font-size:11px}
+  .sod-inv-table th{color:var(--text-muted);font-weight:600;text-transform:uppercase;
+    letter-spacing:.4px;padding:6px 14px;text-align:left;background:var(--surface2);
+    border-bottom:1px solid var(--border)}
+  .sod-inv-table td{padding:7px 14px;border-bottom:1px solid var(--border);
+    color:var(--text-secondary);font-variant-numeric:tabular-nums}
+  .sod-inv-table tr:last-child td{border-bottom:none}
+  .sod-inv-table .num{text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600}
+  .sod-inv-table .ve-tag{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;
+    background:#16a34a22;color:var(--green)}
+  .sod-inv-table .fl-tag{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;
+    background:var(--red-light);color:var(--red)}
+  .sod-inv-table .sub-row td{background:var(--surface2);font-weight:600;color:var(--text-primary)}
+  .sod-inv-table .total-row td{background:#16a34a11;font-weight:700;color:var(--green)}
+  .sod-inv-table .cd-row td{color:var(--red);font-style:italic}
+
+  /* DELETE / EDIT BUTTONS ON TIMELINE ROWS */
+  .tl-delete-btn,.tl-edit-btn{width:24px;height:24px;border-radius:6px;border:1px solid var(--border);
+    background:transparent;cursor:pointer;font-size:11px;color:var(--text-muted);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    opacity:0;transition:opacity .15s,background .15s,color .15s}
+  .tl-item:hover .tl-delete-btn,.tl-item:hover .tl-edit-btn{opacity:1}
+  .tl-delete-btn:hover{background:#fef2f2;border-color:#fca5a5;color:var(--red)}
+  .tl-edit-btn:hover{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
+
+  /* ADD ITEM ROW */
+  .tl-add-row{display:flex;align-items:center;gap:6px;padding:4px 8px;margin-top:2px;
+    border-radius:7px;cursor:pointer;opacity:.5;transition:opacity .15s}
+  .tl-add-row:hover{opacity:1}
+  .tl-add-row span{font-size:10px;font-weight:600;color:var(--accent);letter-spacing:.3px}
+
+  /* INLINE EDIT MODAL */
+  #editItemModal .modal-box{max-width:380px}
+  .edit-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+  .edit-field label{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--text-muted);text-transform:uppercase}
+  .edit-field input{padding:8px 10px;border-radius:7px;border:1px solid var(--border);
+    background:var(--surface2);color:var(--text);font-size:13px;outline:none;
+    transition:border-color .15s}
+  .edit-field input:focus{border-color:var(--accent)}
+  .edit-modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+  .btn-save{padding:8px 18px;border-radius:7px;border:none;background:var(--accent);
+    color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s}
+  .btn-save:hover{opacity:.85}
+  .btn-cancel-edit{padding:8px 14px;border-radius:7px;border:1px solid var(--border);
+    background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer}
+
+  /* DELETE BUTTONS INSIDE PROV MODAL */
+  .prov-del-fact{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);
+    background:transparent;cursor:pointer;font-size:10px;color:var(--text-muted);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transition:opacity .15s,background .15s,color .15s}
+  tr:hover .prov-del-fact{opacity:1}
+  .prov-del-fact:hover{background:#fef2f2;border-color:#fca5a5;color:var(--red)}
+  .prov-del-prov{margin-left:auto;padding:3px 9px;border-radius:5px;
+    border:1px solid #fca5a5;background:transparent;color:var(--red);
+    font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.3px;
+    opacity:0;transition:opacity .15s,background .15s;flex-shrink:0}
+  .prov-group-head:hover .prov-del-prov{opacity:1}
+  .prov-del-prov:hover{background:#fef2f2}
+
+  /* CLICKABLE PROV ITEM */
+  .tl-item.clickable{cursor:pointer;border:1px solid transparent}
+  .tl-item.clickable:hover{border-color:var(--amber);background:var(--amber-light)}
+  .click-hint{font-size:9px;color:var(--amber);font-weight:600;letter-spacing:.3px;margin-top:2px}
+
+  /* MODAL OVERLAY */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .25s}
+  .modal-overlay.open{opacity:1;pointer-events:all}
+  .modal{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-lg);
+    width:100%;max-width:720px;max-height:88vh;display:flex;flex-direction:column;
+    transform:translateY(16px);transition:transform .25s;overflow:hidden}
+  .modal-overlay.open .modal{transform:translateY(0)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;
+    padding:18px 22px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .modal-head h2{font-size:15px;font-weight:700;color:var(--text-primary)}
+  .modal-head p{font-size:11px;color:var(--text-muted);margin-top:2px}
+  .modal-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+    background:var(--surface2);cursor:pointer;display:flex;align-items:center;
+    justify-content:center;font-size:16px;color:var(--text-muted);flex-shrink:0;
+    transition:background .15s}
+  .modal-close:hover{background:var(--border)}
+  .modal-body{overflow-y:auto;padding:20px 22px;flex:1}
+
+  /* PROVEEDOR GROUP */
+  .prov-group{margin-bottom:20px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+  .prov-group:last-child{margin-bottom:0}
+  .prov-group-head{display:flex;align-items:center;gap:12px;padding:12px 14px;
+    background:var(--surface2);border-bottom:1px solid var(--border)}
+  .prov-rut-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+    background:var(--amber-light);color:var(--amber);padding:3px 8px;border-radius:4px;
+    flex-shrink:0;letter-spacing:.3px}
+  .prov-nombre{font-size:13px;font-weight:600;color:var(--text-primary);flex:1}
+  .prov-total-badge{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;
+    color:var(--red);flex-shrink:0}
+  .prov-inv-table{width:100%;border-collapse:collapse;font-size:11px}
+  .prov-inv-table th{color:var(--text-muted);font-weight:600;text-transform:uppercase;
+    letter-spacing:.5px;padding:7px 14px;text-align:left;background:var(--surface2);
+    border-bottom:1px solid var(--border)}
+  .prov-inv-table td{padding:8px 14px;border-bottom:1px solid var(--border);
+    color:var(--text-secondary);font-variant-numeric:tabular-nums}
+  .prov-inv-table tr:last-child td{border-bottom:none}
+  .prov-inv-table .num{text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--red)}
+  .prov-inv-table .doc-tag{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;
+    background:var(--red-light);color:var(--red)}
+  .modal-footer{padding:14px 22px;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--surface2);flex-shrink:0}
+  .modal-footer .total-lbl{font-size:12px;font-weight:600;color:var(--text-secondary)}
+  .modal-footer .total-val{font-family:'IBM Plex Mono',monospace;font-size:18px;
+    font-weight:700;color:var(--red);font-variant-numeric:tabular-nums}
+</style>
+
+<!-- MODAL DETALLE SODIMAC -->
+<div class="modal-overlay" id="sodimacModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sodimacModalTitle" style="max-width:780px">
+    <div class="modal-head" style="background:linear-gradient(135deg,#14532d,#166534);color:#fff">
+      <div>
+        <h2 id="sodimacModalTitle" style="color:#fff">🏪 Detalle Facturas Sodimac</h2>
+        <p id="sodimacModalSub" style="color:#bbf7d0">Semana seleccionada · Cobro anticipado Sodimac</p>
+      </div>
+      <button class="modal-close" id="sodimacModalClose" aria-label="Cerrar" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff">✕</button>
+    </div>
+    <div class="modal-body" id="sodimacModalBody"></div>
+    <div class="modal-footer">
+      <span class="total-lbl" id="sodimacModalWeekLabel">Semana</span>
+      <span class="total-val" id="sodimacModalWeekTotal" style="color:var(--green)"></span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR SALDOS BANCOS -->
+<div class="modal-overlay" id="banksModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="banksModalTitle" style="max-width:580px">
+    <div class="modal-head">
+      <div>
+        <h2 id="banksModalTitle">🏦 Saldos por Banco</h2>
+        <p>Actualice el saldo y la fecha de corte de cada banco</p>
+      </div>
+      <button class="modal-close" id="banksModalClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" id="banksModalBody"></div>
+    <div class="modal-footer">
+      <span class="total-lbl">Los cambios actualizan el dashboard</span>
+      <button id="saveBanksBtn" style="font-size:12px;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:8px;padding:8px 20px;cursor:pointer;letter-spacing:.3px">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROVEEDORES -->
+<div class="modal-overlay" id="provModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="modalTitle">🏭 Detalle Proveedores Nacionales</h2>
+        <p>Al 12/09/2026 · Estado de cuenta auxiliares · Pagado 18/09/2026</p>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <label class="upload-btn" title="Subir Excel de estado de cuenta proveedores" style="font-size:11px">
+        📂 Actualizar con Excel
+        <input type="file" id="provUpload" accept=".xlsx,.xls,.csv">
+      </label>
+      <div style="text-align:right">
+        <div class="total-lbl">Total Proveedores Nacionales</div>
+        <div class="total-val" id="provTotalVal">$5.074.634</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMEX EDIT MODAL -->
+<div class="modal-overlay" id="comexModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:420px">
+    <div class="modal-head">
+      <h2 id="comexModalTitle">✏️ Editar crédito COMEX</h2>
+      <button class="modal-close" id="comexModalClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px">
+      <div class="edit-field">
+        <label>Banco</label>
+        <select id="comexBanco" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-primary);font-size:13px;width:100%;outline:none">
+          <option value="Banco ITAU|tag-itau">Banco ITAU</option>
+          <option value="Bco. de Chile|tag-chile">Bco. de Chile</option>
+          <option value="Bco. Security|tag-security">Bco. Security</option>
+          <option value="Scotiabank|tag-scotia">Scotiabank</option>
+        </select>
+      </div>
+      <div class="edit-field">
+        <label>Nº Crédito</label>
+        <input type="text" id="comexRef" placeholder="Ej: 57103">
+      </div>
+      <div class="edit-field">
+        <label>Cargo (proveedor)</label>
+        <input type="text" id="comexCargo" placeholder="Ej: FEISHUN">
+      </div>
+      <div class="edit-field">
+        <label>Fecha vencimiento</label>
+        <input type="text" id="comexVcto" placeholder="Ej: 06/10/2026">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="edit-field">
+          <label>Monto USD</label>
+          <input type="number" id="comexUSD" placeholder="Ej: 90000" min="0">
+        </div>
+        <div class="edit-field">
+          <label>Interés USD</label>
+          <input type="number" id="comexInt" placeholder="Ej: 3020" min="0">
+        </div>
+      </div>
+      <div class="edit-modal-btns">
+        <button class="btn-cancel-edit" id="comexCancelBtn">Cancelar</button>
+        <button class="btn-save" id="comexSaveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ITEM MODAL -->
+<div class="modal-overlay" id="editItemModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:380px">
+    <div class="modal-head">
+      <h2 id="editModalTitle">✏️ Editar ítem</h2>
+      <button class="modal-close" id="editModalClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px">
+      <div class="edit-field">
+        <label>Nombre / descripción</label>
+        <input type="text" id="editName" placeholder="Ej: Seguro de vida">
+      </div>
+      <div class="edit-field">
+        <label>Fecha de pago</label>
+        <input type="text" id="editDate" placeholder="Ej: 30/09">
+      </div>
+      <div class="edit-field">
+        <label>Monto (CLP)</label>
+        <input type="number" id="editAmount" placeholder="Ej: 1500000" min="0">
+      </div>
+      <div class="edit-modal-btns">
+        <button class="btn-cancel-edit" id="editCancelBtn">Cancelar</button>
+        <button class="btn-save" id="editSaveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="upload-toast" id="uploadToast"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>💼 Flujo de Caja · Empresa Grantt</h1>
+      <p class="header-sub">Representaciones Grantt Limitada &nbsp;·&nbsp; General Velásquez 5720, San Bernardo</p>
+    </div>
+    <span class="badge-date">📅 Al 20/09/2026</span>
+  </div>
+  <div class="header-note">
+    <span><span class="dot-sm" style="background:#ef4444"></span>Pagos urgentes (vencidos esta semana)</span>
+    <span><span class="dot-sm" style="background:#f59e0b"></span>Próximos 30 días</span>
+    <span><span class="dot-sm" style="background:#a78bfa"></span>Créditos COMEX USD</span>
+    <span><span class="dot-sm" style="background:#14b8a6"></span>Saldo disponible</span>
+  </div>
+</div>
+
+<!-- KPI TILES -->
+<div class="kpi-grid">
+  <div class="kpi-card k-teal">
+    <div class="kpi-label">Saldo Bancos (CLP)</div>
+    <div class="kpi-val k-teal">$36.606.085</div>
+    <div class="kpi-sub">Al 18/09/2026 · 6 bancos</div>
+  </div>
+  <div class="kpi-card k-red">
+    <div class="kpi-label">Pagos Urgentes esta semana</div>
+    <div class="kpi-val k-red">$22.701.724</div>
+    <div class="kpi-sub">Embarques vcto 21–27 sep</div>
+  </div>
+  <div class="kpi-card k-blue">
+    <div class="kpi-label">Créditos COMEX (USD)</div>
+    <div class="kpi-val k-blue">USD 1.050.167</div>
+    <div class="kpi-sub">4 bancos · múltiples vencimientos</div>
+  </div>
+  <div class="kpi-card k-amber">
+    <div class="kpi-label">Proveedores Nacionales</div>
+    <div class="kpi-val k-amber">$5.074.634</div>
+    <div class="kpi-sub">Pagado 18/09 · Prov. nacionales</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-grid">
+
+  <!-- LEFT: TIMELINE + COMEX -->
+  <div>
+
+    <!-- INGRESOS SODIMAC -->
+    <div class="card" style="border-left:3px solid var(--green)">
+      <div class="card-header">
+        <div class="card-title"><div class="dot" style="background:var(--green)"></div>Ingresos Programados · Sodimac</div>
+        <label class="upload-btn" title="Subir Excel de facturas Sodimac">
+          📂 Subir Excel
+          <input type="file" id="sodimacUpload" accept=".xlsx,.xls,.csv">
+        </label>
+      </div>
+      <div class="card-body" style="padding-top:8px;padding-bottom:8px">
+        <div id="sodimacIngresos"></div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)">
+          <span>VE bruto $473.292.439 · FL cross-docking −$221.792</span>
+          <strong style="color:var(--green)">Neto $473.070.647</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT TIMELINE -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><div class="dot" style="background:var(--red)"></div>Calendario de Pagos</div>
+        <span style="font-size:11px;color:var(--text-muted)">Sep – Nov 2026</span>
+      </div>
+      <div class="card-body" style="padding-top:8px">
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </div>
+
+    <!-- COMEX USD -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><div class="dot" style="background:var(--purple)"></div>Créditos COMEX en USD</div>
+        <span class="badge-usd">USD</span>
+      </div>
+      <div class="comex-tc-wrap">
+        <label>💵 Tipo de cambio (CLP/USD)</label>
+        <input class="comex-tc-input" type="number" id="comexTC" value="950" min="1" step="1" placeholder="950">
+        <span style="font-size:11px;color:var(--purple);font-weight:600">$/USD</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="comex-table">
+          <thead><tr>
+            <th>Banco</th><th>Nº Crédito</th><th>Cargo</th><th>Vcto.</th>
+            <th style="text-align:right">USD</th>
+            <th style="text-align:right">Interés USD</th>
+            <th style="text-align:right;color:var(--purple)">Total CLP</th>
+            <th style="width:48px"></th>
+          </tr></thead>
+          <tbody id="comexBody"></tbody>
+        </table>
+        <div class="comex-add-row" id="comexAddRow">
+          <span style="font-size:15px;font-weight:700">＋</span><span>Agregar crédito COMEX</span>
+        </div>
+        <div style="padding:12px 16px" class="comex-total">
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary)">Total COMEX</span>
+          <span id="comexTotalUSD" style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--purple);font-size:14px"></span>
+          <span id="comexTotalCLP" style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--green);font-size:13px"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: SALDO + SUMMARY -->
+  <div>
+
+    <!-- SALDO BANCARIO -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><div class="dot" style="background:var(--accent)"></div>Distribución Saldo</div>
+      </div>
+      <div class="card-body">
+        <div class="balance-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">Total al 20/09/2026</div>
+            <button id="editBanksBtn" style="font-size:10px;font-weight:600;color:var(--accent);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;letter-spacing:.3px">✏️ Editar saldos</button>
+          </div>
+          <div id="kpiTotalBancos" style="font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:700;color:var(--accent);margin-bottom:12px;font-variant-numeric:tabular-nums">
+            $36.606.085
+          </div>
+          <div class="balance-bar-wrap" id="balanceBar"></div>
+          <div class="balance-legend" id="balanceLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESUMEN PAGOS -->
+    <div class="card" style="margin-top:0">
+      <div class="card-header">
+        <div class="card-title"><div class="dot" style="background:var(--amber)"></div>Resumen de Obligaciones</div>
+      </div>
+      <div class="card-body" style="padding-top:8px;padding-bottom:8px">
+        <div class="summary-row">
+          <span class="lbl">🔴 Urgentes (≤20 sep)</span>
+          <span class="val" style="color:var(--red)">$311.124</span>
+        </div>
+        <div class="summary-row">
+          <span class="lbl">📦 Embarques (21-27 sep)</span>
+          <span class="val" style="color:var(--amber)">$22.701.724</span>
+        </div>
+        <div class="summary-row">
+          <span class="lbl">📦 Embarques (28 sep-4 oct)</span>
+          <span class="val" style="color:var(--amber)">$6.709.022</span>
+        </div>
+        <div class="summary-row">
+          <span class="lbl">🏢 Arriendos + Seguros (oct)</span>
+          <span class="val" style="color:var(--text-secondary)">$16.291.011</span>
+        </div>
+        <div class="summary-row">
+          <span class="lbl">💳 Crédito BIKO (10 oct)</span>
+          <span class="val" style="color:var(--text-secondary)">$5.804.824</span>
+        </div>
+        <div class="summary-row">
+          <span class="lbl">👥 Sueldos y otros</span>
+          <span class="val" style="color:var(--text-secondary)">$18.500.000</span>
+        </div>
+        <div class="summary-row">
+          <span class="lbl">🏛️ Patente (nov)</span>
+          <span class="val" style="color:var(--text-secondary)">$6.348.042</span>
+        </div>
+        <div class="summary-row" style="border-bottom:2px solid var(--border);padding-bottom:10px">
+          <span class="lbl" style="font-weight:600">Total CLP (est.)</span>
+          <span class="val" style="color:var(--text-primary);font-size:14px">$76.665.747</span>
+        </div>
+        <div class="summary-row" style="padding-top:10px">
+          <span class="lbl">💵 COMEX USD (total)</span>
+          <span class="val" style="color:var(--purple)">USD 1.050.167</span>
+        </div>
+        <div class="summary-row">
+          <span class="lbl">💵 COMEX próx. mes (oct)</span>
+          <span class="val" style="color:var(--purple)">USD 283.182</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- NET POSITION -->
+    <div class="net-card">
+      <div class="n-label">Posición Neta CLP (est.)</div>
+      <div class="n-val">−$40.059.662</div>
+      <div class="n-sub">Saldo $36.6M − Obligaciones $76.7M (sin USD)</div>
+      <div class="net-divider"></div>
+      <div class="net-row"><span>Saldo bancos</span><strong>$36.606.085</strong></div>
+      <div class="net-row"><span>Cobro Sodimac S39 (28/09)</span><strong>+$135.385.416</strong></div>
+      <div class="net-row"><span>Pagos urgentes sep</span><strong style="color:#fca5a5">−$29.721.870</strong></div>
+      <div class="net-row"><span>Cobro Sodimac S40 (oct)</span><strong>+$85.609.950</strong></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">Grantt Limitada · Flujo de Caja al 22/09/2026 · datos internos</div>
+
+<script>
+const fmt = n => '$' + Math.round(n).toLocaleString('es-CL');
+const fmtUSD = n => 'USD ' + Math.round(n).toLocaleString('es-CL');
+
+// ── TIMELINE DATA ──
+const groups = [
+  {
+    label: '🔴 Vencido / Urgente (≤ 20 sep)',
+    color: '#dc2626',
+    items: [
+      {icon:'🏭', name:'Proveedores Nacionales', sub:'TLI · DIMERC · ENTEL · RUTA · DIMENSION', date:'18/09', amount: 5074634, bank:'Chile (pagado)', tag:'urgente'},
+      {icon:'🚛', name:'Contempora (T. Crédito RGrantt)', sub:'Tarjeta crédito empresa', date:'20/09', amount: 79714, bank:'Chile', tag:'urgente'},
+      {icon:'🛡️', name:'MAFRE Seguros Generales', sub:'Seguro general', date:'20/09', amount: 148800, bank:'Chile', tag:'urgente'},
+      {icon:'🚗', name:'BCI Seguros MP3742681', sub:'Seguro vehículo', date:'20/09', amount: 82610, bank:'BIKO', tag:'urgente'},
+    ],
+    subtotal: 5385758
+  },
+  {
+    label: '📦 Embarques esta semana (21–27 sep)',
+    color: '#d97706',
+    items: [
+      {icon:'🚢', name:'YTSE26070476 – FEISHUN 0601-2 + TAILI', sub:'ETA 26/09', date:'26/09', amount: 14329338, bank:'ITAU', tag:'prox'},
+      {icon:'🚢', name:'YTSE26080246 – FEISHUN 0701-1', sub:'ETA 27/09', date:'27/09', amount: 8372386, bank:'ITAU', tag:'prox'},
+    ],
+    subtotal: 22701724
+  },
+  {
+    label: '📦 Embarques semana siguiente (28 sep–4 oct)',
+    color: '#0891b2',
+    items: [
+      {icon:'🚢', name:'YTSE26080310 – FEISHUN 0701-2', sub:'ETA 30/09', date:'30/09', amount: 6709022, bank:'ITAU', tag:'prox'},
+    ],
+    subtotal: 6709022
+  },
+  {
+    label: '🏢 Gastos fijos (5 oct)',
+    color: '#0d9488',
+    items: [
+      {icon:'📦', name:'YTSE2607477 – FEISHUN 0601-3', sub:'Provisión embarque', date:'05/10', amount: 7195339, bank:'ITAU', tag:'prox'},
+      {icon:'🔒', name:'Reales Seguros Generales', sub:'Póliza general', date:'05/10', amount: 1834161, bank:'Chile', tag:'prox'},
+      {icon:'🏭', name:'Arriendo Bodega – Dimensión SA', sub:'Bodega 99,538,350', date:'05/10', amount: 7167854, bank:'Chile', tag:'prox'},
+    ],
+    subtotal: 16197354
+  },
+  {
+    label: '💳 Seguros + Créditos (10 oct)',
+    color: '#7c3aed',
+    items: [
+      {icon:'🚗', name:'BCI Seguros – Camioneta Power', sub:'MP3736804-0', date:'10/10', amount: 74809, bank:'', tag:''},
+      {icon:'🚙', name:'BCI Seguros – Ford Maverick', sub:'p003723733', date:'10/10', amount: 66224, bank:'', tag:''},
+      {icon:'🚛', name:'Contempora (T. Débito AZúñiga)', sub:'Débito automatico', date:'10/10', amount: 148800, bank:'', tag:''},
+      {icon:'💳', name:'Crédito BIKO', sub:'Cuota crédito banco', date:'10/10', amount: 5804824, bank:'BIKO', tag:''},
+    ],
+    subtotal: 6094657
+  },
+  {
+    label: '👥 Personal + Administración',
+    color: '#0f766e',
+    items: [
+      {icon:'👷', name:'Sueldos y remuneraciones', sub:'Personal empresa', date:'—', amount: 18500000, bank:'', tag:''},
+    ],
+    subtotal: 18500000
+  },
+  {
+    label: '🏛️ Patente Comercial (30 nov)',
+    color: '#475569',
+    items: [
+      {icon:'📋', name:'Patente Comercial San Bernardo', sub:'Folio 7', date:'30/11', amount: 6348042, bank:'', tag:''},
+    ],
+    subtotal: 6348042
+  },
+];
+
+function recalcGroup(gl, g){
+  const remaining = g.items.filter(i=>!i._deleted);
+  const newSub = remaining.reduce((s,i)=>s+i.amount,0);
+  const subEl = gl.querySelector('.tl-subtotal strong');
+  if(subEl) subEl.textContent = fmt(newSub);
+  // Hide group if empty
+  if(remaining.length === 0){
+    gl.style.opacity = '.4';
+    const lbl = gl.querySelector('.tl-week-label');
+    if(lbl) lbl.innerHTML += ' <span style="font-size:10px;font-weight:600;color:var(--green)">✓ TODO PAGADO</span>';
+  }
+}
+
+function renderTimeline(){
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  groups.forEach(g => {
+    const gl = document.createElement('div');
+    gl.className = 'tl-group';
+
+    const wl = document.createElement('div');
+    wl.className = 'tl-week-label';
+    wl.style.color = g.color;
+    wl.textContent = g.label;
+    gl.appendChild(wl);
+
+    g.items.forEach((item, idx) => {
+      if(item._deleted) return;
+      const row = document.createElement('div');
+      row.className = 'tl-item';
+      row.style.cssText = 'grid-template-columns:auto 1fr auto auto auto auto;position:relative';
+      const badge = item.tag === 'urgente'
+        ? '<span class="badge-urgente">URGENTE</span>'
+        : item.tag === 'prox' ? '<span class="badge-prox">PRÓXIMO</span>' : '';
+
+      // First item in group 0 = Proveedores (clickable)
+      const isProvRow = (g === groups[0] && idx === 0);
+      row.innerHTML = `
+        <div class="tl-icon" style="background:${g.color}22">${item.icon}</div>
+        <div>
+          <div class="tl-name">${item.name} ${badge}</div>
+          <div class="tl-bank">${item.sub}${item.bank ? ' · ' + item.bank : ''}${isProvRow?'<div class="click-hint">▶ Ver detalle facturas</div>':''}</div>
+        </div>
+        <div class="tl-date">${item.date}</div>
+        <div class="tl-amount neg">${fmt(item.amount)}</div>
+        <button class="tl-edit-btn" title="Editar ítem" aria-label="Editar">✏️</button>
+        <button class="tl-delete-btn" title="Marcar como pagado" aria-label="Eliminar">✕</button>
+      `;
+
+      if(isProvRow) row.classList.add('clickable');
+
+      // Edit button
+      row.querySelector('.tl-edit-btn').addEventListener('click', ev => {
+        ev.stopPropagation();
+        openEditModal(item, gl, g, row);
+      });
+
+      // Delete button
+      row.querySelector('.tl-delete-btn').addEventListener('click', ev => {
+        ev.stopPropagation();
+        row.style.transition = 'opacity .35s, transform .35s';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(24px)';
+        setTimeout(()=>{
+          item._deleted = true;
+          row.remove();
+          recalcGroup(gl, g);
+        }, 350);
+      });
+
+      if(isProvRow) row.addEventListener('click', openProvModal);
+      gl.appendChild(row);
+    });
+
+    // ── Add item row ──
+    const addRow = document.createElement('div');
+    addRow.className = 'tl-add-row';
+    addRow.innerHTML = `<span style="font-size:14px;color:var(--accent)">＋</span><span>Agregar ítem</span>`;
+    addRow.addEventListener('click', () => openAddModal(gl, g));
+    gl.appendChild(addRow);
+
+    const sub = document.createElement('div');
+    sub.className = 'tl-subtotal';
+    const subVal = g.items.reduce((s,i)=>s+i.amount,0);
+    sub.innerHTML = `<span>Subtotal</span><strong style="color:${g.color}">${fmt(subVal)}</strong>`;
+    gl.appendChild(sub);
+
+    tl.appendChild(gl);
+  });
+}
+
+renderTimeline();
+
+// ── EDIT / ADD ITEM MODAL ──
+let _editTarget = null; // {item, gl, g, row} or {gl, g} for new
+
+function openEditModal(item, gl, g, row){
+  _editTarget = {item, gl, g, row, mode:'edit'};
+  document.getElementById('editModalTitle').textContent = '✏️ Editar ítem';
+  document.getElementById('editName').value   = item.name;
+  document.getElementById('editDate').value   = item.date;
+  document.getElementById('editAmount').value = item.amount;
+  document.getElementById('editItemModal').classList.add('open');
+  setTimeout(()=>document.getElementById('editName').focus(), 50);
+}
+
+function openAddModal(gl, g){
+  _editTarget = {gl, g, mode:'add'};
+  document.getElementById('editModalTitle').textContent = '＋ Agregar ítem';
+  document.getElementById('editName').value   = '';
+  document.getElementById('editDate').value   = '';
+  document.getElementById('editAmount').value = '';
+  document.getElementById('editItemModal').classList.add('open');
+  setTimeout(()=>document.getElementById('editName').focus(), 50);
+}
+
+function closeEditModal(){
+  document.getElementById('editItemModal').classList.remove('open');
+  _editTarget = null;
+}
+
+document.getElementById('editModalClose').addEventListener('click', closeEditModal);
+document.getElementById('editCancelBtn').addEventListener('click', closeEditModal);
+document.getElementById('editItemModal').addEventListener('click', e=>{
+  if(e.target === document.getElementById('editItemModal')) closeEditModal();
+});
+
+document.getElementById('editSaveBtn').addEventListener('click', ()=>{
+  if(!_editTarget) return;
+  const name   = document.getElementById('editName').value.trim();
+  const date   = document.getElementById('editDate').value.trim();
+  const amount = parseInt(document.getElementById('editAmount').value) || 0;
+  if(!name){ document.getElementById('editName').focus(); return; }
+
+  if(_editTarget.mode === 'edit'){
+    const {item, gl, g, row} = _editTarget;
+    item.name   = name;
+    item.date   = date;
+    item.amount = amount;
+    // Update the row in place
+    row.querySelector('.tl-name').textContent = name;
+    row.querySelector('.tl-date').textContent = date;
+    row.querySelector('.tl-amount').textContent = fmt(amount);
+    recalcGroup(gl, g);
+  } else {
+    // Add new item to group
+    const {gl, g} = _editTarget;
+    const newItem = {icon:'📌', name, sub:'Manual', date, amount, bank:'', tag:''};
+    g.items.push(newItem);
+    // Re-render only this group
+    renderTimeline();
+  }
+  closeEditModal();
+  showToast(`✅ ${_editTarget.mode === 'edit' ? 'Ítem actualizado' : 'Ítem agregado'}`);
+});
+
+// ── COMEX TABLE ──
+let comexData = [
+  {banco:'Banco ITAU', tag:'tag-itau', ref:'57103', cargo:'FEISHUN', vcto:'06/10/2026', usd:130000, int:5223},
+  {banco:'Banco ITAU', tag:'tag-itau', ref:'57103', cargo:'FEISHUN', vcto:'17/10/2026', usd:106500, int:3759},
+  {banco:'Banco ITAU', tag:'tag-itau', ref:'60623', cargo:'FEISHUN', vcto:'24/12/2026', usd:90000, int:3020},
+  {banco:'Banco ITAU', tag:'tag-itau', ref:'61162', cargo:'FEISHUN', vcto:'11/01/2027', usd:90000, int:3081},
+  {banco:'Bco. de Chile', tag:'tag-chile', ref:'6083', cargo:'—', vcto:'16/10/2026', usd:46682, int:1607},
+  {banco:'Bco. de Chile', tag:'tag-chile', ref:'8556', cargo:'—', vcto:'02/12/2026', usd:50000, int:1721},
+  {banco:'Bco. de Chile', tag:'tag-chile', ref:'4856', cargo:'—', vcto:'08/02/2027', usd:90000, int:3098},
+  {banco:'Bco. de Chile', tag:'tag-chile', ref:'3957', cargo:'—', vcto:'22/02/2027', usd:90000, int:3098},
+  {banco:'Bco. Security', tag:'tag-security', ref:'66432', cargo:'SONGRI', vcto:'09/11/2026', usd:90000, int:3684},
+  {banco:'Bco. Security', tag:'tag-security', ref:'66561', cargo:'—', vcto:'06/12/2026', usd:13000, int:532},
+  {banco:'Bco. Security', tag:'tag-security', ref:'66562', cargo:'—', vcto:'06/12/2026', usd:10000, int:409},
+  {banco:'Scotiabank', tag:'tag-scotia', ref:'46827', cargo:'FEISHUN', vcto:'08/01/2027', usd:60000, int:2065},
+  {banco:'Scotiabank', tag:'tag-scotia', ref:'2876', cargo:'—', vcto:'26/01/2027', usd:41197, int:1442},
+  {banco:'Scotiabank', tag:'tag-scotia', ref:'2932', cargo:'YLK', vcto:'01/02/2027', usd:81928, int:2883},
+  {banco:'Scotiabank', tag:'tag-scotia', ref:'3018', cargo:'YLK', vcto:'08/02/2027', usd:60861, int:2142},
+];
+
+function getTC(){ return parseFloat(document.getElementById('comexTC').value) || 950; }
+
+function renderComex(){
+  const tc = getTC();
+  const cb = document.getElementById('comexBody');
+  cb.innerHTML = '';
+  let totalUSD = 0, totalCLP = 0;
+  comexData.forEach((c, idx) => {
+    if(c._deleted) return;
+    const clp = Math.round((c.usd + c.int) * tc);
+    totalUSD += (c.usd + c.int);
+    totalCLP += clp;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="bank-tag ${c.tag}">${c.banco}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:11px">${c.ref}</td>
+      <td>${c.cargo}</td>
+      <td style="white-space:nowrap">${c.vcto}</td>
+      <td class="num" style="color:var(--purple)">${c.usd.toLocaleString('es-CL')}</td>
+      <td class="num" style="color:var(--text-muted)">${c.int.toLocaleString('es-CL')}</td>
+      <td class="num" style="color:var(--green);font-weight:700">${fmt(clp)}</td>
+      <td style="padding:4px 6px;white-space:nowrap">
+        <div style="display:flex;gap:4px;justify-content:flex-end">
+          <button class="comex-act-btn comex-edit-btn" title="Editar">✏️</button>
+          <button class="comex-act-btn comex-del-btn" title="Eliminar">✕</button>
+        </div>
+      </td>
+    `;
+    tr.querySelector('.comex-edit-btn').addEventListener('click', () => openComexModal(idx));
+    tr.querySelector('.comex-del-btn').addEventListener('click', () => {
+      tr.style.transition = 'opacity .3s, transform .3s';
+      tr.style.opacity = '0'; tr.style.transform = 'translateX(16px)';
+      setTimeout(() => { c._deleted = true; renderComex(); }, 300);
+    });
+    cb.appendChild(tr);
+  });
+  document.getElementById('comexTotalUSD').textContent = fmtUSD(totalUSD);
+  document.getElementById('comexTotalCLP').textContent = '  ≈ ' + fmt(totalCLP);
+}
+
+// TC change listener
+document.getElementById('comexTC').addEventListener('input', renderComex);
+
+// Add row button
+document.getElementById('comexAddRow').addEventListener('click', () => openComexModal(null));
+
+renderComex();
+
+// ── COMEX MODAL ──
+let _comexIdx = null;
+
+function openComexModal(idx){
+  _comexIdx = idx;
+  const isEdit = idx !== null;
+  document.getElementById('comexModalTitle').textContent = isEdit ? '✏️ Editar crédito COMEX' : '＋ Nuevo crédito COMEX';
+  if(isEdit){
+    const c = comexData[idx];
+    document.getElementById('comexBanco').value = c.banco + '|' + c.tag;
+    document.getElementById('comexRef').value   = c.ref;
+    document.getElementById('comexCargo').value = c.cargo;
+    document.getElementById('comexVcto').value  = c.vcto;
+    document.getElementById('comexUSD').value   = c.usd;
+    document.getElementById('comexInt').value   = c.int;
+  } else {
+    document.getElementById('comexBanco').value = 'Banco ITAU|tag-itau';
+    document.getElementById('comexRef').value   = '';
+    document.getElementById('comexCargo').value = '';
+    document.getElementById('comexVcto').value  = '';
+    document.getElementById('comexUSD').value   = '';
+    document.getElementById('comexInt').value   = '0';
+  }
+  document.getElementById('comexModal').classList.add('open');
+  setTimeout(()=>document.getElementById('comexRef').focus(), 50);
+}
+
+function closeComexModal(){ document.getElementById('comexModal').classList.remove('open'); _comexIdx = null; }
+document.getElementById('comexModalClose').addEventListener('click', closeComexModal);
+document.getElementById('comexCancelBtn').addEventListener('click', closeComexModal);
+document.getElementById('comexModal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('comexModal')) closeComexModal();
+});
+
+document.getElementById('comexSaveBtn').addEventListener('click', () => {
+  const parts = document.getElementById('comexBanco').value.split('|');
+  const banco = parts[0], tag = parts[1];
+  const ref   = document.getElementById('comexRef').value.trim();
+  const cargo = document.getElementById('comexCargo').value.trim() || '—';
+  const vcto  = document.getElementById('comexVcto').value.trim();
+  const usd   = parseFloat(document.getElementById('comexUSD').value) || 0;
+  const int_v = parseFloat(document.getElementById('comexInt').value) || 0;
+  if(!ref){ document.getElementById('comexRef').focus(); return; }
+  if(!vcto){ document.getElementById('comexVcto').focus(); return; }
+  if(_comexIdx !== null){
+    Object.assign(comexData[_comexIdx], {banco, tag, ref, cargo, vcto, usd, int:int_v});
+    showToast('✅ Crédito COMEX actualizado');
+  } else {
+    comexData.push({banco, tag, ref, cargo, vcto, usd, int:int_v});
+    showToast('✅ Crédito COMEX agregado');
+  }
+  closeComexModal();
+  renderComex();
+});
+
+// ── BALANCE BAR ──
+let banks = [
+  {name:'Bco. de Chile',  saldo:19035164, fecha:'20/09/2026', color:'#1e40af'},
+  {name:'Banco ITAU',     saldo:7321217,  fecha:'20/09/2026', color:'#0891b2'},
+  {name:'Bco. Security',  saldo:4392730,  fecha:'20/09/2026', color:'#0d9488'},
+  {name:'Scotiabank',     saldo:2928487,  fecha:'20/09/2026', color:'#7c3aed'},
+  {name:'Bco. Estado',    saldo:1830304,  fecha:'20/09/2026', color:'#d97706'},
+  {name:'BIKO',           saldo:1098183,  fecha:'20/09/2026', color:'#dc2626'},
+];
+
+function totalBanks(){ return banks.reduce((s,b)=>s+b.saldo,0); }
+
+function renderBanks(){
+  const total = totalBanks();
+  const bb = document.getElementById('balanceBar');
+  const bl = document.getElementById('balanceLegend');
+  bb.innerHTML=''; bl.innerHTML='';
+  banks.forEach(b => {
+    const pct = total > 0 ? (b.saldo/total*100).toFixed(1) : 0;
+    const seg = document.createElement('div');
+    seg.className='balance-bar-seg';
+    seg.style.cssText=`width:${pct}%;background:${b.color}`;
+    seg.title=`${b.name}: ${fmt(b.saldo)}`;
+    bb.appendChild(seg);
+
+    const row = document.createElement('div');
+    row.className='balance-leg-row';
+    row.style.cursor='default';
+    row.innerHTML=`
+      <div class="balance-leg-dot" style="background:${b.color}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="balance-leg-label">${b.name}</div>
+        <div style="font-size:9px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace">${b.fecha}</div>
+      </div>
+      <span class="balance-leg-val" style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">${fmt(b.saldo)}</span>
+    `;
+    bl.appendChild(row);
+  });
+
+  // Update the large total in the balance card
+  const kpiCard = document.getElementById('kpiTotalBancos');
+  if(kpiCard) kpiCard.textContent = fmt(total);
+  // Also update the first KPI tile (Saldo Bancos)
+  const kpiEl = document.querySelector('.kpi-value');
+  if(kpiEl) kpiEl.textContent = fmt(total);
+
+  // Update net position
+  updateNet();
+}
+
+function updateNet(){
+  const total = totalBanks();
+  const pagosUrgentes = 22701724;
+  const net = total - pagosUrgentes;
+  const netEl = document.getElementById('netValue');
+  if(netEl){
+    netEl.textContent = fmt(Math.abs(net));
+    netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+renderBanks();
+
+// ── EDIT BANKS MODAL ──
+function openBanksModal(){
+  const body = document.getElementById('banksModalBody');
+  body.innerHTML = banks.map((b,i)=>`
+    <div class="prov-group" style="margin-bottom:12px">
+      <div class="prov-group-head" style="border-left:4px solid ${b.color}">
+        <div class="balance-leg-dot" style="background:${b.color};width:12px;height:12px;flex-shrink:0"></div>
+        <span class="prov-nombre">${b.name}</span>
+      </div>
+      <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Saldo (CLP)</label>
+          <input type="text" id="saldo_${i}" value="${b.saldo.toLocaleString('es-CL')}"
+            style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;
+            background:var(--surface);color:var(--text-primary);font-family:'IBM Plex Mono',monospace;
+            font-size:13px;font-variant-numeric:tabular-nums;box-sizing:border-box"
+            oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Fecha Saldo</label>
+          <input type="text" id="fecha_${i}" value="${b.fecha}" placeholder="DD/MM/AAAA"
+            style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;
+            background:var(--surface);color:var(--text-primary);font-size:13px;box-sizing:border-box">
+        </div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('banksModal').classList.add('open');
+}
+
+function saveBanks(){
+  banks.forEach((b,i)=>{
+    const raw = document.getElementById(`saldo_${i}`).value.replace(/\./g,'').replace(',','.');
+    const val = parseFloat(raw);
+    if(!isNaN(val)) b.saldo = Math.round(val);
+    const f = document.getElementById(`fecha_${i}`).value.trim();
+    if(f) b.fecha = f;
+  });
+  document.getElementById('banksModal').classList.remove('open');
+  renderBanks();
+}
+
+document.getElementById('banksModalClose').addEventListener('click',()=>{
+  document.getElementById('banksModal').classList.remove('open');
+});
+document.getElementById('banksModal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('banksModal'))
+    document.getElementById('banksModal').classList.remove('open');
+});
+document.getElementById('saveBanksBtn').addEventListener('click', saveBanks);
+document.getElementById('editBanksBtn').addEventListener('click', openBanksModal);
+
+// ── SODIMAC INGRESOS ──
+const sodimacWeeks = [
+  {
+    id:'s39', label:'Semana 39', rango:'22–28 sep 2026', cobro:'28/09/2026',
+    neto:135385416, ve:135385416, cd:0,
+    facturas:[
+      {tipo:'VE',folio:'VE-40410',vcto:'23/09/2026',monto:137183},
+      {tipo:'VE',folio:'VE-40411',vcto:'23/09/2026',monto:536303},
+      {tipo:'VE',folio:'VE-40412',vcto:'23/09/2026',monto:13585545},
+      {tipo:'VE',folio:'VE-40413',vcto:'23/09/2026',monto:128567},
+      {tipo:'VE',folio:'VE-40414',vcto:'23/09/2026',monto:45851203},
+      {tipo:'VE',folio:'VE-40422',vcto:'23/09/2026',monto:32342874},
+      {tipo:'VE',folio:'VE-40490',vcto:'26/09/2026',monto:14915858},
+      {tipo:'VE',folio:'VE-40491',vcto:'26/09/2026',monto:27887883},
+    ]
+  },
+  {
+    id:'s40', label:'Semana 40', rango:'29 sep–5 oct 2026', cobro:'05/10/2026',
+    neto:85609950, ve:85707161, cd:97211,
+    facturas:[
+      {tipo:'VE',folio:'VE-40508',vcto:'30/09/2026',monto:9628619},
+      {tipo:'VE',folio:'VE-40509',vcto:'30/09/2026',monto:28423753},
+      {tipo:'VE',folio:'VE-40561',vcto:'03/10/2026',monto:14325690},
+      {tipo:'VE',folio:'VE-40562',vcto:'03/10/2026',monto:33329099},
+      {tipo:'FL',folio:'FL-149436405',vcto:'29/09/2026',monto:-97211,proveedor:'CROSS DOCKING'},
+    ]
+  },
+  {
+    id:'s41', label:'Semana 41', rango:'6–12 oct 2026', cobro:'12/10/2026',
+    neto:73851507, ve:73851507, cd:0,
+    facturas:[
+      {tipo:'VE',folio:'VE-40571',vcto:'07/10/2026',monto:24735906},
+      {tipo:'VE',folio:'VE-40577',vcto:'07/10/2026',monto:169622},
+      {tipo:'VE',folio:'VE-40580',vcto:'07/10/2026',monto:11110060},
+      {tipo:'VE',folio:'VE-40638',vcto:'10/10/2026',monto:9338304},
+      {tipo:'VE',folio:'VE-40639',vcto:'10/10/2026',monto:28497615},
+    ]
+  },
+  {
+    id:'s42', label:'Semana 42', rango:'13–19 oct 2026', cobro:'19/10/2026',
+    neto:178348355, ve:178348355, cd:0,
+    facturas:[
+      {tipo:'VE',folio:'VE-40662',vcto:'14/10/2026',monto:11169078},
+      {tipo:'VE',folio:'VE-40663',vcto:'14/10/2026',monto:26808367},
+      {tipo:'VE',folio:'VE-40721',vcto:'17/10/2026',monto:34642608},
+      {tipo:'VE',folio:'VE-40722',vcto:'17/10/2026',monto:105728302},
+    ]
+  },
+];
+
+// S39 = vigente (cobro próximo 28/09); S40-S42 = próximos
+const sodimacVigentes = sodimacWeeks.filter(w=>['s39'].includes(w.id));
+const sodimacProximos = sodimacWeeks.filter(w=>['s40','s41','s42'].includes(w.id));
+const allSod = [...sodimacVigentes,...sodimacProximos];
+
+const sodDiv = document.getElementById('sodimacIngresos');
+allSod.forEach(w=>{
+  const row = document.createElement('div');
+  row.className='sod-row';
+  const isPronto = ['s38','s39'].includes(w.id);
+  row.innerHTML=`
+    <div class="sod-icon">🏪</div>
+    <div>
+      <div class="sod-name">${w.label} · Cobro ${w.cobro}</div>
+      <div class="sod-sub">${w.rango}${w.cd>0?' · FL cross-docking −'+fmt(w.cd):''}</div>
+      <div class="sod-hint">▶ Ver detalle facturas</div>
+    </div>
+    <div class="sod-date">${isPronto?'<span style="color:var(--green);font-weight:700">VIGENTE</span>':'<span style="color:var(--text-muted)">PRÓXIMO</span>'}</div>
+    <div class="sod-amount">${fmt(w.neto)}</div>
+  `;
+  row.addEventListener('click',()=>openSodimacModal(w));
+  sodDiv.appendChild(row);
+});
+
+function openSodimacModal(w){
+  document.getElementById('sodimacModalSub').textContent = `${w.label} · ${w.rango} · Cobro el ${w.cobro}`;
+  document.getElementById('sodimacModalWeekLabel').textContent = `${w.label} · Cobro neto`;
+  document.getElementById('sodimacModalWeekTotal').textContent = fmt(w.neto);
+
+  const veTotal = w.facturas.filter(f=>f.tipo==='VE').reduce((s,f)=>s+f.monto,0);
+  const veRows = w.facturas.filter(f=>f.tipo==='VE').map(f=>`
+    <tr>
+      <td><span class="ve-tag">VE</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace">${f.folio}</td>
+      <td>${f.vcto}</td>
+      <td class="num" style="color:var(--green)">${fmt(f.monto)}</td>
+    </tr>`).join('');
+  const cdRows = w.facturas.filter(f=>f.tipo==='FL').map(f=>`
+    <tr class="cd-row">
+      <td><span class="fl-tag">FL</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace">${f.folio}</td>
+      <td>${f.vcto}</td>
+      <td class="num" style="color:var(--red)">${fmt(f.monto)}</td>
+    </tr>`).join('');
+  const subRow = `<tr class="sub-row"><td colspan="3">Subtotal VE</td><td class="num">${fmt(veTotal)}</td></tr>`;
+  const cdSumRow = w.cd>0 ? `<tr class="cd-row"><td colspan="3">Cross-Docking (FL a descontar)</td><td class="num" style="color:var(--red)">−${fmt(w.cd)}</td></tr>` : '';
+  const totalRow = `<tr class="total-row"><td colspan="3"><strong>TOTAL COBRO ${w.label.toUpperCase()}</strong></td><td class="num">${fmt(w.neto)}</td></tr>`;
+
+  document.getElementById('sodimacModalBody').innerHTML = `
+    <div class="prov-group">
+      <div class="sod-week-head">
+        <span class="sod-week-badge">${w.label}</span>
+        <span class="sod-week-title">${w.rango} · Cobro el ${w.cobro}</span>
+        <span class="sod-week-total">${fmt(w.neto)}</span>
+      </div>
+      <table class="sod-inv-table">
+        <thead><tr>
+          <th>Tipo</th><th>N° Folio</th><th>Vcto. Factura</th><th style="text-align:right">Monto</th>
+        </tr></thead>
+        <tbody>${veRows}${subRow}${cdRows}${cdSumRow}${totalRow}</tbody>
+      </table>
+    </div>`;
+  document.getElementById('sodimacModal').classList.add('open');
+}
+
+document.getElementById('sodimacModalClose').addEventListener('click',()=>{
+  document.getElementById('sodimacModal').classList.remove('open');
+});
+document.getElementById('sodimacModal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('sodimacModal'))
+    document.getElementById('sodimacModal').classList.remove('open');
+});
+
+// ── PROVEEDORES MODAL ──
+const provData = [
+  {rut:'76566490', nombre:'TRANSPORTE DE CONTENEDORES CHILE S.A.(TLI)', facturas:[
+    {folio:'FL-2779', vcto:'29/07/2026', saldo:6965393},
+  ]},
+  {rut:'76603240', nombre:'CONTENEDORES PATAGONIA SPA', facturas:[
+    {folio:'FL-124451', vcto:'15/09/2026', saldo:4010300},
+  ]},
+  {rut:'96656410', nombre:'BICE VIDA COMPAÑÍA DE SEGUROS S.A.', facturas:[
+    {folio:'FL-922512', vcto:'14/09/2026', saldo:1093796},
+  ]},
+  {rut:'81185000', nombre:'CESMEC S.A.', facturas:[
+    {folio:'FL-419077', vcto:'11/10/2026', saldo:991804},
+  ]},
+  {rut:'76320186', nombre:'TECNO FAST S.A', facturas:[
+    {folio:'FL-430254', vcto:'15/10/2026', saldo:927223},
+  ]},
+  {rut:'76730417', nombre:'COMERCIAL SAENZ SPA', facturas:[
+    {folio:'FL-7359', vcto:'31/07/2026', saldo:827526},
+  ]},
+  {rut:'97080000', nombre:'Banco BICE', facturas:[
+    {folio:'FL-3779067', vcto:'09/06/2026', saldo:43740},
+    {folio:'FL-3787258', vcto:'12/06/2026', saldo:21634},
+    {folio:'FL-3816602', vcto:'01/07/2026', saldo:54871},
+    {folio:'FL-3840319', vcto:'14/07/2026', saldo:55210},
+    {folio:'FL-3873891', vcto:'06/08/2026', saldo:54478},
+    {folio:'FL-3908646', vcto:'25/08/2026', saldo:54395},
+    {folio:'FL-3931414', vcto:'10/09/2026', saldo:55095},
+    {folio:'FL-3931415', vcto:'10/09/2026', saldo:55095},
+    {folio:'FL-3949222', vcto:'15/09/2026', saldo:56974},
+    {folio:'FL-3949223', vcto:'15/09/2026', saldo:56974},
+  ]},
+  {rut:'96945440', nombre:'Soc.Concesionaria Autopista Central S.A.', facturas:[
+    {folio:'LE-20719645', vcto:'01/10/2026', saldo:400181},
+  ]},
+  {rut:'77731886', nombre:'El Patron del Pallets Spa', facturas:[
+    {folio:'FL-6385', vcto:'15/09/2026', saldo:380800},
+  ]},
+  {rut:'76496130', nombre:'Sociedad Costanera Norte S.A.', facturas:[
+    {folio:'FL-6379422', vcto:'05/10/2026', saldo:59716},
+    {folio:'LE-12520777', vcto:'05/10/2026', saldo:309307},
+  ]},
+  {rut:'76444460', nombre:'G-4 ARQUITECTOS ASOCIADOS LIMITADA', facturas:[
+    {folio:'LE-545', vcto:'23/07/2026', saldo:367603},
+  ]},
+  {rut:'96806980', nombre:'ENTEL PCS TELECOMUNICACIONES S.A.', facturas:[
+    {folio:'FL-54135103', vcto:'15/10/2026', saldo:313070},
+  ]},
+  {rut:'85896100', nombre:'SERVICIOS EQUIFAX CHILE LIMITADA.', facturas:[
+    {folio:'FL-4228129', vcto:'01/10/2026', saldo:106522},
+  ]},
+  {rut:'76083317', nombre:'PINA Y ROMERO LIMITADA', facturas:[
+    {folio:'FL-20543', vcto:'31/08/2026', saldo:105000},
+  ]},
+  {rut:'76151639', nombre:'Sociedad Comercial Yerival Ltda.', facturas:[
+    {folio:'FL-52479', vcto:'16/09/2026', saldo:81991},
+  ]},
+  {rut:'76981875', nombre:'CONTEMPORA COMPANIA DE SEGUROS GENERALES S.A', facturas:[
+    {folio:'LE-125201', vcto:'13/08/2026', saldo:74605},
+  ]},
+  {rut:'76768946', nombre:'VOISSNET CLOUD SERVICES S.A.', facturas:[
+    {folio:'FL-62818', vcto:'30/09/2026', saldo:71707},
+  ]},
+  {rut:'77630439', nombre:'Operadora de Sistemas Electrónicos SPA(RUTA 78)', facturas:[
+    {folio:'LE-3409117', vcto:'30/09/2026', saldo:61980},
+    {folio:'LE-3455342', vcto:'30/09/2026', saldo:4987},
+  ]},
+  {rut:'76376061', nombre:'SOCIEDAD CONCESIONARIA VESPUCIO ORIENTE S.A.', facturas:[
+    {folio:'LE-3524252', vcto:'09/10/2026', saldo:8434},
+    {folio:'LE-3554183', vcto:'09/10/2026', saldo:27885},
+  ]},
+  {rut:'97004000', nombre:'Banco de Chile', facturas:[
+    {folio:'FL-47629422', vcto:'05/06/2026', saldo:33559},
+  ]},
+  {rut:'96928180', nombre:'Empresa Nac. de Certificaciones Electronica S.A(E-CERTCHILE)', facturas:[
+    {folio:'FL-3587007', vcto:'04/09/2026', saldo:30928},
+  ]},
+  {rut:'76526262', nombre:'FENWAY TECNOLOGIAS SPA', facturas:[
+    {folio:'FL-25819', vcto:'03/09/2026', saldo:25600},
+  ]},
+  {rut:'76743593', nombre:'EOX SPA', facturas:[
+    {folio:'FL-19016', vcto:'22/08/2026', saldo:18590},
+  ]},
+  {rut:'76172387', nombre:'SOCIEDAD CONCESIONARIA VALLES DEL BIO BIO S.A', facturas:[
+    {folio:'LE-1286826', vcto:'30/09/2026', saldo:15600},
+  ]},
+  {rut:'77722758', nombre:'SOCIEDAD CONCESIONARIA RUTA 5 CHILLAN-COLLIPULLI S.A.', facturas:[
+    {folio:'LE-2102081', vcto:'04/10/2026', saldo:11000},
+  ]},
+  {rut:'76167431', nombre:'Mat. de Cons.Electric. y Transporte Bruno Peredo E.I.R.L.', facturas:[
+    {folio:'FL-3377', vcto:'27/08/2026', saldo:9000},
+  ]},
+  {rut:'76449868', nombre:'SOCIEDAD CONCESIONARIA NUEVO CAMINO NOGALES - PUCHUNCAVI S.A', facturas:[
+    {folio:'LE-326189', vcto:'13/10/2026', saldo:2450},
+  ]},
+];
+
+function renderProvModal(){
+  const body = document.getElementById('modalBody');
+  body.innerHTML = '';
+
+  provData.forEach((p, pi) => {
+    if(p._deleted) return;
+    const activeFacts = p.facturas.filter(f=>!f._deleted);
+    if(activeFacts.length === 0) return;
+
+    const subtotal = activeFacts.reduce((s,f)=>s+f.saldo,0);
+
+    const group = document.createElement('div');
+    group.className = 'prov-group';
+
+    // Header
+    const head = document.createElement('div');
+    head.className = 'prov-group-head';
+    head.style.position = 'relative';
+    head.innerHTML = `
+      <span class="prov-rut-badge">${p.rut}</span>
+      <span class="prov-nombre">${p.nombre}</span>
+      <span class="prov-total-badge" data-ptotal="${pi}">${fmt(subtotal)}</span>
+      <button class="prov-del-prov" title="Eliminar proveedor completo" data-pi="${pi}">✕ Proveedor</button>`;
+    group.appendChild(head);
+
+    // Table
+    const tbl = document.createElement('table');
+    tbl.className = 'prov-inv-table';
+    tbl.innerHTML = `<thead><tr>
+      <th>Nº Documento</th>
+      <th>Vencimiento</th>
+      <th style="text-align:right">Total a Pagar</th>
+      <th style="width:32px"></th>
+    </tr></thead>`;
+    const tbody = document.createElement('tbody');
+
+    p.facturas.forEach((f, fi) => {
+      if(f._deleted) return;
+      const tr = document.createElement('tr');
+      tr.dataset.pi = pi;
+      tr.dataset.fi = fi;
+      tr.innerHTML = `
+        <td><span class="doc-tag">${f.folio}</span></td>
+        <td>${f.vcto}</td>
+        <td class="num">${fmt(f.saldo)}</td>
+        <td><button class="prov-del-fact" title="Eliminar factura" data-pi="${pi}" data-fi="${fi}">✕</button></td>`;
+      tbody.appendChild(tr);
+    });
+
+    tbl.appendChild(tbody);
+    group.appendChild(tbl);
+    body.appendChild(group);
+  });
+
+  // Update grand total
+  const grand = provData.filter(p=>!p._deleted).reduce((s,p)=>
+    s + p.facturas.filter(f=>!f._deleted).reduce((ss,f)=>ss+f.saldo,0), 0);
+  document.getElementById('provTotalVal').textContent = fmt(grand);
+
+  // Bind delete buttons
+  body.querySelectorAll('.prov-del-fact').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const pi = +btn.dataset.pi, fi = +btn.dataset.fi;
+      const tr = btn.closest('tr');
+      tr.style.transition = 'opacity .3s,transform .3s';
+      tr.style.opacity = '0'; tr.style.transform = 'translateX(16px)';
+      setTimeout(()=>{
+        provData[pi].facturas[fi]._deleted = true;
+        // If no facturas left, mark provider deleted too
+        if(provData[pi].facturas.filter(f=>!f._deleted).length === 0)
+          provData[pi]._deleted = true;
+        renderProvModal();
+      }, 300);
+    });
+  });
+
+  body.querySelectorAll('.prov-del-prov').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const pi = +btn.dataset.pi;
+      const grp = btn.closest('.prov-group');
+      grp.style.transition = 'opacity .3s,transform .3s';
+      grp.style.opacity = '0'; grp.style.transform = 'translateX(16px)';
+      setTimeout(()=>{
+        provData[pi]._deleted = true;
+        provData[pi].facturas.forEach(f=>f._deleted = true);
+        renderProvModal();
+      }, 300);
+    });
+  });
+}
+
+function openProvModal(){
+  renderProvModal();
+  document.getElementById('provModal').classList.add('open');
+}
+
+document.getElementById('modalClose').addEventListener('click',()=>{
+  document.getElementById('provModal').classList.remove('open');
+});
+document.getElementById('provModal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('provModal'))
+    document.getElementById('provModal').classList.remove('open');
+});
+
+// ── UPLOAD HELPERS ──
+function showToast(msg, ok=true){
+  const t = document.getElementById('uploadToast');
+  t.textContent = msg;
+  t.style.background = ok ? '#166534' : '#991b1b';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+function parseDate(v){
+  if(!v) return null;
+  if(typeof v === 'number'){
+    // Excel serial date
+    const d = new Date(Math.round((v - 25569)*86400*1000));
+    return d;
+  }
+  if(typeof v === 'string'){
+    // DD/MM/YYYY
+    const m = v.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if(m) return new Date(+m[3]<100?2000+ +m[3]: +m[3], +m[2]-1, +m[1]);
+  }
+  return null;
+}
+
+function fmtDate(d){
+  if(!d) return '—';
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function findCol(headers, keywords){
+  return headers.findIndex(h => h && keywords.some(k => String(h).toLowerCase().includes(k.toLowerCase())));
+}
+
+// ── SODIMAC EXCEL UPLOAD ──
+document.getElementById('sodimacUpload').addEventListener('change', function(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb = XLSX.read(ev.target.result, {type:'array', cellDates:true});
+      // Find first sheet
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if(!rows.length){ showToast('⚠ Archivo vacío', false); return; }
+
+      // Detect header row (first row with ≥4 non-empty cells)
+      let hIdx = rows.findIndex(r => r.filter(Boolean).length >= 4);
+      if(hIdx < 0) hIdx = 0;
+      const headers = rows[hIdx].map(h=>String(h||'').trim());
+
+      const colTipo  = findCol(headers,['tipo','type']);
+      const colFolio = findCol(headers,['folio','numero','nro','n°','num']);
+      const colVcto  = findCol(headers,['venc','vcto','fecha_v','due']);
+      const colMonto = findCol(headers,['monto','saldo','total','valor','importe','amount']);
+
+      if(colMonto < 0){ showToast('⚠ No encontré columna de monto en el Excel', false); return; }
+
+      // Week date ranges (use current year or detect from data)
+      const weekRanges = [
+        {id:'s38', label:'Semana 38', from:new Date(2026,8,15), to:new Date(2026,8,21)},
+        {id:'s39', label:'Semana 39', from:new Date(2026,8,22), to:new Date(2026,8,28)},
+        {id:'s40', label:'Semana 40', from:new Date(2026,8,29), to:new Date(2026,9,5)},
+        {id:'s41', label:'Semana 41', from:new Date(2026,9,6),  to:new Date(2026,9,12)},
+      ];
+
+      // Reset week facturas
+      const newWeeks = sodimacWeeks.map(w=>({...w, facturas:[], neto:0, ve:0, cd:0}));
+
+      let totalParsed = 0;
+      for(let i=hIdx+1; i<rows.length; i++){
+        const r = rows[i];
+        const monto = parseFloat(String(r[colMonto]||'').replace(/[$\.\s]/g,'').replace(',','.'));
+        if(!monto && monto!==0) continue;
+        const tipo  = colTipo>=0 ? String(r[colTipo]||'VE').trim().toUpperCase() : 'VE';
+        const folio = colFolio>=0 ? String(r[colFolio]||'').trim() : '';
+        let vctoDate = colVcto>=0 ? parseDate(r[colVcto]) : null;
+        const vctoStr = fmtDate(vctoDate);
+
+        // Assign to week
+        const week = newWeeks.find(w => vctoDate && vctoDate >= w.from && vctoDate <= w.to);
+        if(!week) continue;
+
+        const absM = Math.abs(monto);
+        week.facturas.push({tipo, folio, vcto:vctoStr, monto: tipo==='FL' ? -absM : absM});
+        if(tipo==='VE'){ week.ve += absM; }
+        else if(tipo==='FL'){ week.cd += absM; }
+        totalParsed++;
+      }
+
+      // Compute neto per week
+      newWeeks.forEach(w=>{ w.neto = w.ve - w.cd; });
+
+      // Update global
+      sodimacWeeks.length = 0;
+      newWeeks.forEach(w=>sodimacWeeks.push(w));
+
+      // Re-render ingresos rows
+      const sodDiv = document.getElementById('sodimacIngresos');
+      sodDiv.innerHTML='';
+      const allSodNew = [...sodimacWeeks];
+      allSodNew.forEach(w=>{
+        const row = document.createElement('div');
+        row.className='sod-row';
+        const isPronto = ['s38','s39'].includes(w.id);
+        row.innerHTML=`
+          <div class="sod-icon">🏪</div>
+          <div>
+            <div class="sod-name">${w.label} · Cobro ${w.cobro}</div>
+            <div class="sod-sub">${w.rango}${w.cd>0?' · FL cross-docking −'+fmt(w.cd):''}</div>
+            <div class="sod-hint">▶ Ver detalle facturas</div>
+          </div>
+          <div class="sod-date">${isPronto?'<span style="color:var(--green);font-weight:700">VIGENTE</span>':'<span style="color:var(--text-muted)">PRÓXIMO</span>'}</div>
+          <div class="sod-amount">${fmt(w.neto)}</div>
+        `;
+        row.addEventListener('click',()=>openSodimacModal(w));
+        sodDiv.appendChild(row);
+      });
+
+      // Update footer total
+      const totalNeto = sodimacWeeks.reduce((s,w)=>s+w.neto,0);
+      const footerEl = document.querySelector('.card[style*="green"] .card-header span');
+      if(footerEl) footerEl.textContent = fmt(totalNeto)+' total';
+
+      this.value='';
+      showToast(`✅ Sodimac actualizado · ${totalParsed} facturas · ${sodimacWeeks.filter(w=>w.neto>0).length} semanas`);
+    } catch(err){
+      showToast('⚠ Error al leer el archivo: '+err.message, false);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// ── PROVEEDORES A EXCLUIR SIEMPRE (filtro permanente) ──
+const PROV_EXCLUIDOS = new Set([
+  '55555555',  // PROVEEDOR EXTRANJERO
+  '76821330',  // IMPERIAL S.A
+  '77398220',  // MERCADO LIBRE CHILE LTDA
+  '96511460',  // CONSTRUMART S.A (LAS REJAS)
+  '96726970',  // CHILEMAT SPA
+  '96792430',  // SODIMAC S.A
+]);
+
+function normRut(r){
+  // Strip dots, dashes, spaces and verification digit → digits only
+  return String(r||'').replace(/[\.\-\s]/g,'').replace(/k$/i,'').toUpperCase()
+    .replace(/[^0-9]/g,'');
+}
+
+// ── PROVEEDORES EXCEL UPLOAD ──
+document.getElementById('provUpload').addEventListener('change', function(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb = XLSX.read(ev.target.result, {type:'array', cellDates:true});
+
+      // Try to find a sheet named "PROVEEDORES" or similar
+      let sheetName = wb.SheetNames.find(n=>
+        n.toUpperCase().includes('PROV') || n.toUpperCase().includes('PROVEEDOR')
+      ) || wb.SheetNames[0];
+
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if(!rows.length){ showToast('⚠ Hoja vacía', false); return; }
+
+      // Detect header
+      let hIdx = rows.findIndex(r => r.filter(Boolean).length >= 4);
+      if(hIdx < 0) hIdx = 0;
+      const headers = rows[hIdx].map(h=>String(h||'').trim());
+
+      const colRut    = findCol(headers,['rut','r.u.t']);
+      const colNombre = findCol(headers,['nombre','razon','razón','name','proveedor']);
+      const colFolio  = findCol(headers,['folio','nro','n°','numero','doc','factura','tipo']);
+      const colVcto   = findCol(headers,['venc','vcto','fecha_v','due']);
+      const colSaldo  = findCol(headers,['saldo','total','monto','valor','importe']);
+
+      if(colSaldo < 0){ showToast('⚠ No encontré columna de saldo en el Excel', false); return; }
+
+      // Group by RUT
+      const map = new Map();
+      let totalParsed = 0;
+
+      let skipped = 0;
+      for(let i=hIdx+1; i<rows.length; i++){
+        const r = rows[i];
+        const saldo = parseFloat(String(r[colSaldo]||'').replace(/[$\.\s]/g,'').replace(',','.'));
+        if(!saldo || saldo<=0) continue;
+
+        const rut    = colRut>=0    ? String(r[colRut]||'').trim()    : '—';
+        const nombre = colNombre>=0 ? String(r[colNombre]||'').trim() : 'Sin nombre';
+        const folio  = colFolio>=0  ? String(r[colFolio]||'').trim()  : '—';
+        const vctoD  = colVcto>=0   ? parseDate(r[colVcto])           : null;
+        const vcto   = fmtDate(vctoD);
+
+        // ── Filtro permanente: excluir proveedores configurados ──
+        if(PROV_EXCLUIDOS.has(normRut(rut))){ skipped++; continue; }
+
+        if(!map.has(rut)) map.set(rut, {rut, nombre, facturas:[]});
+        const entry = map.get(rut);
+        if(nombre && nombre!=='Sin nombre') entry.nombre = nombre;
+        entry.facturas.push({folio, vcto, saldo: Math.round(saldo)});
+        totalParsed++;
+      }
+
+      if(!map.size){ showToast('⚠ No se encontraron filas con saldo válido', false); return; }
+
+      // Update provData
+      provData.length = 0;
+      map.forEach(v => provData.push(v));
+
+      // Update total
+      const grand = provData.reduce((s,p)=>s+p.facturas.reduce((ss,f)=>ss+f.saldo,0),0);
+      const totalEl = document.getElementById('provTotalVal');
+      if(totalEl) totalEl.textContent = fmt(grand);
+
+      // If modal is open, refresh content
+      if(document.getElementById('provModal').classList.contains('open')) openProvModal();
+
+      // Update KPI tile if possible
+      const kpiAmber = document.querySelector('.k-amber');
+      if(kpiAmber) kpiAmber.querySelector('.kpi-val').textContent = fmt(grand);
+
+      this.value='';
+      const skipMsg = skipped > 0 ? ` · ${skipped} excluidas (Sodimac/Construmart/etc.)` : '';
+      showToast(`✅ Proveedores actualizados · ${totalParsed} facturas · ${map.size} proveedores${skipMsg}`);
+    } catch(err){
+      showToast('⚠ Error al leer el archivo: '+err.message, false);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// Proveedores click wiring is handled inside renderTimeline()
+</script>
+
+</body></html>

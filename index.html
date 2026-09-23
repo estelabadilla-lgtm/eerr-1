@@ -883,6 +883,7 @@
     <button data-tab="centros" onclick="showTab('centros')">Centros de Costos</button>
     <button data-tab="meli" onclick="showTab('meli')">MELI Liquidación</button>
     <button data-tab="seguros" onclick="showTab('seguros')">Seguros</button>
+    <button data-tab="flujo_caja" onclick="showTab('flujo_caja')">Flujo de Caja</button>
   </nav>
 </div>
 
@@ -1207,6 +1208,11 @@
       <div id="seg-docs-lista"></div>
     </div>
   </div>
+</div>
+
+<!-- ══════════════════ TAB: FLUJO DE CAJA ══════════════════ -->
+<div id="tab-flujo_caja" class="tab">
+  <iframe src="./flujo_caja.html" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
 </div>
 
 <script>
@@ -4064,8 +4070,8 @@ async function segEliminarPoliza(id) {
 // (pensado para que cada área vea/edite lo que le corresponde), no
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
-  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true,  puedeActualizarMayor: false },
-  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros'], canEdit: true,  puedeActualizarMayor: true  },
+  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja'], canEdit: true,  puedeActualizarMayor: false },
+  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja'], canEdit: true,  puedeActualizarMayor: true  },
   bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['seguros'], canEdit: true, puedeActualizarMayor: false },
 };
 

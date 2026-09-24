@@ -394,11 +394,14 @@
   /* Editar/Eliminar solo para Gerencia */
   .seg-icon-btn[title="Editar"],
   .seg-icon-btn[title="Eliminar"],
-  .seg-btn-add { display: none !important; }
+  .seg-btn-add,
+  .seg-docs-upload-section { display: none !important; }
 
   body.role-gerencia .seg-icon-btn[title="Editar"],
   body.role-gerencia .seg-icon-btn[title="Eliminar"],
   body.role-gerencia .seg-btn-add { display: inline-flex !important; }
+
+  body.role-gerencia .seg-docs-upload-section { display: block !important; }
 
   body.role-viewer .seg-doc-upload,
   body.role-viewer .seg-doc-del { display: none !important; }
@@ -1166,43 +1169,45 @@
       <button type="button" class="seg-modal-close" onclick="segCerrarDocsModal()">&times;</button>
     </div>
     <div class="seg-modal-body">
-      <div class="seg-form-grid">
-        <div class="seg-form-row" style="grid-column:1/-1">
-          <label>Tipo de documento</label>
-          <select id="seg-docs-tipo" onchange="segDocsTipoChange()">
-            <option value="poliza_seguro_accidentes">Póliza de Seguro</option>
-            <option value="factura_compra">Factura de Compra</option>
-            <option value="padron">Padrón</option>
-            <option value="primera_inscripcion">Primera Inscripción</option>
-            <option value="permiso_circulacion">Permiso de Circulación</option>
-            <option value="soap">SOAP</option>
-            <option value="revision_tecnica">Revisión Técnica</option>
-            <option value="revision_tecnica_contaminantes">Revisión Técnica Contaminantes</option>
-            <option value="otro">Otro</option>
-          </select>
-        </div>
-        <div class="seg-form-row">
-          <label>Archivo</label>
-          <input type="file" id="seg-docs-file">
-          <span id="seg-docs-file-hint" style="font-size:11px;color:var(--gris);display:none">Puedes seleccionar varios archivos a la vez</span>
-        </div>
-        <div class="seg-form-row"></div>
-        <div id="seg-docs-fechas" style="display:none;grid-column:1/-1">
-          <div class="seg-form-grid" style="margin-top:4px">
-            <div class="seg-form-row">
-              <label>Fecha de Inicio</label>
-              <input type="date" id="seg-docs-finicio">
-            </div>
-            <div class="seg-form-row">
-              <label>Fecha de Término</label>
-              <input type="date" id="seg-docs-ftermino">
+      <div class="seg-docs-upload-section">
+        <div class="seg-form-grid">
+          <div class="seg-form-row" style="grid-column:1/-1">
+            <label>Tipo de documento</label>
+            <select id="seg-docs-tipo" onchange="segDocsTipoChange()">
+              <option value="poliza_seguro_accidentes">Póliza de Seguro</option>
+              <option value="factura_compra">Factura de Compra</option>
+              <option value="padron">Padrón</option>
+              <option value="primera_inscripcion">Primera Inscripción</option>
+              <option value="permiso_circulacion">Permiso de Circulación</option>
+              <option value="soap">SOAP</option>
+              <option value="revision_tecnica">Revisión Técnica</option>
+              <option value="revision_tecnica_contaminantes">Revisión Técnica Contaminantes</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="seg-form-row">
+            <label>Archivo</label>
+            <input type="file" id="seg-docs-file">
+            <span id="seg-docs-file-hint" style="font-size:11px;color:var(--gris);display:none">Puedes seleccionar varios archivos a la vez</span>
+          </div>
+          <div class="seg-form-row"></div>
+          <div id="seg-docs-fechas" style="display:none;grid-column:1/-1">
+            <div class="seg-form-grid" style="margin-top:4px">
+              <div class="seg-form-row">
+                <label>Fecha de Inicio</label>
+                <input type="date" id="seg-docs-finicio">
+              </div>
+              <div class="seg-form-row">
+                <label>Fecha de Término</label>
+                <input type="date" id="seg-docs-ftermino">
+              </div>
             </div>
           </div>
         </div>
+        <button type="button" class="seg-btn-add" style="width:fit-content;margin-top:8px" onclick="segSubirDocumentoModal()">+ Subir Documento</button>
+        <div id="seg-docs-status" style="font-size:12px;color:var(--gris)"></div>
+        <div class="seg-form-sep"></div>
       </div>
-      <button type="button" class="seg-btn-add" style="width:fit-content;margin-top:8px" onclick="segSubirDocumentoModal()">+ Subir Documento</button>
-      <div id="seg-docs-status" style="font-size:12px;color:var(--gris)"></div>
-      <div class="seg-form-sep"></div>
       <div id="seg-docs-lista"></div>
     </div>
   </div>

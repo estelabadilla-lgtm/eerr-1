@@ -519,7 +519,7 @@ function renderAll(){renderMeta();fillTipos();fillVends();render()}
 let pend={cli:null,bl:null};
 const LS='cartera_vencidos_data';
 function saveFile(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
-bJson.addEventListener('click',()=>saveFile('data.json',new Blob([JSON.stringify(DATA)],{type:'application/json'})));
+bJson.addEventListener('click',()=>location.reload());
 const setDrop=(id,cls,txt)=>{const d=document.getElementById('d'+id),s=document.getElementById('s'+id);d.classList.remove('ok','err');if(cls)d.classList.add(cls);s.textContent=txt};
 bUpd.addEventListener('click',()=>{const o=upd.hidden;upd.hidden=!o;bUpd.setAttribute('aria-expanded',o)});
 bCancel.addEventListener('click',()=>{pend={cli:null,bl:null};inCli.value='';inBl.value='';resetDrops();prev.hidden=true;msg.textContent='';bApply.disabled=true;upd.hidden=true;bUpd.setAttribute('aria-expanded',false)});

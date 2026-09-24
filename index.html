@@ -884,6 +884,7 @@
     <button data-tab="meli" onclick="showTab('meli')">MELI Liquidación</button>
     <button data-tab="seguros" onclick="showTab('seguros')">Seguros</button>
     <button data-tab="flujo_caja" onclick="showTab('flujo_caja')">Flujo de Caja</button>
+    <button data-tab="cartera" onclick="showTab('cartera')">Cartera Vencidos</button>
   </nav>
 </div>
 
@@ -1215,6 +1216,11 @@
   <iframe src="./flujo_caja.html" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
 </div>
 
+<!-- ══════════════════ TAB: CARTERA VENCIDOS ══════════════════ -->
+<div id="tab-cartera" class="tab">
+  <iframe src="./cartera_vencidos.html" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════
 //  GLOBALS
@@ -1531,7 +1537,7 @@ function showTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
-  document.querySelector('.toolbar').style.display = name === 'flujo_caja' ? 'none' : '';
+  document.querySelector('.toolbar').style.display = (name === 'flujo_caja' || name === 'cartera') ? 'none' : '';
   if (name === 'graficos') renderCharts();
   if (name === 'seguros' && !SEG_LOADED) segInit();
 }
@@ -4071,8 +4077,8 @@ async function segEliminarPoliza(id) {
 // (pensado para que cada área vea/edite lo que le corresponde), no
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
-  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja'], canEdit: true,  puedeActualizarMayor: false },
-  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja'], canEdit: true,  puedeActualizarMayor: true  },
+  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja','cartera'], canEdit: true,  puedeActualizarMayor: false },
+  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja','cartera'], canEdit: true,  puedeActualizarMayor: true  },
   bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['seguros'], canEdit: true, puedeActualizarMayor: false },
 };
 

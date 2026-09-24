@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cartera Clientes Vencidos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f6f6f3; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --accent:#1c5cab; --bar:#2a78d6; --bar-soft:#9ec5f4;
+  --crit:#d03b3b; --crit-bg:#fbe9e9; --crit-ink:#a32020;
+  --good:#0ca30c; --good-bg:#e6f4e6; --good-ink:#006300;
+  --warn-bg:#fdf1d8; --warn-ink:#8a5a00;
+  --hover:rgba(42,120,214,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --accent:#86b6ef; --bar:#3987e5; --bar-soft:#1c5cab;
+    --crit:#e66767; --crit-bg:#3a1c1c; --crit-ink:#f19a9a;
+    --good:#0ca30c; --good-bg:#16301a; --good-ink:#5fd35f;
+    --warn-bg:#3a2e12; --warn-ink:#f2c35a;
+    --hover:rgba(57,135,229,.12);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --accent:#86b6ef; --bar:#3987e5; --bar-soft:#1c5cab;
+  --crit:#e66767; --crit-bg:#3a1c1c; --crit-ink:#f19a9a;
+  --good:#0ca30c; --good-bg:#16301a; --good-ink:#5fd35f;
+  --warn-bg:#3a2e12; --warn-ink:#f2c35a;
+  --hover:rgba(57,135,229,.12);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-inline:16px;padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px}
+h1{font-size:22px;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--ink2);margin:2px 0 0}
+.asof{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink2);font:inherit;font-size:13px;padding:6px 11px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:600}
+.seg button:focus-visible,input:focus-visible,select:focus-visible,th button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.flabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:-4px}
+input[type=search],select{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+input[type=search]{flex:1 1 160px;min-width:0}
+#reset{margin-left:auto;font:inherit;font-size:13px;background:none;border:0;color:var(--accent);cursor:pointer;padding:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi .lab{font-size:12px;color:var(--ink2)}
+.kpi .val{font-size:24px;font-weight:650;letter-spacing:-.01em}
+.kpi .note{font-size:12px;color:var(--muted)}
+.kpi.crit .val{color:var(--crit-ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;min-width:0}
+.card h2{font-size:14px;margin:0 0 2px}
+.card .hint{font-size:12px;color:var(--muted);margin:0 0 10px}
+svg text{fill:var(--muted);font-size:11px}
+svg .vlab{fill:var(--ink2);font-size:11px}
+svg .clab{fill:var(--ink);font-size:12px}
+.hit{fill:transparent;cursor:pointer}
+.hit:hover{fill:var(--hover)}
+.tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,.12);border-radius:8px;padding:8px 10px;font-size:12px;z-index:10;max-width:260px}
+.tip b{display:block;margin-bottom:2px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.bl{background:var(--crit-bg);color:var(--crit-ink)}
+.pill.ac{background:var(--good-bg);color:var(--good-ink)}
+.days{font-variant-numeric:tabular-nums;font-weight:600}
+.days.late{color:var(--crit-ink)}
+.days.soon{color:var(--muted);font-weight:400}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap}
+td.name{white-space:normal;min-width:200px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--surface)}
+th button{all:unset;cursor:pointer}
+th button::after{content:attr(data-dir);margin-left:4px;color:var(--accent)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--hover)}
+tfoot td{font-weight:650;border-bottom:0;border-top:1px solid var(--axis)}
+tr.grp{cursor:pointer}
+tr.grp td{vertical-align:middle}
+tr.grp.open td{border-bottom-color:transparent;background:var(--hover)}
+.car{display:inline-block;width:14px;color:var(--muted);transition:transform .15s}
+tr.grp.open .car{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.car{transition:none}}
+.gname{display:flex;gap:6px;align-items:flex-start}.gname .car{margin-top:1px;flex:none}
+.rut{display:block;font-size:12px;color:var(--muted)}
+tr.sub>td{padding:0 10px 12px 34px;background:var(--hover);border-bottom:1px solid var(--grid)}
+tr.sub:hover{background:transparent}
+table.inv{width:auto;min-width:min(640px,100%);background:var(--surface);border:1px solid var(--border);border-radius:8px;border-collapse:separate;border-spacing:0;overflow:hidden}
+table.inv th{position:static;background:var(--surface);font-size:10.5px;padding:6px 12px}
+table.inv td{padding:6px 12px;font-size:12.5px}
+table.inv tr:last-child td{border-bottom:0}
+.vcell{color:var(--crit-ink);font-variant-numeric:tabular-nums}
+.btn.sm{padding:5px 10px;font-weight:500}
+.tbar{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.count{font-size:12px;color:var(--muted)}
+.empty{color:var(--muted);padding:24px 0;text-align:center}
+@media (max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+@media (max-width:420px){.kpi .val{font-size:20px}}
+
+.hbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:7px 12px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink)}
+.btn.pri{background:var(--accent);color:var(--surface);border-color:transparent}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.upd{display:flex;flex-direction:column;gap:12px}
+.drops{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.drop{border:1.5px dashed var(--axis);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;background:var(--bg)}
+.drop.over{border-color:var(--accent);background:var(--hover)}
+.drop.ok{border-style:solid;border-color:var(--good)}
+.drop.err{border-style:solid;border-color:var(--crit)}
+.drop b{font-size:13px}
+.drop .d1{font-size:12px;color:var(--ink2)}
+.drop .st{font-size:12px;color:var(--muted)}
+.drop.ok .st{color:var(--good-ink)}
+.drop.err .st{color:var(--crit-ink)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.prev{font-size:13px;color:var(--ink2);background:var(--bg);border-radius:8px;padding:10px 12px}
+.prev table{font-size:12px;width:auto}
+.prev td,.prev th{padding:3px 12px 3px 0;border:0;background:transparent;position:static}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{font-size:13px}
+.msg.ok{color:var(--good-ink)}.msg.err{color:var(--crit-ink)}
+details.rules{font-size:12px;color:var(--ink2)}
+details.rules summary{cursor:pointer;color:var(--accent)}
+details.rules ol{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.meta{font-size:12px;color:var(--muted)}
+@media (max-width:640px){.drops{grid-template-columns:1fr}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Cartera de clientes vencidos</h1>
+      <p class="sub">Clientes Nacionales, Cheques por Cobrar y Anticipo de Clientes</p>
+      <p class="meta" id="meta"></p>
+    </div>
+    <div class="hbtns">
+      <span class="asof" id="asof"></span>
+      <button type="button" class="btn" id="bXls">Descargar Excel</button>
+      <button type="button" class="btn pri" id="bUpd" aria-expanded="false" aria-controls="upd">Actualizar datos</button>
+    </div>
+  </header>
+
+  <section class="card upd" id="upd" hidden>
+    <div>
+      <h2>Actualizar con archivos nuevos</h2>
+      <p class="hint" style="margin:2px 0 0">Sube uno o los dos archivos. Si subes solo uno, el otro se mantiene como está ahora. Los datos se procesan en tu navegador y quedan guardados en este navegador. Para dejarlos fijos en el proyecto, descarga el data.json y reemplaza el archivo.</p>
+    </div>
+    <div class="drops">
+      <label class="drop" id="dCli" for="inCli">
+        <b>Clientes</b>
+        <span class="d1">Reporte "Detalle de Documentos por Auxiliar" (.xlsx)</span>
+        <span class="st" id="sCli">Arrastra el archivo aquí o haz clic para elegirlo</span>
+        <input type="file" id="inCli" accept=".xlsx,.xls">
+      </label>
+      <label class="drop" id="dBl" for="inBl">
+        <b>Bloqueados</b>
+        <span class="d1">Archivo con columna C = BL (S/N) y columna D = Rut (.xlsx)</span>
+        <span class="st" id="sBl">Arrastra el archivo aquí o haz clic para elegirlo</span>
+        <input type="file" id="inBl" accept=".xlsx,.xls">
+      </label>
+    </div>
+    <div class="prev" id="prev" hidden></div>
+    <div class="actions">
+      <button type="button" class="btn pri" id="bApply" disabled>Guardar y actualizar dashboard</button>
+      <button type="button" class="btn" id="bCancel">Cancelar</button>
+      <button type="button" class="btn" id="bJson">Descargar data.json</button>
+      <span class="msg" id="msg" role="status"></span>
+    </div>
+    <details class="rules">
+      <summary>Reglas que se aplican siempre</summary>
+      <ol>
+        <li>Solo cuentas 10-04-01-01 Clientes Nacionales, 10-05-01-02 Cheques por Cobrar y 20-05-01-02 Anticipo de Clientes.</li>
+        <li>Se sacan los documentos con saldo menor a 2 (incluye negativos: depósitos, saldos a favor y abonos).</li>
+        <li>Se excluyen por RUT (todas sus sucursales): Imperial S.A (76.821.330-5), Mercado Libre Chile (77.398.220-1), Construmart (96.511.460-2), Chilemat (96.726.970-0), Sodimac (96.792.430-K) y Rexel Electra (96.899.860-9).</li>
+        <li>Estado: se cruza el RUT con la columna D del archivo de bloqueados; columna C = S → Bloqueado, N → Activo.</li>
+        <li>Vendedor: columna "Nombre del Vendedor". Si un documento no trae vendedor (cheques, anticipos), se usa el vendedor más frecuente de ese RUT; si no hay, queda "Sin vendedor".</li>
+        <li>Días de atraso = fecha de corte del reporte ("Saldos al") − fecha de vencimiento.</li>
+      </ol>
+    </details>
+  </section>
+  <div class="filters" role="group" aria-label="Filtros">
+    <span class="flabel">Estado</span>
+    <div class="seg" id="fEstado">
+      <button type="button" data-v="" aria-pressed="true">Todos</button>
+      <button type="button" data-v="Activo" aria-pressed="false">Activo</button>
+      <button type="button" data-v="Bloqueado" aria-pressed="false">Bloqueado</button>
+    </div>
+    <span class="flabel">Vencimiento</span>
+    <div class="seg" id="fVenc">
+      <button type="button" data-v="" aria-pressed="true">Todos</button>
+      <button type="button" data-v="v" aria-pressed="false">Vencidos</button>
+      <button type="button" data-v="p" aria-pressed="false">Por vencer</button>
+    </div>
+    <select id="fVend" aria-label="Vendedor"><option value="">Todos los vendedores</option></select>
+    <select id="fTipo" aria-label="Tipo de documento"><option value="">Todo tipo de documento</option></select>
+    <input type="search" id="fQ" placeholder="Buscar cliente o RUT" aria-label="Buscar cliente o RUT">
+    <button type="button" id="reset">Limpiar</button>
+  </div>
+
+  <section class="kpis">
+    <div class="kpi"><span class="lab">Saldo total</span><span class="val" id="kTot"></span><span class="note" id="kTotN"></span></div>
+    <div class="kpi crit"><span class="lab">Vencido</span><span class="val" id="kVen"></span><span class="note" id="kVenN"></span></div>
+    <div class="kpi"><span class="lab">Por vencer</span><span class="val" id="kPor"></span><span class="note" id="kPorN"></span></div>
+    <div class="kpi crit"><span class="lab">Clientes bloqueados</span><span class="val" id="kBl"></span><span class="note" id="kBlN"></span></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Antigüedad del saldo</h2>
+      <p class="hint">Días de atraso según fecha de vencimiento. Haz clic en un tramo para filtrar.</p>
+      <div id="aging"></div>
+    </div>
+    <div class="card">
+      <h2>Top 10 clientes por saldo</h2>
+      <p class="hint">Parte oscura = vencido · parte clara = por vencer.</p>
+      <div id="topc"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Saldo por vendedor</h2>
+    <p class="hint">Parte oscura = vencido · parte clara = por vencer. Haz clic en un vendedor para ver solo sus clientes.</p>
+    <div id="vendc"></div>
+  </section>
+
+  <section class="card">
+    <div class="tbar">
+      <h2 id="tTitle">Detalle</h2>
+      <div class="hbtns">
+        <div class="seg" id="fModo" role="group" aria-label="Vista del detalle">
+          <button type="button" data-v="c" aria-pressed="true">Por cliente</button>
+          <button type="button" data-v="d" aria-pressed="false">Por documento</button>
+        </div>
+        <button type="button" class="btn sm" id="bExp">Expandir todo</button>
+        <span class="count" id="tCount"></span>
+      </div>
+    </div>
+    <div class="tablewrap"><table id="tbl"></table></div>
+  </section>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const CUENTAS={'10-04-01-01':'Clientes Nacionales','10-05-01-02':'Cheques por Cobrar','20-05-01-02':'Anticipo de Clientes'};
+const EXCLUIDOS=['76.821.330-5','77.398.220-1','96.511.460-2','96.726.970-0','96.792.430-K','96.899.860-9'];
+const rk=s=>String(s??'').trim().toUpperCase().replace(/\./g,'');
+const EXC=new Set(EXCLUIDOS.map(rk));
+let DATA=null, D=[], TODAY=0;
+const SINV='Sin vendedor';
+const vname=s=>String(s??'').trim().replace(/\s+/g,' ');
+const utc=s=>{const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)};
+function build(data){
+  DATA=data; TODAY=utc(data.corte);
+  // row: [rut,nombre,tipo,doc,fecha,saldo,cuenta,vendedor]
+  D=data.rows.map(r=>{const bl=data.bl[rk(r[0])];const est=bl==='S'?'Bloqueado':(bl==='N'?'Activo':'Sin dato');
+    return [r[0],r[1],est,r[2],r[3],r[4],r[5],Math.round((TODAY-utc(r[4]))/864e5),r[6],r[7]||SINV]});
+}
+const pad=n=>String(n).padStart(2,'0');
+const fdateIso=iso=>{const [y,m,d]=iso.split('-');return d+'/'+m+'/'+y};
+function toIso(v){
+  if(v==null||v==='')return null;
+  if(v instanceof Date){const x=new Date(v.getTime()+12*36e5);return x.getUTCFullYear()+'-'+pad(x.getUTCMonth()+1)+'-'+pad(x.getUTCDate())}
+  if(typeof v==='number'){const p=XLSX.SSF.parse_date_code(v);return p?p.y+'-'+pad(p.m)+'-'+pad(p.d):null}
+  const m=String(v).trim().match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+  return m?m[3]+'-'+pad(m[2])+'-'+pad(m[1]):null;
+}
+const num=v=>typeof v==='number'?v:Number(String(v??'').trim().replace(/\./g,'').replace(',','.'));
+async function readBook(file){const buf=await file.arrayBuffer();return XLSX.read(buf,{type:'array',cellDates:false})}
+function sheetRows(wb){return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:null})}
+function parseClientes(wb){
+  const A=sheetRows(wb);
+  const hi=A.findIndex(r=>r&&String(r[0]??'').trim()==='Código Cuenta');
+  if(hi<0)throw new Error('No encontré la fila de encabezados ("Código Cuenta"). ¿Es el reporte "Detalle de Documentos por Auxiliar"?');
+  const H=A[hi].map(h=>String(h??'').trim());
+  const col=n=>{const i=H.indexOf(n);if(i<0)throw new Error('Falta la columna "'+n+'".');return i};
+  const c={cta:col('Código Cuenta'),rut:col('RUT Auxiliar'),nom:col('Nombre del Auxiliar'),tipo:col('Tipo Dcto.'),doc:col('Documento'),fv:col('Fecha de Vencimiento'),sal:col('Saldo a la Fecha'),ven:H.indexOf('Nombre del Vendedor')};
+  let corte=null;
+  for(let i=0;i<hi;i++){const s=(A[i]||[]).map(x=>x??'').join(' ');const m=s.match(/Saldos al\s*:?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);if(m){corte=m[3]+'-'+pad(m[2])+'-'+pad(m[1]);break}}
+  if(!corte)throw new Error('No encontré la fecha de corte ("Saldos al : dd/mm/aaaa") en el encabezado.');
+  const st={total:0,cuenta:0,menor2:0,excl:0,sinFecha:0};
+  const rows=[],vc={};
+  for(let i=hi+1;i<A.length;i++){
+    const r=A[i];if(!r)continue;const cta=String(r[c.cta]??'').trim();if(!cta)continue;st.total++;
+    if(!CUENTAS[cta]){st.cuenta++;continue}
+    const vn=c.ven>=0?vname(r[c.ven]):'';if(vn){const k=rk(r[c.rut]);(vc[k]=vc[k]||{})[vn]=(vc[k][vn]||0)+1}
+    const sal=num(r[c.sal]);if(!(sal>=2)){st.menor2++;continue}
+    const rut=String(r[c.rut]??'').trim();if(EXC.has(rk(rut))){st.excl++;continue}
+    const fv=toIso(r[c.fv]);if(!fv){st.sinFecha++;continue}
+    const doc=num(r[c.doc]);
+    rows.push([rut,String(r[c.nom]??'').trim(),String(r[c.tipo]??'').trim(),isNaN(doc)?String(r[c.doc]??''):doc,fv,Math.round(sal),cta,c.ven>=0?vname(r[c.ven]):'']);
+  }
+  // documentos sin vendedor (cheques, anticipos): se asigna el vendedor más frecuente del mismo RUT
+  st.vendAsig=0;st.sinVend=0;
+  for(const r of rows){if(r[7])continue;const m=vc[rk(r[0])];if(m){r[7]=Object.entries(m).sort((a,b)=>b[1]-a[1])[0][0];st.vendAsig++}else{r[7]=SINV;st.sinVend++}}
+  return {corte,rows,st};
+}
+function parseBloq(wb){
+  const A=sheetRows(wb);const bl={};let n=0,s=0;
+  for(const r of A){if(!r)continue;const rut=rk(r[3]);const v=String(r[2]??'').trim().toUpperCase();
+    if(!rut||rut==='RUT'||(v!=='S'&&v!=='N'))continue;n++;if(v==='S'){s++;bl[rut]='S'}else if(bl[rut]!=='S')bl[rut]='N'}
+  if(!n)throw new Error('No encontré filas con S/N en la columna C y RUT en la columna D.');
+  return {bl,n,s};
+}
+
+const BUCKETS=[
+  {k:'p',lab:'Por vencer',t:d=>d<=0},
+  {k:'1',lab:'1–30',t:d=>d>=1&&d<=30},
+  {k:'2',lab:'31–60',t:d=>d>=31&&d<=60},
+  {k:'3',lab:'61–90',t:d=>d>=61&&d<=90},
+  {k:'4',lab:'91–180',t:d=>d>=91&&d<=180},
+  {k:'5',lab:'+180',t:d=>d>180}
+];
+const st={estado:'',venc:'',tipo:'',vend:'',q:'',bucket:'',sk:'def',sd:-1,modo:'c',gk:'def',gd:-1};
+const OPEN=new Set();
+const fmt=n=>'$'+Math.round(n).toLocaleString('es-CL');
+const short=n=>{const a=Math.abs(n);if(a>=1e6)return '$'+(n/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' M';if(a>=1e3)return '$'+Math.round(n/1e3).toLocaleString('es-CL')+' mil';return fmt(n)};
+const fdate=s=>{const [y,m,d]=s.split('-');return d+'/'+m+'/'+y};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\./g,'');
+
+const sel=document.getElementById('fTipo');
+function fillTipos(){const cur=sel.value;sel.length=1;[...new Set(D.map(r=>r[3]))].sort().forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o)});sel.value=[...sel.options].some(o=>o.value===cur)?cur:'';st.tipo=sel.value}
+const vsel=document.getElementById('fVend');
+function fillVends(){const cur=vsel.value;vsel.length=1;const vs=[...new Set(D.map(r=>r[9]))].sort((a,b)=>a===SINV?1:b===SINV?-1:a.localeCompare(b,'es'));vs.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;vsel.appendChild(o)});vsel.value=vs.includes(cur)?cur:'';st.vend=vsel.value}
+
+function base(skipBucket){
+  const q=norm(st.q.trim());
+  return D.filter(r=>(!st.estado||r[2]===st.estado)&&(!st.tipo||r[3]===st.tipo)&&(!st.vend||r[9]===st.vend)
+    &&(!st.venc||(st.venc==='v'?r[7]>0:r[7]<=0))
+    &&(!q||norm(r[1]).includes(q)||norm(r[0]).includes(q))
+    &&(skipBucket||!st.bucket||BUCKETS.find(b=>b.k===st.bucket).t(r[7])));
+}
+const sum=a=>a.reduce((s,r)=>s+r[6],0);
+
+const tip=document.getElementById('tip');
+function showTip(e,html){tip.innerHTML=html;tip.hidden=false;const w=tip.offsetWidth,h=tip.offsetHeight;let x=e.clientX+14,y=e.clientY+14;if(x+w>innerWidth-8)x=e.clientX-w-14;if(y+h>innerHeight-8)y=e.clientY-h-14;tip.style.left=x+'px';tip.style.top=y+'px'}
+function hideTip(){tip.hidden=true}
+
+function renderKpis(rows){
+  const v=rows.filter(r=>r[7]>0),p=rows.filter(r=>r[7]<=0),tot=sum(rows);
+  const cl=new Set(rows.map(r=>r[0])),bl=new Set(rows.filter(r=>r[2]==='Bloqueado').map(r=>r[0]));
+  const pct=x=>tot?Math.round(x/tot*100)+'% del total':'—';
+  kTot.textContent=fmt(tot); kTotN.textContent=rows.length+' documentos · '+cl.size+' clientes';
+  kVen.textContent=fmt(sum(v)); kVenN.textContent=v.length+' documentos · '+pct(sum(v));
+  kPor.textContent=fmt(sum(p)); kPorN.textContent=p.length+' documentos · '+pct(sum(p));
+  const sb=sum(rows.filter(r=>r[2]==='Bloqueado'));
+  kBl.textContent=bl.size; kBlN.textContent=fmt(sb)+' en saldo';
+}
+
+function renderAging(){
+  const rows=base(true);
+  const data=BUCKETS.map(b=>{const rs=rows.filter(r=>b.t(r[7]));return {...b,v:sum(rs),n:rs.length}});
+  const W=520,H=280,L=12,R=12,T=24,B=40,pw=W-L-R,ph=H-T-B;
+  const max=Math.max(1,...data.map(d=>d.v));
+  const bw=pw/data.length,gap=14;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Saldo por tramo de antigüedad">`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${T+ph}" y2="${T+ph}" stroke="var(--axis)"/>`;
+  data.forEach((d,i)=>{
+    const h=d.v/max*ph,x=L+i*bw+gap/2,w=bw-gap,y=T+ph-h;
+    const active=!st.bucket||st.bucket===d.k;
+    const col=d.k==='p'?'var(--bar-soft)':'var(--bar)';
+    if(h>0){const r=Math.min(4,h,w/2);s+=`<path d="M${x},${T+ph}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${T+ph}Z" fill="${col}" opacity="${active?1:.3}"/>`;}
+    s+=`<text class="vlab" x="${x+w/2}" y="${y-6}" text-anchor="middle">${d.v?short(d.v):'—'}</text>`;
+    s+=`<text x="${x+w/2}" y="${T+ph+16}" text-anchor="middle" ${st.bucket===d.k?'style="fill:var(--ink);font-weight:600"':''}>${d.lab}</text>`;
+    s+=`<text x="${x+w/2}" y="${T+ph+30}" text-anchor="middle">${d.n} dcto${d.n===1?'':'s'}</text>`;
+    s+=`<rect class="hit" data-k="${d.k}" x="${L+i*bw}" y="${T-20}" width="${bw}" height="${ph+20}" rx="6"><title>${d.lab}</title></rect>`;
+  });
+  s+='</svg>';
+  aging.innerHTML=s;
+  aging.querySelectorAll('.hit').forEach(el=>{
+    const d=data.find(x=>x.k===el.dataset.k);
+    el.addEventListener('mousemove',e=>showTip(e,`<b>${d.k==='p'?'Por vencer':d.lab+' días de atraso'}</b>${fmt(d.v)}<br>${d.n} documentos`));
+    el.addEventListener('mouseleave',hideTip);
+    el.addEventListener('click',()=>{st.bucket=st.bucket===d.k?'':d.k;hideTip();render()});
+  });
+}
+
+function renderTop(rows){
+  const m=new Map();
+  rows.forEach(r=>{let o=m.get(r[0]);if(!o){o={rut:r[0],n:r[1],e:r[2],v:0,p:0,c:0};m.set(r[0],o)}if(r[7]>0)o.v+=r[6];else o.p+=r[6];o.c++});
+  const arr=[...m.values()].sort((a,b)=>(b.v+b.p)-(a.v+a.p)).slice(0,10);
+  if(!arr.length){topc.innerHTML='<p class="empty">Sin clientes para estos filtros.</p>';return}
+  const rh=28,W=520,LW=200,RW=70,T=4,H=T+arr.length*rh;
+  const max=Math.max(...arr.map(a=>a.v+a.p)),pw=W-LW-RW-8;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Top 10 clientes por saldo">`;
+  arr.forEach((a,i)=>{
+    const y=T+i*rh,bh=14,by=y+(rh-bh)/2;
+    const nm=a.n.length>24?a.n.slice(0,23)+'…':a.n;
+    s+=`<text class="clab" x="${LW-16}" y="${y+rh/2+4}" text-anchor="end">${esc(nm)}</text>`;
+    if(a.e==='Bloqueado')s+=`<circle cx="${LW-8}" cy="${y+rh/2}" r="4" fill="var(--crit)"/>`;
+    const wv=a.v/max*pw,wp=a.p/max*pw;
+    if(wv>0)s+=`<rect x="${LW}" y="${by}" width="${Math.max(wv-(wp>0?1:0),1)}" height="${bh}" rx="${wp>0?0:3}" fill="var(--bar)"/>`;
+    if(wp>0)s+=`<rect x="${LW+wv+(wv>0?1:0)}" y="${by}" width="${Math.max(wp-(wv>0?1:0),1)}" height="${bh}" rx="0" fill="var(--bar-soft)"/>`;
+    s+=`<text class="vlab" x="${LW+wv+wp+6}" y="${y+rh/2+4}">${short(a.v+a.p)}</text>`;
+    s+=`<rect class="hit" data-i="${i}" x="0" y="${y}" width="${W}" height="${rh}" rx="4"/>`;
+  });
+  s+='</svg>';
+  topc.innerHTML=s+'<p class="hint" style="margin:6px 0 0"><span style="color:var(--crit)">●</span> cliente bloqueado · clic para ver sus documentos</p>';
+  topc.querySelectorAll('.hit').forEach(el=>{
+    const a=arr[+el.dataset.i];
+    el.addEventListener('mousemove',e=>showTip(e,`<b>${esc(a.n)}</b>${a.rut} · <span class="pill ${a.e==='Bloqueado'?'bl':'ac'}">${a.e}</span><br>Vencido: ${fmt(a.v)}<br>Por vencer: ${fmt(a.p)}<br>${a.c} documentos`));
+    el.addEventListener('mouseleave',hideTip);
+    el.addEventListener('click',()=>{st.q=a.rut;fQ.value=a.rut;OPEN.add(a.rut);hideTip();render()});
+  });
+}
+
+const pillE=e=>`<span class="pill ${e==='Bloqueado'?'bl':(e==='Activo'?'ac':'')}">${e}</span>`;
+const daysCell=dd=>`<span class="days ${dd>0?'late':'soon'}">${dd>0?dd:(dd===0?'Hoy':'en '+(-dd)+' d')}</span>`;
+const thB=(k,lab,cls,cur,dir)=>{const on=String(k)===String(cur)||(cur==='def'&&(k==='t'||k===6));return `<th${cls?' class="'+cls+'"':''}><button type="button" data-k="${k}" data-dir="${on?(dir>0?'↑':'↓'):''}">${lab}</button></th>`};
+const defDoc=(a,b)=>((b[7]>0)-(a[7]>0))||(b[6]-a[6]);
+const defGrp=(a,b)=>((b.v>0)-(a.v>0))||(b.t-a.t);
+function groups(rows){
+  const m=new Map();
+  rows.forEach(r=>{let g=m.get(r[0]);if(!g){g={rut:r[0],n:r[1],e:r[2],vs:new Set(),docs:[],v:0,p:0,t:0,md:-1e9};m.set(r[0],g)}
+    g.docs.push(r);g.vs.add(r[9]);if(r[7]>0)g.v+=r[6];else g.p+=r[6];g.t+=r[6];g.md=Math.max(g.md,r[7])});
+  m.forEach(g=>{g.ven=[...g.vs].join(', ');g.c=g.docs.length;g.docs.sort(defDoc)});
+  return [...m.values()];
+}
+function renderTable(rows){
+  const b=st.bucket&&BUCKETS.find(x=>x.k===st.bucket);
+  tTitle.textContent=(st.modo==='c'?'Deuda por cliente':'Detalle de documentos')+(st.vend?' · '+st.vend:'')+(b?' · '+(b.k==='p'?'Por vencer':b.lab+' días'):'');
+  bExp.hidden=st.modo!=='c';
+  if(st.modo==='c'){
+    const G=groups(rows);const k=st.gk,d=st.gd;
+    G.sort(k==='def'?defGrp:(a,b)=>{const x=a[k],y=b[k];return (typeof x==='number'?x-y:String(x).localeCompare(String(y),'es'))*d});
+    const allOpen=G.length&&G.every(g=>OPEN.has(g.rut));bExp.textContent=allOpen?'Contraer todo':'Expandir todo';
+    let h='<thead><tr>'+thB('n','Cliente','',k,d)+thB('e','Estado','',k,d)+thB('ven','Vendedor','',k,d)+thB('c','Documentos','num',k,d)+thB('v','Vencido','num',k,d)+thB('p','Por vencer','num',k,d)+thB('md','Máx. atraso','num',k,d)+thB('t','Saldo','num',k,d)+'</tr></thead><tbody>';
+    if(!G.length)h+='<tr><td colspan="8" class="empty">No hay clientes con estos filtros.</td></tr>';
+    G.forEach(g=>{const o=OPEN.has(g.rut);
+      h+=`<tr class="grp${o?' open':''}" data-rut="${esc(g.rut)}" tabindex="0" aria-expanded="${o}"><td class="name"><div class="gname"><span class="car" aria-hidden="true">▸</span><div>${esc(g.n)}<span class="rut">${g.rut}</span></div></div></td><td>${pillE(g.e)}</td><td>${esc(g.ven)}</td><td class="num">${g.c}</td><td class="num">${g.v?`<span class="vcell">${fmt(g.v)}</span>`:'—'}</td><td class="num">${g.p?fmt(g.p):'—'}</td><td class="num">${daysCell(g.md)}</td><td class="num"><b>${fmt(g.t)}</b></td></tr>`;
+      if(o)h+=`<tr class="sub"><td colspan="8"><table class="inv"><thead><tr><th>Tipo dcto.</th><th class="num">N° documento</th><th>Vencimiento</th><th class="num">Días atraso</th><th class="num">Saldo</th></tr></thead><tbody>`+
+        g.docs.map(r=>`<tr><td>${esc(r[3])}</td><td class="num">${r[4]}</td><td>${fdate(r[5])}</td><td class="num">${daysCell(r[7])}</td><td class="num">${fmt(r[6])}</td></tr>`).join('')+`</tbody></table></td></tr>`;
+    });
+    h+=`</tbody><tfoot><tr><td colspan="3">Total · ${G.length} clientes</td><td class="num">${rows.length}</td><td class="num">${fmt(sum(rows.filter(r=>r[7]>0)))}</td><td class="num">${fmt(sum(rows.filter(r=>r[7]<=0)))}</td><td></td><td class="num">${fmt(sum(rows))}</td></tr></tfoot>`;
+    tbl.innerHTML=h;
+    tCount.textContent=G.length+' clientes · '+rows.length+' documentos';
+    tbl.querySelectorAll('tr.grp').forEach(tr=>{const tg=()=>{const r=tr.dataset.rut;OPEN.has(r)?OPEN.delete(r):OPEN.add(r);renderTable(base(false))};
+      tr.addEventListener('click',tg);tr.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tg()}})});
+  }else{
+    const k=st.sk,d=st.sd;
+    const sorted=[...rows].sort(k==='def'?defDoc:(a,b)=>{const x=a[k],y=b[k];return (typeof x==='number'?x-y:String(x).localeCompare(String(y),'es'))*d});
+    let h='<thead><tr>'+thB(0,'RUT','',k,d)+thB(1,'Cliente','',k,d)+thB(2,'Estado','',k,d)+thB(9,'Vendedor','',k,d)+thB(3,'Tipo dcto.','',k,d)+thB(4,'Documento','num',k,d)+thB(5,'Vencimiento','',k,d)+thB(7,'Días atraso','num',k,d)+thB(6,'Saldo','num',k,d)+'</tr></thead><tbody>';
+    h+=sorted.length?sorted.map(r=>`<tr><td>${r[0]}</td><td class="name">${esc(r[1])}</td><td>${pillE(r[2])}</td><td>${esc(r[9])}</td><td>${esc(r[3])}</td><td class="num">${r[4]}</td><td>${fdate(r[5])}</td><td class="num">${daysCell(r[7])}</td><td class="num">${fmt(r[6])}</td></tr>`).join('')
+      :'<tr><td colspan="9" class="empty">No hay documentos con estos filtros.</td></tr>';
+    h+=`</tbody><tfoot><tr><td colspan="8">Total</td><td class="num">${fmt(sum(rows))}</td></tr></tfoot>`;
+    tbl.innerHTML=h;
+    tCount.textContent=rows.length+' de '+D.length+' documentos';
+  }
+  tbl.querySelectorAll('thead button').forEach(bt=>bt.addEventListener('click',e=>{e.stopPropagation();const kk=bt.dataset.k;
+    if(st.modo==='c'){if(st.gk==='def'&&kk==='t'){st.gk='t';st.gd=-1}else if(st.gk===kk)st.gd*=-1;else{st.gk=kk;st.gd=['v','p','t','md','c'].includes(kk)?-1:1}}
+    else{const n=+kk;if(st.sk==='def'&&n===6){st.sk=6;st.sd=-1}else if(st.sk===n)st.sd*=-1;else{st.sk=n;st.sd=(n===6||n===7)?-1:1}}
+    renderTable(base(false))}));
+}
+bExp.addEventListener('click',()=>{const G=groups(base(false));const all=G.every(g=>OPEN.has(g.rut));G.forEach(g=>all?OPEN.delete(g.rut):OPEN.add(g.rut));renderTable(base(false))});
+
+function renderVend(){
+  const vs=st.vend; st.vend=''; const rows=base(false); st.vend=vs;
+  const m=new Map();
+  rows.forEach(r=>{let o=m.get(r[9]);if(!o){o={n:r[9],v:0,p:0,c:0,cl:new Set()};m.set(r[9],o)}if(r[7]>0)o.v+=r[6];else o.p+=r[6];o.c++;o.cl.add(r[0])});
+  const arr=[...m.values()].sort((a,b)=>(b.v+b.p)-(a.v+a.p));
+  if(!arr.length){vendc.innerHTML='<p class="empty">Sin datos para estos filtros.</p>';return}
+  const rh=26,W=1080,LW=190,RW=190,T=2,H=T+arr.length*rh;
+  const max=Math.max(...arr.map(a=>a.v+a.p)),pw=W-LW-RW-8;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Saldo por vendedor">`;
+  arr.forEach((a,i)=>{
+    const y=T+i*rh,bh=14,by=y+(rh-bh)/2,on=!st.vend||st.vend===a.n;
+    s+=`<text class="clab" x="${LW-10}" y="${y+rh/2+4}" text-anchor="end" ${st.vend===a.n?'font-weight="700"':''} opacity="${on?1:.45}">${esc(a.n)}</text>`;
+    const wv=a.v/max*pw,wp=a.p/max*pw;
+    if(wv>0)s+=`<rect x="${LW}" y="${by}" width="${Math.max(wv-(wp>0?1:0),1)}" height="${bh}" fill="var(--bar)" opacity="${on?1:.3}"/>`;
+    if(wp>0)s+=`<rect x="${LW+wv+(wv>0?1:0)}" y="${by}" width="${Math.max(wp-(wv>0?1:0),1)}" height="${bh}" fill="var(--bar-soft)" opacity="${on?1:.3}"/>`;
+    s+=`<text class="vlab" x="${LW+wv+wp+6}" y="${y+rh/2+4}" opacity="${on?1:.45}">${fmt(a.v+a.p)} · ${a.cl.size} cliente${a.cl.size===1?'':'s'}</text>`;
+    s+=`<rect class="hit" data-i="${i}" x="0" y="${y}" width="${W}" height="${rh}" rx="4"/>`;
+  });
+  vendc.innerHTML=s+'</svg>';
+  vendc.querySelectorAll('.hit').forEach(el=>{
+    const a=arr[+el.dataset.i];
+    el.addEventListener('mousemove',e=>showTip(e,`<b>${esc(a.n)}</b>Vencido: ${fmt(a.v)}<br>Por vencer: ${fmt(a.p)}<br>${a.cl.size} clientes · ${a.c} documentos`));
+    el.addEventListener('mouseleave',hideTip);
+    el.addEventListener('click',()=>{st.vend=st.vend===a.n?'':a.n;vsel.value=st.vend;hideTip();render()});
+  });
+}
+function render(){const rows=base(false);renderKpis(rows);renderAging();renderTop(rows);renderVend();renderTable(rows)}
+
+function seg(id,key){document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st[key]=b.dataset.v;syncSeg();render()})}
+function syncSeg(){[['fEstado','estado'],['fVenc','venc'],['fModo','modo']].forEach(([id,k])=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st[k])))}
+seg('fEstado','estado');seg('fVenc','venc');seg('fModo','modo');
+sel.addEventListener('change',()=>{st.tipo=sel.value;render()});
+vsel.addEventListener('change',()=>{st.vend=vsel.value;render()});
+fQ.addEventListener('input',()=>{st.q=fQ.value;render()});
+reset.addEventListener('click',()=>{Object.assign(st,{estado:'',venc:'',tipo:'',vend:'',q:'',bucket:'',gk:'def',gd:-1,sk:'def',sd:-1});fQ.value='';sel.value='';vsel.value='';syncSeg();render()});
+
+function renderMeta(){
+  asof.textContent='Saldos al '+fdateIso(DATA.corte);
+  const a=DATA.actualizado?new Date(DATA.actualizado):null;
+  meta.textContent='Clientes: '+(DATA.archivoClientes||'—')+' · Bloqueados: '+(DATA.archivoBloqueados||'—')+(a?' · Actualizado '+a.toLocaleString('es-CL',{dateStyle:'short',timeStyle:'short'}):'');
+}
+function renderAll(){renderMeta();fillTipos();fillVends();render()}
+
+// ---------- Actualizar datos ----------
+let pend={cli:null,bl:null};
+const LS='cartera_vencidos_data';
+function saveFile(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+bJson.addEventListener('click',()=>saveFile('data.json',new Blob([JSON.stringify(DATA)],{type:'application/json'})));
+const setDrop=(id,cls,txt)=>{const d=document.getElementById('d'+id),s=document.getElementById('s'+id);d.classList.remove('ok','err');if(cls)d.classList.add(cls);s.textContent=txt};
+bUpd.addEventListener('click',()=>{const o=upd.hidden;upd.hidden=!o;bUpd.setAttribute('aria-expanded',o)});
+bCancel.addEventListener('click',()=>{pend={cli:null,bl:null};inCli.value='';inBl.value='';resetDrops();prev.hidden=true;msg.textContent='';bApply.disabled=true;upd.hidden=true;bUpd.setAttribute('aria-expanded',false)});
+function resetDrops(){setDrop('Cli','','Arrastra el archivo aquí o haz clic para elegirlo');setDrop('Bl','','Arrastra el archivo aquí o haz clic para elegirlo')}
+async function take(kind,file){
+  if(!file)return;msg.textContent='';msg.className='msg';
+  const id=kind==='cli'?'Cli':'Bl';
+  if(typeof XLSX==='undefined'){setDrop(id,'err','No se pudo cargar el lector de Excel. Revisa tu conexión y recarga la página.');return}
+  setDrop(id,'','Leyendo '+file.name+'…');
+  try{
+    const wb=await readBook(file);
+    if(kind==='cli'){const p=parseClientes(wb);p.name=file.name;pend.cli=p;
+      setDrop(id,'ok',file.name+' · '+p.rows.length+' documentos válidos · corte '+fdateIso(p.corte));}
+    else{const p=parseBloq(wb);p.name=file.name;pend.bl=p;
+      setDrop(id,'ok',file.name+' · '+p.n+' clientes · '+p.s+' bloqueados');}
+  }catch(e){pend[kind]=null;setDrop(id,'err',file.name+': '+(e.message||'no se pudo leer el archivo'))}
+  preview();
+}
+function nextData(){
+  if(!pend.cli&&!pend.bl)return null;
+  return {corte:pend.cli?pend.cli.corte:DATA.corte,rows:pend.cli?pend.cli.rows:DATA.rows,bl:pend.bl?pend.bl.bl:DATA.bl,
+    archivoClientes:pend.cli?pend.cli.name:DATA.archivoClientes,archivoBloqueados:pend.bl?pend.bl.name:DATA.archivoBloqueados,actualizado:new Date().toISOString()};
+}
+function stats(data){const bl=data.bl;let t=0,b=0;const cb=new Set();for(const r of data.rows){t+=r[5];if(bl[rk(r[0])]==='S'){b+=r[5];cb.add(rk(r[0]))}}
+  const sd=new Set(data.rows.filter(r=>!bl[rk(r[0])]).map(r=>r[0]));return {docs:data.rows.length,t,b,cb:cb.size,sd:sd.size}}
+function preview(){
+  const n=nextData();bApply.disabled=!n;if(!n){prev.hidden=true;return}
+  const a=stats(DATA),b=stats(n);
+  let h='<table><tr><th></th><th>Actual</th><th>Nuevo</th></tr>'+
+    `<tr><td>Fecha de corte</td><td>${fdateIso(DATA.corte)}</td><td>${fdateIso(n.corte)}</td></tr>`+
+    `<tr><td>Documentos</td><td>${a.docs}</td><td>${b.docs}</td></tr>`+
+    `<tr><td>Saldo total</td><td>${fmt(a.t)}</td><td>${fmt(b.t)}</td></tr>`+
+    `<tr><td>Clientes bloqueados</td><td>${a.cb}</td><td>${b.cb}</td></tr>`+
+    `<tr><td>Saldo bloqueado</td><td>${fmt(a.b)}</td><td>${fmt(b.b)}</td></tr></table>`;
+  if(pend.cli){const s=pend.cli.st;h+=`<p style="margin:8px 0 0">Del archivo de clientes: ${s.total} filas → ${s.cuenta} de otras cuentas, ${s.menor2} con saldo menor a 2 y ${s.excl} de clientes excluidos quedan fuera${s.sinFecha?`, más ${s.sinFecha} sin fecha de vencimiento válida`:''}.${s.vendAsig||s.sinVend?` A ${s.vendAsig} documentos sin vendedor (cheques, anticipos) se les asignó el vendedor habitual del cliente; ${s.sinVend} quedan como "Sin vendedor".`:''}</p>`}
+  if(b.sd)h+=`<p style="margin:6px 0 0;color:var(--warn-ink)">${b.sd} RUT no aparecen en el archivo de bloqueados; se mostrarán como "Sin dato".</p>`;
+  prev.innerHTML=h;prev.hidden=false;
+}
+[['Cli','cli'],['Bl','bl']].forEach(([id,k])=>{
+  const inp=document.getElementById('in'+id),d=document.getElementById('d'+id);
+  inp.addEventListener('change',()=>take(k,inp.files[0]));
+  d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});
+  d.addEventListener('dragleave',()=>d.classList.remove('over'));
+  d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');take(k,e.dataTransfer.files[0])});
+});
+bApply.addEventListener('click',async()=>{
+  const n=nextData();if(!n)return;bApply.disabled=true;msg.className='msg';
+  const apply=()=>{build(n);renderAll();pend={cli:null,bl:null};inCli.value='';inBl.value='';resetDrops();prev.hidden=true};
+  apply();
+  try{localStorage.setItem(LS,JSON.stringify(n));msg.className='msg ok';msg.textContent='Listo. Dashboard actualizado y guardado en este navegador. Usa "Descargar data.json" para actualizar el archivo del proyecto.'}
+  catch(e){msg.className='msg err';msg.textContent='Dashboard actualizado, pero no se pudo guardar en este navegador. Usa "Descargar data.json" para conservarlo.'}
+});
+
+// ---------- Descargar Excel ----------
+bXls.addEventListener('click',async()=>{
+  if(typeof XLSX==='undefined')return;
+  const rows=base(false);
+  const det=rows.map(r=>({'Código Cuenta':r[8],'Descripción Cuenta':CUENTAS[r[8]]||'','RUT Auxiliar':r[0],'Nombre del Auxiliar':r[1],'Estado':r[2],'Vendedor':r[9],'Tipo Dcto.':r[3],'Documento':r[4],'Fecha de Vencimiento':fdate(r[5]),'Días atraso':r[7],'Saldo a la Fecha':r[6]}));
+  const m=new Map();rows.forEach(r=>{const k=r[0];const o=m.get(k)||{'RUT Auxiliar':r[0],'Nombre del Auxiliar':r[1],'Estado':r[2],'Vendedor':r[9],'Documentos':0,'Vencido':0,'Por vencer':0,'Saldo':0};o.Documentos++;o[r[7]>0?'Vencido':'Por vencer']+=r[6];o.Saldo+=r[6];m.set(k,o)});
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(det),'Detalle');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([...m.values()].sort((a,b)=>b.Saldo-a.Saldo)),'Por Cliente');
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  saveFile('Cartera_vencidos_'+DATA.corte+(st.vend?'_'+st.vend.replace(/[^\wÀ-ÿ]+/g,'_'):'')+'.xlsx',new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+});
+
+// ---------- Inicio ----------
+// Orden de carga: 1) lo guardado en este navegador (si es más nuevo), 2) data.json junto al HTML, 3) datos incluidos en la página.
+const boot=async()=>{
+  let d=null;
+  try{const r=await fetch('data.json',{cache:'no-store'});if(r.ok)d=await r.json()}catch(e){}
+  if(!d){try{d=JSON.parse(document.getElementById('seed').textContent)}catch(e){}}
+  try{const l=JSON.parse(localStorage.getItem(LS)||'null');if(l&&(!d||(l.actualizado||'')>(d.actualizado||'')))d=l}catch(e){}
+  if(!d){document.querySelector('.kpis').insertAdjacentHTML('beforebegin','<p class="msg err">No hay datos. Usa "Actualizar datos" para subir los archivos.</p>');upd.hidden=false;return}
+  build(d);renderAll();
+};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+</script>
+<script type="application/json" id="seed">{"corte":"2026-09-23","rows":[["10.288.069-2","CRISTOBAL VIGIL CRUZ","VENTA AFECTA ELECTRONICA",37773,"2026-01-30",39017,"10-04-01-01","VICTOR GUERRA CONCHA"],["10.288.069-2","CRISTOBAL VIGIL CRUZ","VENTA AFECTA ELECTRONICA",39615,"2026-07-19",262416,"10-04-01-01","VENTAS AL PERSONAL"],["10.288.069-2","CRISTOBAL VIGIL CRUZ","VENTA AFECTA ELECTRONICA",39737,"2026-07-30",55216,"10-04-01-01","VENTAS AL PERSONAL"],["11.199.497-8","IRELIA GONZALEZ","VENTA AFECTA ELECTRONICA",40165,"2026-09-02",5399,"10-04-01-01","VENTAS AL PERSONAL"],["11.199.497-8","IRELIA GONZALEZ","VENTA AFECTA ELECTRONICA",40311,"2026-09-13",4189,"10-04-01-01","VENTAS AL PERSONAL"],["11.199.497-8","IRELIA GONZALEZ","VENTA AFECTA ELECTRONICA",40522,"2026-10-02",8566,"10-04-01-01","VENTAS AL PERSONAL"],["12.157.265-6","GABRIEL ESTRADA GENIALES","VENTA AFECTA ELECTRONICA",40738,"2026-09-22",39925,"10-04-01-01","Oscar Bucarey"],["12.265.447-8","Maria Alejandra Hurtado Badilla","VENTA AFECTA ELECTRONICA",39929,"2026-08-16",67176,"10-04-01-01","MUESTRAS"],["12.265.447-8","Maria Alejandra Hurtado Badilla","VENTA AFECTA ELECTRONICA",40404,"2026-09-23",60916,"10-04-01-01","VENTAS AL PERSONAL"],["12.265.447-8","Maria Alejandra Hurtado Badilla","VENTA AFECTA ELECTRONICA",40484,"2026-09-26",3,"10-04-01-01","MUESTRAS"],["12.267.435-5","DAVID MONDACA GARRIDO","VENTA AFECTA ELECTRONICA",40249,"2026-09-10",141598,"10-04-01-01","Oscar Bucarey"],["12.282.770-4","Patricio Hernández Alvarez","VENTA AFECTA ELECTRONICA",35360,"2025-04-12",786519,"10-04-01-01","Alejandra Hurtado"],["12.389.321-2","Figueroa Obando Luis Fernando","VENTA AFECTA ELECTRONICA",40338,"2026-09-18",5755,"10-04-01-01","VENTAS AL PERSONAL"],["76.136.561-4","Electricidad Curico S.A.","VENTA AFECTA ELECTRONICA",40428,"2026-10-09",366044,"10-04-01-01","Marcelo Herrera"],["76.136.561-4","Electricidad Curico S.A.","VENTA AFECTA ELECTRONICA",40512,"2026-10-16",1234668,"10-04-01-01","Marcelo Herrera"],["76.136.561-4","Electricidad Curico S.A.","VENTA AFECTA ELECTRONICA",40601,"2026-10-24",1086521,"10-04-01-01","Marcelo Herrera"],["76.136.561-4","Electricidad Curico S.A.","VENTA AFECTA ELECTRONICA",40672,"2026-10-30",222302,"10-04-01-01","Marcelo Herrera"],["12.981.096-3","RICARDO ZAMORA","VENTA AFECTA ELECTRONICA",40629,"2026-09-10",157639,"10-04-01-01","Joel Cordova"],["13.059.636-3","Guerra Concha Victor Hugo","VENTA AFECTA ELECTRONICA",40498,"2026-09-27",13864,"10-04-01-01","VENTAS AL PERSONAL"],["13.315.111-7","Victoria  Molina  Bascuñan","VENTA AFECTA ELECTRONICA",40648,"2026-09-11",300000,"10-04-01-01","Oscar Bucarey"],["13.493.200-7","PAULA VILLA ZUÑIGA","VENTA AFECTA ELECTRONICA",40164,"2026-09-02",2975,"10-04-01-01","VENTAS AL PERSONAL"],["13.493.200-7","PAULA VILLA ZUÑIGA","VENTA AFECTA ELECTRONICA",40381,"2026-09-19",8583,"10-04-01-01","VENTAS AL PERSONAL"],["14.259.316-5","Herrera Cid Marcelo Andres","VENTA AFECTA ELECTRONICA",40510,"2026-10-01",18029,"10-04-01-01","VENTAS AL PERSONAL"],["15.102.743-1","ESTELA BADILLA OSORIO","VENTA AFECTA ELECTRONICA",40716,"2026-10-17",22686,"10-04-01-01","VENTAS AL PERSONAL"],["15.776.190-0","MARIA ANGELICA PEREDA","VENTA AFECTA ELECTRONICA",40631,"2026-10-10",94504,"10-04-01-01","Joel Cordova"],["15.782.947-5","FERRETERIA NICO","VENTA AFECTA ELECTRONICA",40731,"2026-09-22",211503,"10-04-01-01","Joel Cordova"],["18.059.756-5","MIGUEL CASTILLO FLORES","VENTA AFECTA ELECTRONICA",34766,"2025-01-17",1445,"10-04-01-01","VENTAS AL PERSONAL"],["18.935.292-1","JOSE ANTONIO PEREZ-COTAPOS GALMEZ","VENTA AFECTA ELECTRONICA",40392,"2026-08-21",10710,"10-04-01-01","VENTAS AL PERSONAL"],["4.948.327-9","Victor Zolrza Fuentealba","VENTA AFECTA ELECTRONICA",39777,"2026-08-05",218311,"10-04-01-01","Oscar Bucarey"],["5.006.833-1","Ana bohn  carter","VENTA AFECTA ELECTRONICA",40664,"2026-10-14",232464,"10-04-01-01","Oscar Bucarey"],["5.178.881-8","CARLOS EGGELING STEMANN","VENTA AFECTA ELECTRONICA",40747,"2026-10-23",149464,"10-04-01-01","Marcelo Herrera"],["60.301.001-9","CORP ADMINISTRATIVA DEL PODER JUDICIAL","VENTA AFECTA ELECTRONICA",34664,"2025-01-03",49064,"10-04-01-01","LICI"],["6.179.639-8","Maria Vargas Espinoza","VENTA AFECTA ELECTRONICA",40426,"2026-09-24",138100,"10-04-01-01","Oscar Bucarey"],["6.499.734-3","IVAN CEBALLOS MOLINA","VENTA AFECTA ELECTRONICA",39785,"2026-08-05",776784,"10-04-01-01","Alejandra Hurtado"],["7.496.477-K","LORENZO PALMA","VENTA AFECTA ELECTRONICA",39869,"2026-08-13",169777,"10-04-01-01","Joel Cordova"],["7.592.981-1","RICHARD PETERSEN GOLDBERG","VENTA AFECTA ELECTRONICA",40375,"2026-09-19",561680,"10-04-01-01","Alejandra Hurtado"],["76.013.723-5","Comercial Aservi Tools Limitada","VENTA AFECTA ELECTRONICA",39800,"2026-10-06",443199,"10-04-01-01","Alejandra Hurtado"],["76.013.723-5","Comercial Aservi Tools Limitada","VENTA AFECTA ELECTRONICA",39836,"2026-10-07",41430,"10-04-01-01","Alejandra Hurtado"],["76.013.723-5","Comercial Aservi Tools Limitada","VENTA AFECTA ELECTRONICA",39886,"2026-10-13",265989,"10-04-01-01","Alejandra Hurtado"],["76.013.723-5","Comercial Aservi Tools Limitada","VENTA AFECTA ELECTRONICA",40153,"2026-10-29",914065,"10-04-01-01","Alejandra Hurtado"],["76.013.723-5","Comercial Aservi Tools Limitada","VENTA AFECTA ELECTRONICA",40245,"2026-11-09",151725,"10-04-01-01","Alejandra Hurtado"],["76.013.723-5","Comercial Aservi Tools Limitada","VENTA AFECTA ELECTRONICA",40332,"2026-11-17",251209,"10-04-01-01","Alejandra Hurtado"],["76.013.723-5","Comercial Aservi Tools Limitada","VENTA AFECTA ELECTRONICA",40565,"2026-12-03",312170,"10-04-01-01","Alejandra Hurtado"],["76.013.723-5","Comercial Aservi Tools Limitada","VENTA AFECTA ELECTRONICA",40646,"2026-12-10",381109,"10-04-01-01","Alejandra Hurtado"],["76.048.324-9","Sociedad Electricidad Industrial HSI y Compañia Limitada","VENTA AFECTA ELECTRONICA",39110,"2026-08-09",163030,"10-04-01-01","Alejandra Hurtado"],["76.078.138-K","Soc.Comercializadora y de Servicios Electricos Chavez Ltda.","VENTA AFECTA ELECTRONICA",40592,"2026-10-08",702100,"10-04-01-01","Alejandra Hurtado"],["76.085.400-K","ELFLE COMERCIAL DOS LTDA.","VENTA AFECTA ELECTRONICA",40316,"2026-09-16",299547,"10-04-01-01","Alejandra Hurtado"],["76.085.400-K","ELFLE COMERCIAL DOS LTDA.","VENTA AFECTA ELECTRONICA",40407,"2026-09-23",661664,"10-04-01-01","Alejandra Hurtado"],["76.085.400-K","ELFLE COMERCIAL DOS LTDA.","VENTA AFECTA ELECTRONICA",40515,"2026-10-01",1292483,"10-04-01-01","Alejandra Hurtado"],["76.085.400-K","ELFLE COMERCIAL DOS LTDA.","VENTA AFECTA ELECTRONICA",40583,"2026-10-07",1736615,"10-04-01-01","Alejandra Hurtado"],["76.090.219-5","Patricio Hernandez Proyectos y Montajes Electricos Ltda.","VENTA AFECTA ELECTRONICA",40305,"2026-10-12",1339559,"10-04-01-01","Alejandra Hurtado"],["76.090.219-5","Patricio Hernandez Proyectos y Montajes Electricos Ltda.","VENTA AFECTA ELECTRONICA",40576,"2026-11-06",757435,"10-04-01-01","Alejandra Hurtado"],["76.147.778-1","SERVICIOS AZUL VENTURES LIMITADA","VENTA AFECTA ELECTRONICA",34024,"2024-08-22",4459545,"10-04-01-01","Cristobal Vigil"],["76.167.431-5","Mat. de Cons.Electric. y Transporte Bruno Peredo E.I.R.L.","VENTA AFECTA ELECTRONICA",34426,"2024-12-29",2030650,"10-04-01-01","Marcelo Herrera"],["76.170.481-8","Comercializadora Arquitel Ltda.","VENTA AFECTA ELECTRONICA",40079,"2026-08-28",98532,"10-04-01-01","Alejandra Hurtado"],["76.179.395-0","DISTRIBUIDORA Y COMERCIALIZADORA LUIS HERNAN GOMEZ GONZALEZ","VENTA AFECTA ELECTRONICA",40024,"2026-07-24",238633,"10-04-01-01","Joel Cordova"],["76.179.395-0","DISTRIBUIDORA Y COMERCIALIZADORA LUIS HERNAN GOMEZ GONZALEZ","VENTA AFECTA ELECTRONICA",40671,"2026-09-15",222061,"10-04-01-01","Joel Cordova"],["76.200.407-0","Comercial Saez","VENTA AFECTA ELECTRONICA",40327,"2026-09-17",94484,"10-04-01-01","Oscar Bucarey"],["76.248.620-2","CASA NAVIA S.A.","VENTA AFECTA ELECTRONICA",37995,"2026-02-19",311899,"10-04-01-01","LUTGARDO GANGAS"],["76.248.620-2","CASA NAVIA S.A.","VENTA AFECTA ELECTRONICA",38072,"2026-02-26",171788,"10-04-01-01","LUTGARDO GANGAS"],["76.248.620-2","CASA NAVIA S.A.","VENTA AFECTA ELECTRONICA",38345,"2026-03-22",312256,"10-04-01-01","LUTGARDO GANGAS"],["76.248.620-2","CASA NAVIA S.A.","VENTA AFECTA ELECTRONICA",38405,"2026-03-29",287314,"10-04-01-01","LUTGARDO GANGAS"],["76.262.206-8","Sociedad Comercializadora Mella y Diaz Compañía Limitada","VENTA AFECTA ELECTRONICA",40442,"2026-10-24",178500,"10-04-01-01","Alejandra Hurtado"],["76.423.206-2","Sociedad Arevalo y Garcia Ltda.","VENTA AFECTA ELECTRONICA",40127,"2026-08-29",180642,"10-04-01-01","SANDRA ORTEGA"],["76.423.206-2","Sociedad Arevalo y Garcia Ltda.","VENTA AFECTA ELECTRONICA",40380,"2026-09-19",293127,"10-04-01-01","SANDRA ORTEGA"],["76.423.206-2","Sociedad Arevalo y Garcia Ltda.","VENTA AFECTA ELECTRONICA",40418,"2026-09-24",227647,"10-04-01-01","SANDRA ORTEGA"],["76.434.155-4","MARCOS MORALES ORDEÑO","VENTA AFECTA ELECTRONICA",40584,"2026-10-07",62308,"10-04-01-01","Oscar Bucarey"],["76.457.503-2","Ferreteria Lirquen","VENTA AFECTA ELECTRONICA",40054,"2026-08-27",164456,"10-04-01-01","Oscar Bucarey"],["76.495.590-0","Sociedad Comercial Valdés y Figueroa Ltda.","VENTA AFECTA ELECTRONICA",40068,"2026-09-27",543235,"10-04-01-01","Alejandra Hurtado"],["76.495.590-0","Sociedad Comercial Valdés y Figueroa Ltda.","VENTA AFECTA ELECTRONICA",40191,"2026-10-04",998410,"10-04-01-01","Alejandra Hurtado"],["76.495.590-0","Sociedad Comercial Valdés y Figueroa Ltda.","VENTA AFECTA ELECTRONICA",40568,"2026-11-03",1580671,"10-04-01-01","Alejandra Hurtado"],["76.585.455-5","BARRACA DE FIERROS MATERIALES CONSTRUCCION","VENTA AFECTA ELECTRONICA",32532,"2024-02-09",1000000,"10-04-01-01","Marcelo Herrera"],["76.628.480-9","HNOS  AHUMADA FLORES MATERIALES DE CONSTRUCCION LTDA","VENTA AFECTA ELECTRONICA",40336,"2026-09-18",364402,"10-04-01-01","Oscar Bucarey"],["76.628.480-9","HNOS  AHUMADA FLORES MATERIALES DE CONSTRUCCION LTDA","VENTA AFECTA ELECTRONICA",40739,"2026-10-22",52360,"10-04-01-01","Oscar Bucarey"],["76.677.967-0","COMERCIALIZADORA ARTICULOS DE FERRETERIA PATRICIO RETAMAL JA","VENTA AFECTA ELECTRONICA",40067,"2026-07-29",80000,"10-04-01-01","Joel Cordova"],["76.677.967-0","COMERCIALIZADORA ARTICULOS DE FERRETERIA PATRICIO RETAMAL JA","VENTA AFECTA ELECTRONICA",40746,"2026-09-23",61642,"10-04-01-01","Joel Cordova"],["76.743.593-2","EOX SPA","VENTA AFECTA ELECTRONICA",40599,"2026-10-09",30690,"10-04-01-01","Alejandra Hurtado"],["76.770.842-4","COPRAD SPA","VENTA AFECTA ELECTRONICA",40477,"2026-09-26",1292505,"10-04-01-01","Alejandra Hurtado"],["76.826.580-1","FERRETERIA CAVEM SPA","VENTA AFECTA ELECTRONICA",39927,"2026-08-16",981754,"10-04-01-01","Alejandra Hurtado"],["76.826.580-1","FERRETERIA CAVEM SPA","VENTA AFECTA ELECTRONICA",39947,"2026-08-19",339686,"10-04-01-01","Alejandra Hurtado"],["76.826.580-1","FERRETERIA CAVEM SPA","VENTA AFECTA ELECTRONICA",40176,"2026-09-03",303736,"10-04-01-01","Alejandra Hurtado"],["76.826.580-1","FERRETERIA CAVEM SPA","VENTA AFECTA ELECTRONICA",40220,"2026-09-05",86721,"10-04-01-01","Alejandra Hurtado"],["76.826.580-1","FERRETERIA CAVEM SPA","VENTA AFECTA ELECTRONICA",40297,"2026-09-12",258749,"10-04-01-01","Alejandra Hurtado"],["76.826.580-1","FERRETERIA CAVEM SPA","VENTA AFECTA ELECTRONICA",40333,"2026-09-18",846257,"10-04-01-01","Alejandra Hurtado"],["76.828.357-5","ALTERNATIVA ELECTRICA SPA","VENTA AFECTA ELECTRONICA",34663,"2025-03-03",55656,"10-04-01-01","Alejandra Hurtado"],["76.828.357-5","ALTERNATIVA ELECTRICA SPA","VENTA AFECTA ELECTRONICA",38968,"2026-07-22",1397976,"10-04-01-01","Alejandra Hurtado"],["76.828.357-5","ALTERNATIVA ELECTRICA SPA","VENTA AFECTA ELECTRONICA",39102,"2026-08-09",1765008,"10-04-01-01","Alejandra Hurtado"],["76.828.357-5","ALTERNATIVA ELECTRICA SPA","VENTA AFECTA ELECTRONICA",39727,"2026-09-28",4617676,"10-04-01-01","Alejandra Hurtado"],["76.837.731-6","LESMAR Spa","VENTA AFECTA ELECTRONICA",40591,"2026-10-23",111931,"10-04-01-01","Alejandra Hurtado"],["76.859.814-2","TECHNICAL SPA","VENTA AFECTA ELECTRONICA",32575,"2024-01-04",18061,"10-04-01-01","Alejandra Hurtado"],["76.860.803-2","COMERCIAL CECA SPA","VENTA AFECTA ELECTRONICA",40497,"2026-09-27",563670,"10-04-01-01","Alejandra Hurtado"],["76.872.636-1","MASER  SPA","VENTA AFECTA ELECTRONICA",40064,"2026-09-26",17261,"10-04-01-01","Marcelo Herrera"],["76.872.636-1","MASER  SPA","VENTA AFECTA ELECTRONICA",40234,"2026-10-06",7473,"10-04-01-01","Marcelo Herrera"],["76.872.636-1","MASER  SPA","VENTA AFECTA ELECTRONICA",40315,"2026-10-16",176249,"10-04-01-01","Marcelo Herrera"],["76.872.636-1","MASER  SPA","VENTA AFECTA ELECTRONICA",40481,"2026-10-26",43197,"10-04-01-01","Marcelo Herrera"],["76.872.636-1","MASER  SPA","VENTA AFECTA ELECTRONICA",40741,"2026-11-21",35605,"10-04-01-01","Marcelo Herrera"],["76.872.636-1","MASER  SPA","VENTA AFECTA ELECTRONICA",40744,"2026-11-22",35669,"10-04-01-01","Marcelo Herrera"],["76.872.636-1","MASER  SPA","VENTA AFECTA ELECTRONICA",40745,"2026-11-22",176372,"10-04-01-01","Marcelo Herrera"],["76.932.877-7","ELECTROLINE Spa","VENTA AFECTA ELECTRONICA",40263,"2026-09-11",764539,"10-04-01-01","Alejandra Hurtado"],["76.932.877-7","ELECTROLINE Spa","VENTA AFECTA ELECTRONICA",40728,"2026-10-21",806320,"10-04-01-01","Alejandra Hurtado"],["76.989.563-9","SOCIEDAD COMERCIAL INGEPRODUCTS LIMITADA","VENTA AFECTA ELECTRONICA",37569,"2026-01-03",6783,"10-04-01-01","Alejandra Hurtado"],["77.089.102-7","COMERCIALIZADORA LAZAROS SPA","VENTA AFECTA ELECTRONICA",40440,"2026-09-24",362852,"10-04-01-01","Oscar Bucarey"],["77.093.922-4","Comercial Richard Antonio Ceballos Orellana EIRL","VENTA AFECTA ELECTRONICA",39756,"2026-08-01",378434,"10-04-01-01","Alejandra Hurtado"],["77.093.922-4","Comercial Richard Antonio Ceballos Orellana EIRL","VENTA AFECTA ELECTRONICA",40236,"2026-09-06",303845,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",39970,"2026-09-20",649990,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",39971,"2026-09-20",565756,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",40057,"2026-09-26",749641,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",40257,"2026-10-11",1047682,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",40324,"2026-10-17",1070167,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",40427,"2026-10-24",657713,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",40585,"2026-11-06",1592291,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",40586,"2026-11-07",194322,"10-04-01-01","Alejandra Hurtado"],["77.111.638-8","ACTION SPA.","VENTA AFECTA ELECTRONICA",40715,"2026-11-16",876495,"10-04-01-01","Alejandra Hurtado"],["77.168.492-0","Inversiones C y D SpA","VENTA AFECTA ELECTRONICA",40429,"2026-09-24",4528124,"10-04-01-01","Alejandra Hurtado"],["77.168.492-0","Inversiones C y D SpA","VENTA AFECTA ELECTRONICA",40670,"2026-10-15",2631537,"10-04-01-01","Alejandra Hurtado"],["77.169.774-7","PATRICIA HERRERA E HIJOS LTDA","VENTA AFECTA ELECTRONICA",40330,"2026-09-18",134986,"10-04-01-01","Joel Cordova"],["77.169.774-7","PATRICIA HERRERA E HIJOS LTDA","VENTA AFECTA ELECTRONICA",40633,"2026-10-10",172800,"10-04-01-01","Joel Cordova"],["77.260.626-5","SAMAC SPA","VENTA AFECTA ELECTRONICA",40308,"2026-09-13",807629,"10-04-01-01","Joel Cordova"],["77.274.753-5","CITOTOOLS SPA","VENTA AFECTA ELECTRONICA",40517,"2026-10-02",266233,"10-04-01-01","Diego Rivero"],["77.297.462-0","FULL SERVICE ACCESORIOS SPA","VENTA AFECTA ELECTRONICA",30222,"2022-12-30",87579,"10-04-01-01","Carlos Peñaloza Peña"],["77.297.462-0","FULL SERVICE ACCESORIOS SPA","VENTA AFECTA ELECTRONICA",30300,"2023-01-12",374683,"10-04-01-01","Carlos Peñaloza Peña"],["77.297.462-0","FULL SERVICE ACCESORIOS SPA","VENTA AFECTA ELECTRONICA",30426,"2023-02-04",154843,"10-04-01-01","Carlos Peñaloza Peña"],["77.306.846-1","FERRETERÍA NICOLE CÉSPEDES E.I.R.L.","VENTA AFECTA ELECTRONICA",40493,"2026-09-27",574301,"10-04-01-01","Marcelo Herrera"],["77.371.242-5","COMERCIAL Y DISTRIBUIDORA MYC SPA","VENTA AFECTA ELECTRONICA",40735,"2026-10-22",419475,"10-04-01-01","Alejandra Hurtado"],["77.397.738-0","Ferretería Tres Montes","VENTA AFECTA ELECTRONICA",40042,"2026-09-25",1220744,"10-04-01-01","Alejandra Hurtado"],["77.397.738-0","Ferretería Tres Montes","VENTA AFECTA ELECTRONICA",40516,"2026-11-01",513830,"10-04-01-01","Alejandra Hurtado"],["7.742.664-7","Alberto Patricio  Zuñiga Seguel","VENTA AFECTA ELECTRONICA",40329,"2026-09-17",3862,"10-04-01-01","VENTAS AL PERSONAL"],["77.607.849-2","FERRECASTRO SPA","VENTA AFECTA ELECTRONICA",40492,"2026-08-27",219676,"10-04-01-01","Oscar Bucarey"],["77.616.490-9","El rincon  materiales de construccion","VENTA AFECTA ELECTRONICA",40248,"2026-09-10",111931,"10-04-01-01","Oscar Bucarey"],["77.648.190-4","COMERCIAL ORVE LTDA.","VENTA AFECTA ELECTRONICA",39835,"2026-09-07",79849,"10-04-01-01","Marcelo Herrera"],["77.648.190-4","COMERCIAL ORVE LTDA.","VENTA AFECTA ELECTRONICA",40237,"2026-10-09",944275,"10-04-01-01","Marcelo Herrera"],["77.648.190-4","COMERCIAL ORVE LTDA.","VENTA AFECTA ELECTRONICA",40314,"2026-10-16",64260,"10-04-01-01","Marcelo Herrera"],["77.648.190-4","COMERCIAL ORVE LTDA.","VENTA AFECTA ELECTRONICA",40518,"2026-11-01",79849,"10-04-01-01","Marcelo Herrera"],["77.648.190-4","COMERCIAL ORVE LTDA.","VENTA AFECTA ELECTRONICA",40554,"2026-11-02",184069,"10-04-01-01","Marcelo Herrera"],["77.648.190-4","COMERCIAL ORVE LTDA.","VENTA AFECTA ELECTRONICA",40733,"2026-11-21",329273,"10-04-01-01","Marcelo Herrera"],["77.716.337-K","TOOLWORK CHILE SPA.","VENTA AFECTA ELECTRONICA",40260,"2026-09-11",185640,"10-04-01-01","Marcelo Herrera"],["77.716.337-K","TOOLWORK CHILE SPA.","VENTA AFECTA ELECTRONICA",40319,"2026-09-16",69252,"10-04-01-01","Marcelo Herrera"],["77.716.337-K","TOOLWORK CHILE SPA.","VENTA AFECTA ELECTRONICA",40373,"2026-09-19",1141343,"10-04-01-01","Marcelo Herrera"],["77.716.337-K","TOOLWORK CHILE SPA.","VENTA AFECTA ELECTRONICA",40618,"2026-10-09",49192,"10-04-01-01","Marcelo Herrera"],["77.716.337-K","TOOLWORK CHILE SPA.","VENTA AFECTA ELECTRONICA",40619,"2026-10-09",983844,"10-04-01-01","Marcelo Herrera"],["77.716.337-K","TOOLWORK CHILE SPA.","VENTA AFECTA ELECTRONICA",40640,"2026-10-10",73788,"10-04-01-01","Marcelo Herrera"],["77.716.337-K","TOOLWORK CHILE SPA.","VENTA AFECTA ELECTRONICA",40726,"2026-10-21",129227,"10-04-01-01","Marcelo Herrera"],["77.716.337-K","TOOLWORK CHILE SPA.","VENTA AFECTA ELECTRONICA",40727,"2026-10-21",102252,"10-04-01-01","Marcelo Herrera"],["77.730.863-7","INGENIERIA ELECTRICA JMC SPA","VENTA AFECTA ELECTRONICA",40574,"2026-10-07",1483180,"10-04-01-01","Joel Cordova"],["77.753.408-4","Electromall SPA","VENTA AFECTA ELECTRONICA",40325,"2026-09-17",256921,"10-04-01-01","Marcelo Herrera"],["77.753.408-4","Electromall SPA","VENTA AFECTA ELECTRONICA",40402,"2026-09-23",183784,"10-04-01-01","Marcelo Herrera"],["77.753.408-4","Electromall SPA","VENTA AFECTA ELECTRONICA",40674,"2026-10-15",278722,"10-04-01-01","Marcelo Herrera"],["77.753.408-4","Electromall SPA","VENTA AFECTA ELECTRONICA",40730,"2026-10-21",150630,"10-04-01-01","Marcelo Herrera"],["77.828.926-1","D&D ELECTRIC SPA","VENTA AFECTA ELECTRONICA",37342,"2025-11-19",595,"10-04-01-01","Alejandra Hurtado"],["77.908.645-3","COMERCIAL C&G GROUP SPA","VENTA AFECTA ELECTRONICA",40445,"2026-09-24",31704,"10-04-01-01","Alejandra Hurtado"],["77.908.645-3","COMERCIAL C&G GROUP SPA","VENTA AFECTA ELECTRONICA",40595,"2026-10-08",49052,"10-04-01-01","Alejandra Hurtado"],["77.911.906-8","Importadora la chilena san pablo","VENTA AFECTA ELECTRONICA",40261,"2026-08-12",72471,"10-04-01-01","Oscar Bucarey"],["77.991.824-6","FERRETERIA JAVIER ANDRES CHAVEZ GARRIDO E.I.R.L.","VENTA AFECTA ELECTRONICA",40743,"2026-10-22",274904,"10-04-01-01","Oscar Bucarey"],["78.076.859-2","IMPORTADORA Y COMERCIAL EUSTAQUIO SPA","VENTA AFECTA ELECTRONICA",39674,"2026-07-25",282222,"10-04-01-01","Joel Cordova"],["78.077.349-9","comercializadora cardon ltda","VENTA AFECTA ELECTRONICA",40572,"2026-10-07",132787,"10-04-01-01","SANDRA ORTEGA"],["78.077.349-9","comercializadora cardon ltda","VENTA AFECTA ELECTRONICA",40575,"2026-10-07",260446,"10-04-01-01","SANDRA ORTEGA"],["78.084.506-6","J.A.T. Energy Electric Spa","VENTA AFECTA ELECTRONICA",40258,"2026-09-11",44744,"10-04-01-01","Alejandra Hurtado"],["78.099.603-K","POWER TRUCK SPA","VENTA AFECTA ELECTRONICA",40734,"2026-10-22",21027,"10-04-01-01","Alejandra Hurtado"],["78.113.276-4","G-LED SANTIAGO SPA","VENTA AFECTA ELECTRONICA",40405,"2026-09-13",76041,"10-04-01-01","Joel Cordova"],["78.236.410-3","José Morales y Compañía Ltda.","VENTA AFECTA ELECTRONICA",40409,"2026-09-23",169254,"10-04-01-01","Marcelo Herrera"],["78.236.410-3","José Morales y Compañía Ltda.","VENTA AFECTA ELECTRONICA",40679,"2026-10-16",157080,"10-04-01-01","Marcelo Herrera"],["78.407.681-4","FERRETERIA VILLANUEVA","VENTA AFECTA ELECTRONICA",40714,"2026-10-16",215849,"10-04-01-01","Joel Cordova"],["78.428.147-7","COMERCIALIZADORA LLICO","VENTA AFECTA ELECTRONICA",40385,"2026-09-20",70347,"10-04-01-01","Joel Cordova"],["78.831.630-5","Metalmar Cia. Ltda.","VENTA AFECTA ELECTRONICA",40590,"2026-09-08",272141,"10-04-01-01","Alejandra Hurtado"],["79.550.730-2","Comercial Larrain S.A.","VENTA AFECTA ELECTRONICA",40566,"2026-10-04",914753,"10-04-01-01","Alejandra Hurtado"],["79.659.100-5","MATELEC LIMITADA","VENTA AFECTA ELECTRONICA",40168,"2026-10-02",287873,"10-04-01-01","Alejandra Hurtado"],["79.748.470-9","ELECTRICIDAD GUZMAN S.A.","VENTA AFECTA ELECTRONICA",40045,"2026-09-25",1957352,"10-04-01-01","Alejandra Hurtado"],["79.748.470-9","ELECTRICIDAD GUZMAN S.A.","VENTA AFECTA ELECTRONICA",40240,"2026-10-09",1219988,"10-04-01-01","Alejandra Hurtado"],["79.748.470-9","ELECTRICIDAD GUZMAN S.A.","VENTA AFECTA ELECTRONICA",40519,"2026-11-01",1142400,"10-04-01-01","Alejandra Hurtado"],["79.748.470-9","ELECTRICIDAD GUZMAN S.A.","VENTA AFECTA ELECTRONICA",40564,"2026-11-02",620109,"10-04-01-01","Alejandra Hurtado"],["79.748.470-9","ELECTRICIDAD GUZMAN S.A.","VENTA AFECTA ELECTRONICA",40589,"2026-11-07",2542292,"10-04-01-01","Alejandra Hurtado"],["79.748.470-9","ELECTRICIDAD GUZMAN S.A.","VENTA AFECTA ELECTRONICA",40647,"2026-11-10",684512,"10-04-01-01","Alejandra Hurtado"],["80.565.900-9","YOLITO BALART HERMANOS LTDA.","VENTA AFECTA ELECTRONICA",35198,"2025-04-21",24990,"10-04-01-01","Marcelo Herrera"],["80.565.900-9","YOLITO BALART HERMANOS LTDA.","VENTA AFECTA ELECTRONICA",39758,"2026-08-31",436730,"10-04-01-01","Alejandra Hurtado"],["80.565.900-9","YOLITO BALART HERMANOS LTDA.","VENTA AFECTA ELECTRONICA",39759,"2026-08-31",663425,"10-04-01-01","Alejandra Hurtado"],["80.565.900-9","YOLITO BALART HERMANOS LTDA.","VENTA AFECTA ELECTRONICA",39760,"2026-08-31",365074,"10-04-01-01","Alejandra Hurtado"],["80.565.900-9","YOLITO BALART HERMANOS LTDA.","VENTA AFECTA ELECTRONICA",39761,"2026-08-31",436730,"10-04-01-01","Alejandra Hurtado"],["8.112.942-8","LIA GRANT CORTES","VENTA AFECTA ELECTRONICA",40587,"2026-11-07",446131,"10-04-01-01","Alejandra Hurtado"],["81.151.900-6","FRINDT S.A.","VENTA AFECTA ELECTRONICA",33328,"2024-06-29",51646,"10-04-01-01","Alejandra Hurtado"],["81.151.900-6","FRINDT S.A.","VENTA AFECTA ELECTRONICA",33329,"2024-06-29",77469,"10-04-01-01","Alejandra Hurtado"],["81.151.900-6","FRINDT S.A.","VENTA AFECTA ELECTRONICA",33330,"2024-06-29",77469,"10-04-01-01","Alejandra Hurtado"],["81.151.900-6","FRINDT S.A.","VENTA AFECTA ELECTRONICA",33331,"2024-06-29",134827,"10-04-01-01","Alejandra Hurtado"],["81.151.900-6","FRINDT S.A.","VENTA AFECTA ELECTRONICA",33847,"2024-09-27",608715,"10-04-01-01","Alejandra Hurtado"],["81.151.900-6","FRINDT S.A.","VENTA AFECTA ELECTRONICA",33848,"2024-09-27",2748186,"10-04-01-01","Alejandra Hurtado"],["81.151.900-6","FRINDT S.A.","VENTA AFECTA ELECTRONICA",33849,"2024-09-27",494921,"10-04-01-01","Alejandra Hurtado"],["81.185.000-4","CESMEC S.A.","VENTA AFECTA ELECTRONICA",40723,"2026-10-21",25322,"10-04-01-01","MUESTRAS"],["81.185.000-4","CESMEC S.A.","VENTA AFECTA ELECTRONICA",40724,"2026-10-21",42193,"10-04-01-01","MUESTRAS"],["8.130.625-7","Ana Rosa Muñoz Bahamonde","VENTA AFECTA ELECTRONICA",40742,"2026-10-22",88122,"10-04-01-01","Oscar Bucarey"],["81.515.100-3","Selim Dabed Spa","VENTA AFECTA ELECTRONICA",40023,"2026-09-21",56885,"10-04-01-01","Alejandra Hurtado"],["81.515.100-3","Selim Dabed Spa","VENTA AFECTA ELECTRONICA",40386,"2026-10-20",546686,"10-04-01-01","Alejandra Hurtado"],["81.515.100-3","Selim Dabed Spa","VENTA AFECTA ELECTRONICA",40387,"2026-10-20",534191,"10-04-01-01","Alejandra Hurtado"],["81.515.100-3","Selim Dabed Spa","VENTA AFECTA ELECTRONICA",40388,"2026-10-20",146668,"10-04-01-01","Alejandra Hurtado"],["81.515.100-3","Selim Dabed Spa","VENTA AFECTA ELECTRONICA",40389,"2026-10-20",197838,"10-04-01-01","Alejandra Hurtado"],["81.515.100-3","Selim Dabed Spa","VENTA AFECTA ELECTRONICA",40390,"2026-10-20",151011,"10-04-01-01","Alejandra Hurtado"],["81.515.100-3","Selim Dabed Spa","VENTA AFECTA ELECTRONICA",40391,"2026-10-20",106922,"10-04-01-01","Alejandra Hurtado"],["81.515.100-3","Selim Dabed Spa","VENTA AFECTA ELECTRONICA",40597,"2026-11-07",828523,"10-04-01-01","Alejandra Hurtado"],["8.365.676-K","Sonia Flor Henriquez Jimenez","VENTA AFECTA ELECTRONICA",40218,"2026-09-05",367424,"10-04-01-01","Alejandra Hurtado"],["85.479.600-3","Figueroa y Salazar Ltda","VENTA AFECTA ELECTRONICA",40400,"2026-09-23",241570,"10-04-01-01","Alejandra Hurtado"],["85.512.100-K","ELECTRICIDAD M. LOMUSCIO E HIJOS LTDA","VENTA AFECTA ELECTRONICA",39843,"2026-10-07",529193,"10-04-01-01","Marcelo Herrera"],["85.512.100-K","ELECTRICIDAD M. LOMUSCIO E HIJOS LTDA","VENTA AFECTA ELECTRONICA",39951,"2026-10-19",69020,"10-04-01-01","Marcelo Herrera"],["85.512.100-K","ELECTRICIDAD M. LOMUSCIO E HIJOS LTDA","VENTA AFECTA ELECTRONICA",39952,"2026-10-19",119000,"10-04-01-01","Marcelo Herrera"],["85.512.100-K","ELECTRICIDAD M. LOMUSCIO E HIJOS LTDA","VENTA AFECTA ELECTRONICA",40111,"2026-10-28",1583593,"10-04-01-01","Marcelo Herrera"],["85.512.100-K","ELECTRICIDAD M. LOMUSCIO E HIJOS LTDA","VENTA AFECTA ELECTRONICA",40299,"2026-11-11",661309,"10-04-01-01","Marcelo Herrera"],["85.512.100-K","ELECTRICIDAD M. LOMUSCIO E HIJOS LTDA","VENTA AFECTA ELECTRONICA",40489,"2026-11-25",492184,"10-04-01-01","Marcelo Herrera"],["85.512.100-K","ELECTRICIDAD M. LOMUSCIO E HIJOS LTDA","VENTA AFECTA ELECTRONICA",40513,"2026-11-30",477904,"10-04-01-01","Marcelo Herrera"],["85.512.100-K","ELECTRICIDAD M. LOMUSCIO E HIJOS LTDA","VENTA AFECTA ELECTRONICA",40514,"2026-11-30",166600,"10-04-01-01","Marcelo Herrera"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40060,"2026-09-26",448868,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40061,"2026-09-26",243393,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40062,"2026-09-26",1046205,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40521,"2026-11-01",60143,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40649,"2026-12-13",76160,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40650,"2026-12-13",76160,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40651,"2026-12-13",76160,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40652,"2026-12-13",76160,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40653,"2026-12-13",540027,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40654,"2026-12-13",540027,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40655,"2026-12-13",540027,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40656,"2026-12-13",137474,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40657,"2026-12-13",788982,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40658,"2026-12-13",788982,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40659,"2026-12-13",788982,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40680,"2026-12-15",540027,"10-04-01-01","Alejandra Hurtado"],["86.053.400-2","FERRETERIA OVIEDO S A","VENTA AFECTA ELECTRONICA",40681,"2026-12-15",788982,"10-04-01-01","Alejandra Hurtado"],["8.636.814-5","OSCAR VILLALOBOS TORRES","VENTA AFECTA ELECTRONICA",40334,"2026-09-18",112574,"10-04-01-01","Oscar Bucarey"],["8.636.814-5","OSCAR VILLALOBOS TORRES","VENTA AFECTA ELECTRONICA",40582,"2026-10-07",401733,"10-04-01-01","Oscar Bucarey"],["8.765.465-6","HECTOR MANUEL FUENTES LOBOS","VENTA AFECTA ELECTRONICA",40499,"2026-09-27",4100,"10-04-01-01","VENTAS AL PERSONAL"],["8.870.764-8","Pedro Antonio Castillo Ramirez","VENTA AFECTA ELECTRONICA",40323,"2026-09-16",145704,"10-04-01-01","Alejandra Hurtado"],["89.203.200-9","Desiderio Apablaza e Hijos Limitada","VENTA AFECTA ELECTRONICA",40665,"2026-10-14",115744,"10-04-01-01","Diego Rivero"],["89.396.900-4","Distribuidora Electrica Vitel S.A.","VENTA AFECTA ELECTRONICA",40185,"2026-10-03",165410,"10-04-01-01","Alejandra Hurtado"],["89.396.900-4","Distribuidora Electrica Vitel S.A.","VENTA AFECTA ELECTRONICA",40645,"2026-11-10",364854,"10-04-01-01","Alejandra Hurtado"],["8.957.292-4","Magaly Farias Contreras","VENTA AFECTA ELECTRONICA",40495,"2026-09-27",385144,"10-04-01-01","Alejandra Hurtado"],["8.957.292-4","Magaly Farias Contreras","VENTA AFECTA ELECTRONICA",40567,"2026-10-04",354025,"10-04-01-01","Alejandra Hurtado"],["94.707.000-2","FERRETERIA COVADONGA LIMITADA","VENTA AFECTA ELECTRONICA",40729,"2026-10-21",180851,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40051,"2026-09-26",257040,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40055,"2026-09-26",913920,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40069,"2026-09-27",145061,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40070,"2026-09-27",642600,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40077,"2026-09-27",1180480,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40122,"2026-09-28",454461,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40123,"2026-09-28",155890,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40124,"2026-09-28",58905,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40125,"2026-09-28",277508,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40128,"2026-09-28",277270,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40151,"2026-09-29",3976980,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40152,"2026-09-29",1435140,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40226,"2026-10-05",553350,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40317,"2026-10-16",268345,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40376,"2026-10-19",251566,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40377,"2026-10-19",164220,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40378,"2026-10-19",138516,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40399,"2026-10-23",211820,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40403,"2026-10-23",218960,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40479,"2026-10-26",147798,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40480,"2026-10-26",128877,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40482,"2026-10-26",211820,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40483,"2026-10-26",109480,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40501,"2026-10-27",553350,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40520,"2026-11-01",267512,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40581,"2026-11-06",105910,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40588,"2026-11-07",304045,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40616,"2026-11-08",492065,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40617,"2026-11-08",1312808,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40632,"2026-11-09",3339854,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40634,"2026-11-09",212653,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40635,"2026-11-09",12614,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40636,"2026-11-09",18921,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40637,"2026-11-09",88536,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40641,"2026-11-09",87465,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40642,"2026-11-09",167076,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40643,"2026-11-09",22015,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40644,"2026-11-10",209797,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40718,"2026-11-16",698530,"10-04-01-01","Alejandra Hurtado"],["96.355.000-6","Electrocom S.A.","VENTA AFECTA ELECTRONICA",40736,"2026-11-21",419356,"10-04-01-01","Alejandra Hurtado"],["96.501.610-4","Empresa Comercializadora y Abastecedora Nor S.A.C.I. ECANOR","VENTA AFECTA ELECTRONICA",40177,"2026-10-03",407575,"10-04-01-01","Alejandra Hurtado"],["96.501.610-4","Empresa Comercializadora y Abastecedora Nor S.A.C.I. ECANOR","VENTA AFECTA ELECTRONICA",40596,"2026-11-07",562739,"10-04-01-01","Alejandra Hurtado"],["96.661.820-5","COMERCIAL COPELEC S,A.","VENTA AFECTA ELECTRONICA",39848,"2026-09-08",3583685,"10-04-01-01","Marcelo Herrera"],["96.661.820-5","COMERCIAL COPELEC S,A.","VENTA AFECTA ELECTRONICA",39849,"2026-09-08",2730503,"10-04-01-01","Marcelo Herrera"],["96.868.560-0","OLIN S.A.","VENTA AFECTA ELECTRONICA",39899,"2026-09-13",157889,"10-04-01-01","Marcelo Herrera"],["96.868.560-0","OLIN S.A.","VENTA AFECTA ELECTRONICA",40557,"2026-11-02",94605,"10-04-01-01","Marcelo Herrera"],["12.244.258-6","CATHERINE MORENO","Cheque",4974269,"2026-10-10",244236,"10-05-01-02","Sin vendedor"],["12.631.089-7","Octavio Valenzuela Toro","Cheque",4071,"2026-09-18",132733,"10-05-01-02","Sin vendedor"],["76.048.324-9","Soc. Electr. Industrial HSI y Cia. Ltda.","Cheque",443958,"2026-08-23",1062979,"10-05-01-02","Alejandra Hurtado"],["76.048.324-9","Soc. Electr. Industrial HSI y Cia. Ltda.","Cheque",443959,"2026-11-14",522910,"10-05-01-02","Alejandra Hurtado"],["76.048.324-9","Soc. Electr. Industrial HSI y Cia. Ltda.","Cheque",443975,"2026-11-23",1177457,"10-05-01-02","Alejandra Hurtado"],["76.058.980-2","COMERCIAL E INVERSIONES GLP CHILE LTDA","Cheque",15319,"2026-09-25",673331,"10-05-01-02","Sin vendedor"],["76.058.980-2","COMERCIAL E INVERSIONES GLP CHILE LTDA","Cheque",15329,"2027-08-26",246307,"10-05-01-02","Sin vendedor"],["76.167.431-5","Mat. de Cons.Electric. y Transporte Bruno Peredo E.I.R.L.","Cheque",846764,"2024-11-09",2328729,"10-05-01-02","Marcelo Herrera"],["76.274.167-9","IMPORTADORA JIN HONG LIMITADA","Cheque",2423,"2026-10-13",140123,"10-05-01-02","Sin vendedor"],["76.872.636-1","MASER  SPA","Cheque",6517599,"2026-09-23",683651,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6517607,"2026-09-25",320536,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6517611,"2026-08-26",451811,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6517624,"2026-10-03",476284,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6523123,"2026-11-07",448469,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6523440,"2026-10-06",396456,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6523448,"2026-10-09",517763,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6523458,"2026-10-15",486402,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6523464,"2026-10-24",380310,"10-05-01-02","Marcelo Herrera"],["76.872.636-1","MASER  SPA","Cheque",6525499,"2026-11-18",416267,"10-05-01-02","Marcelo Herrera"],["76.899.286-K","SOCIEDAD COMERCIAL CR SPA","Cheque",4802,"2026-09-29",395000,"10-05-01-02","Sin vendedor"],["76.899.286-K","SOCIEDAD COMERCIAL CR SPA","Cheque",4803,"2026-10-14",395121,"10-05-01-02","Sin vendedor"],["76.899.286-K","SOCIEDAD COMERCIAL CR SPA","Cheque",4818,"2026-11-02",220745,"10-05-01-02","Sin vendedor"],["77.647.789-3","FARMAMAS","Cheque",8499432,"2026-09-29",427917,"10-05-01-02","Sin vendedor"],["78.113.276-4","G-LED SANTIAGO SPA","Cheque",9335729,"2026-09-21",463350,"10-05-01-02","Joel Cordova"],["78.411.012-5","FERRETERIA M3 SPA","Cheque",14,"2026-09-21",230000,"10-05-01-02","Sin vendedor"],["78.411.012-5","FERRETERIA M3 SPA","Cheque",15,"2026-09-28",230000,"10-05-01-02","Sin vendedor"],["78.411.012-5","FERRETERIA M3 SPA","Cheque",16,"2026-10-05",242328,"10-05-01-02","Sin vendedor"],["8.636.814-5","OSCAR VILLALOBOS TORRES","Cheque",3100085,"2026-09-12",223472,"10-05-01-02","Oscar Bucarey"],["96.596.450-9","FERROLUSAC S.A.","Cheque",3632416,"2026-08-17",110337,"10-05-01-02","Alejandra Hurtado"],["9.786.354-7","JOSE IVAN JARA HENRIQUEZ","Cheque",17672,"2026-10-22",208262,"10-05-01-02","Sin vendedor"],["9.964.913-5","ROSA BARRA MUÑOZ","Cheque",8196150,"2026-09-10",60214,"10-05-01-02","Sin vendedor"],["13.059.636-3","Guerra Concha Victor Hugo","Abono Bancario",3812,"2024-12-17",9000000,"20-05-01-02","VENTAS AL PERSONAL"]],"bl":{"1-9":"N","10576818-4":"N","100-7":"N","10110765-5":"N","10168834-8":"N","10188438-4":"N","10288065-K":"N","10288069-2":"N","10294726-6":"N","10343277-4":"N","104-K":"N","10405366-1":"N","10450480-9":"N","10521974-1":"N","10579553-K":"N","10582156-5":"N","10587112-0":"N","10603477-K":"N","10605343-K":"N","10708036-8":"N","10735625-8":"N","10744496-3":"N","10750189-4":"N","10782721-8":"N","10783952-6":"N","10824960-9":"N","10895126-5":"N","10950030-5":"N","10991517-3":"N","11056158-K":"N","11166476-5":"N","11178566-K":"N","11199497-8":"N","11218189-K":"S","11276371-6":"N","11296158-5":"N","11338358-5":"N","11569772-2":"N","11577727-0":"N","11583749-4":"N","11609459-2":"N","11691726-2":"N","11753560-6":"N","11833560-0":"N","11837506-8":"N","11841938-3":"N","11848499-1":"N","11862294-4":"N","11871040-1":"N","11897054-3":"N","11941265-K":"N","11979852-3":"N","11992384-0":"N","12027637-9":"N","12053203-0":"N","12157265-6":"N","12158356-9":"N","12226011-9":"N","12237053-4":"N","12244258-6":"N","12261511-1":"N","12265447-8":"N","12267435-5":"S","12282770-4":"S","12289772-9":"N","12300260-1":"N","12334450-2":"N","12389321-2":"N","12405874-0":"S","12468399-8":"N","12480648-8":"N","12482230-0":"N","12503546-9":"N","12631089-7":"N","12643712-9":"N","12658582-9":"S","12723980-0":"N","76136561-4":"N","12760377-4":"N","12808306-5":"N","12853642-6":"N","12854585-9":"N","12864585-3":"N","12896333-2":"S","12899411-4":"N","12901184-K":"N","12973355-1":"N","12981096-3":"S","13021382-0":"N","13026244-9":"S","13035667-2":"N","13050888-K":"N","13055236-6":"N","13059636-3":"N","13060087-5":"N","13065010-4":"N","13108849-3":"N","13121823-0":"N","13196355-6":"N","13250298-6":"N","13265700-9":"N","13268411-1":"N","13271972-1":"N","13277935-K":"N","13315111-7":"S","13436347-9":"N","13456205-6":"N","13479586-7":"N","13493200-7":"N","13551618-K":"N","13555339-5":"N","13670411-7":"N","13720015-5":"N","13750309-3":"N","13785873-8":"N","13893639-2":"N","13937911-K":"N","14126750-7":"N","14162624-8":"N","14168145-1":"N","14191304-2":"N","14194732-K":"N","14198510-8":"N","14243730-9":"N","14259316-5":"N","14274612-3":"N","14319549-K":"N","14320925-3":"N","14344428-7":"N","14352392-6":"N","14383565-0":"N","14391166-7":"N","14397228-3":"N","14448240-9":"N","14566304-0":"N","14637612-6":"N","14640139-2":"N","14672243-1":"N","15102743-1":"N","1518614-3":"N","15187700-1":"N","15318109-8":"S","15339706-6":"N","15503242-1":"N","15528246-0":"N","15543555-0":"N","15563448-0":"N","15592697-K":"N","15598621-2":"N","15633316-6":"N","15742576-5":"N","15776190-0":"N","15782947-5":"S","15797651-6":"N","15892772-1":"N","15893471-K":"N","15905508-6":"N","15908547-3":"N","15978274-3":"N","16012651-5":"N","16074884-2":"N","16087592-5":"S","16094075-1":"N","16237568-7":"N","16254506-K":"N","16300525-5":"N","16305619-4":"N","16321808-9":"N","16325533-2":"N","16422925-4":"N","16471177-3":"N","16578559-2":"N","16626967-9":"N","16633766-6":"N","16652967-0":"N","16712562-K":"N","16714806-9":"N","16858615-9":"N","16908828-4":"N","1702517-1":"N","17069063-K":"N","17085260-5":"N","17089747-1":"N","17109099-7":"N","17163691-4":"S","17168846-9":"N","17312754-5":"N","17416401-0":"N","17459086-9":"N","17778588-1":"N","17835647-K":"N","17876143-9":"N","17925264-3":"N","18027427-8":"N","18028344-7":"N","18047951-1":"N","18059756-5":"S","18117660-1":"N","18153700-0":"N","18367179-0":"N","18422304-K":"N","18485748-0":"N","18538040-8":"N","18623742-0":"N","18650375-9":"N","18722760-7":"N","18762380-4":"N","18905085-2":"N","18935292-1":"N","19182615-9":"N","19238764-7":"N","19254830-6":"N","19281898-2":"N","19305967-8":"N","19747843-8":"N","19914742-0":"N","2-7":"N","20402188-0":"N","20445420-5":"N","20568935-4":"N","20592733-6":"N","210-0":"N","21720123-3":"N","21775660-K":"N","21828123-0":"N","220-8":"N","22064949-0":"N","221-6":"N","2281168-1":"N","2350587-8":"N","24321208-1":"N","25015725-8":"N","25773947-3":"N","26272475-1":"N","26351958-2":"N","26352450-0":"N","26377451-5":"N","26870262-8":"N","26970185-4":"N","27322016-K":"N","2818060-8":"N","28576496-3":"N","28791680-9":"N","28803660-8":"N","3632004-4":"N","3749981-1":"N","3982034-K":"S","4187256-K":"N","4412287-1":"N","4689975-K":"N","4787503-K":"N","4852373-0":"N","4941336-K":"N","4948327-9":"S","4973237-6":"S","50048740-2":"N","5006833-1":"N","50096190-2":"N","50314960-5":"N","50351440-0":"N","5040115-4":"N","5051266-5":"S","5053475-8":"N","5178881-8":"N","52003150-2":"N","5228035-4":"N","53308233-5":"S","53325809-3":"N","56031620-8":"N","5605944-K":"N","56060190-5":"N","5812223-8":"N","5813418-K":"S","5823299-8":"N","5834361-7":"N","5861121-2":"N","5893177-2":"N","5901201-0":"N","6001911-8":"N","6020264-8":"N","60301001-9":"S","6067360-8":"N","6081672-7":"N","60910000-1":"N","61102119-4":"N","61103032-0":"N","61107000-4":"N","61202000-0":"N","61601000-K":"N","61606402-9":"N","6169327-0":"N","6179639-8":"N","61941900-6":"N","6227076-4":"N","6283756-K":"N","6371087-3":"N","6379904-1":"N","6481352-8":"N","6499734-3":"S","65030848-4":"N","65047817-7":"N","65233329-K":"N","65392180-2":"N","6546581-7":"N","65500900-0":"N","65501350-4":"N","6572795-1":"N","6628239-2":"N","6749946-8":"N","6801821-8":"N","6897083-0":"N","6903803-4":"N","69040100-2":"N","69061100-7":"N","69070100-6":"N","69070900-7":"N","69252300-8":"N","6931063-K":"N","6947710-0":"N","69910000-5":"N","7841547-9":"N","7044415-1":"N","7048390-4":"N","7054961-1":"N","71014200-9":"N","7111733-2":"N","71236700-8":"N","71578000-3":"N","7214132-6":"N","7233671-2":"N","72548600-6":"N","7267801-K":"N","7321868-3":"N","7345281-3":"N","7399940-5":"N","7496477-K":"S","7542594-5":"N","7592981-1":"S","76055373-5":"N","76883585-3":"N","76001653-5":"N","76002128-8":"N","76002421-K":"N","76003049-K":"N","76003953-5":"N","76004995-6":"N","76005024-5":"N","76008016-0":"N","76009507-9":"N","76009926-0":"S","76010125-7":"N","76010952-5":"N","76013723-5":"N","76015195-5":"N","76015257-9":"N","76015323-0":"N","76015597-7":"N","76017138-7":"N","76018061-0":"N","76018251-6":"N","76019353-4":"N","76021958-4":"N","76022051-5":"N","76023899-6":"N","76024076-1":"N","76026746-5":"N","76027318-K":"N","76028439-4":"N","76028477-7":"N","76031871-K":"N","76032544-9":"N","76038840-8":"N","76040050-5":"N","76040960-K":"N","76041367-4":"N","76042147-2":"N","76043957-6":"N","76045052-9":"N","76045688-8":"S","76048119-K":"N","76048251-K":"N","76048324-9":"S","76050204-9":"N","76050918-3":"N","76052923-0":"N","76053325-4":"N","76053745-4":"N","76054087-0":"N","76055192-9":"N","76055223-2":"N","76057224-1":"N","76058338-3":"N","76058719-2":"S","76058980-2":"N","76059600-0":"N","76059975-1":"N","76061030-5":"N","76061312-6":"N","76061996-5":"N","76062892-1":"N","76064737-3":"N","76065164-8":"S","76066501-0":"N","76067194-0":"N","76068315-9":"N","76068740-5":"S","76071047-4":"N","76071949-8":"N","76074119-1":"N","76076264-4":"N","76077572-K":"N","76078138-K":"N","76078200-9":"N","76081006-1":"N","76081591-8":"N","76082578-6":"S","76083965-5":"N","76084117-K":"N","76084456-K":"N","76085338-0":"N","76085400-K":"N","76086543-5":"N","76087249-0":"N","76087509-0":"N","76088204-6":"N","76088223-2":"N","76088421-9":"N","7608915-9":"N","76090219-5":"N","76091079-1":"N","76091462-2":"N","76091747-8":"N","76091790-7":"N","76092207-2":"N","76094150-6":"N","76095355-5":"N","76095619-8":"N","76097028-K":"N","76097047-6":"N","76097101-4":"N","76098003-K":"N","76098095-1":"N","76098467-1":"N","76099789-7":"N","76100142-6":"N","76102581-3":"N","76103289-5":"N","76103665-3":"N","76104264-5":"S","76108498-4":"N","76108885-8":"N","76109787-3":"N","76110096-3":"N","76110491-8":"N","76111101-9":"N","76112743-8":"S","76117461-4":"N","76117617-K":"N","76119711-8":"N","76125226-7":"N","76126699-3":"N","76127876-2":"N","76128836-9":"N","76129042-8":"N","76129804-6":"N","76131588-9":"S","76131741-5":"N","76133272-4":"N","76135481-7":"N","76135718-2":"N","0-0":"N","76136591-6":"N","76137989-5":"N","76139477-0":"N","76141975-7":"N","76142474-2":"N","76142515-3":"N","76142983-3":"N","76147711-0":"N","76147778-1":"N","76149672-7":"N","76152292-2":"N","76152318-K":"S","76153650-8":"N","76155763-7":"N","76158538-K":"N","76161731-1":"N","76163382-1":"N","76164251-0":"N","76165270-2":"N","76167431-5":"S","76170481-8":"S","76170707-8":"N","76171462-7":"N","76174208-6":"S","76174358-9":"N","76175835-7":"N","76176441-1":"N","76179395-0":"S","76181791-4":"N","76182644-1":"N","76184490-3":"N","76185119-5":"N","76189742-K":"N","76193068-0":"N","76197286-3":"N","76200407-0":"S","76200874-2":"N","76201031-3":"N","76201044-5":"N","76201237-5":"N","76201772-5":"S","76202140-4":"S","76205673-9":"S","76209385-5":"N","76210294-3":"N","76212232-4":"N","76219457-0":"S","76225072-1":"N","76226059-K":"N","76227460-4":"N","76299244-2":"S","76229287-4":"N","76235278-8":"N","76239893-1":"N","7624066-3":"N","76242600-5":"N","76243910-7":"N","76246731-3":"N","76248620-2":"S","76255490-9":"S","76256401-7":"N","76256541-2":"N","76257096-3":"N","76259100-6":"S","76259860-4":"N","76261054-K":"N","76262206-8":"N","76266673-1":"N","76270626-1":"N","76271681-K":"N","76274167-9":"N","76276236-6":"N","76278048-8":"N","76283082-5":"N","76284829-5":"N","76284956-9":"N","76288360-0":"N","76288690-1":"N","76291273-2":"N","76292332-7":"N","76293289-K":"N","76308444-2":"N","76309023-K":"N","76310413-3":"N","76315737-7":"N","76320186-4":"N","76328020-9":"N","76330906-1":"N","76331890-7":"N","76333980-7":"N","76337640-0":"N","76338709-7":"N","76339484-0":"N","76345093-7":"N","76347891-2":"N","76349735-6":"N","76350147-7":"N","76354292-0":"N","76358283-3":"N","76360330-K":"N","76361872-2":"N","76364206-2":"N","76366132-6":"N","76376168-1":"N","76377482-1":"N","76377569-0":"N","76381110-7":"N","76385305-5":"N","76385839-1":"N","76388096-6":"N","76389813-K":"N","76399888-6":"N","76401208-9":"N","76402357-9":"N","76405155-6":"N","76411030-7":"N","76413010-3":"S","76423206-2":"S","76424720-5":"S","76426254-9":"N","76426262-K":"N","76428433-K":"N","76434155-4":"S","76436355-8":"N","76441560-4":"N","76442320-8":"N","76443852-3":"N","76444001-3":"N","76446106-1":"N","76446891-0":"N","76449720-1":"N","76450721-5":"N","76451270-7":"N","76454887-6":"N","76457503-2":"S","76467457-K":"N","76469778-2":"N","76475620-7":"S","76481485-1":"N","76481987-K":"N","76483280-9":"N","76484151-4":"N","76485249-4":"N","76485433-0":"N","76486030-6":"N","76487560-5":"N","76487988-0":"N","76490560-1":"N","76491380-9":"N","76492780-K":"N","76494530-1":"S","76495590-0":"N","76498786-1":"N","76499237-7":"N","76503160-5":"S","76505110-K":"N","76506185-7":"N","76509349-K":"N","76512640-1":"S","76513327-0":"N","76513891-4":"N","76518240-9":"N","76519120-3":"N","76519713-9":"N","76520463-1":"N","76526403-0":"N","76526660-2":"N","76527980-1":"N","76530910-7":"N","76533405-5":"N","76536576-7":"N","76539270-5":"N","76539990-4":"N","76540946-2":"N","76544146-3":"N","76545470-0":"S","76546000-K":"S","76556430-1":"N","76565273-1":"N","76566490-K":"N","76567200-7":"N","76568450-1":"N","76568980-5":"N","76574359-1":"N","76574494-6":"N","76574660-4":"N","76576070-4":"N","76578125-6":"N","76582829-5":"N","76585351-6":"N","76585455-5":"S","76585755-4":"N","76587458-0":"N","76589042-K":"N","76590169-3":"N","76594471-6":"N","76595785-0":"N","76599245-1":"N","76606886-3":"N","76608644-6":"N","76612461-5":"N","76616420-K":"N","76617036-6":"N","76617237-7":"N","76621040-6":"N","76627163-4":"N","76628206-7":"N","76628480-9":"S","76629122-8":"N","76629300-K":"N","76632261-1":"N","76640260-7":"N","76641196-7":"N","76642435-K":"N","76643470-3":"N","76648830-7":"N","76651291-7":"N","76653310-8":"N","76660180-4":"N","76665858-K":"N","76666496-2":"N","76667390-2":"N","76671574-5":"N","76677967-0":"S","76679615-K":"N","76681908-7":"N","76682400-5":"S","76685299-8":"S","76688307-9":"N","76693022-0":"N","76694539-2":"N","76694960-6":"N","76698370-7":"N","76699788-0":"N","76710737-4":"N","76720101-K":"N","76721594-0":"N","76723958-0":"N","76724150-K":"N","76724549-1":"N","76726880-7":"N","76727281-2":"N","76732095-7":"N","76733490-7":"N","76734070-2":"N","76736830-5":"N","76738466-1":"N","76743593-2":"N","76744120-7":"N","76744980-1":"S","76747066-5":"N","76747967-0":"N","76748060-1":"N","76754302-6":"N","76757057-0":"N","76761675-9":"N","76765390-5":"N","76766302-1":"N","76769380-K":"N","76769498-9":"N","76770842-4":"N","76771870-5":"N","76774080-8":"S","76783680-5":"S","76790420-7":"N","76797245-8":"N","76806345-1":"N","76811983-K":"N","76817829-1":"N","76820501-9":"N","76821330-5":"N","76821422-0":"N","76822424-2":"N","76826250-0":"N","76826580-1":"N","76828357-5":"S","76837556-9":"N","76837731-6":"N","76844788-8":"N","76846862-1":"N","76849210-7":"N","76852623-0":"N","76856563-5":"N","76857813-3":"N","76858005-7":"N","76859814-2":"S","76860803-2":"N","76867187-7":"N","76871269-7":"N","76871322-7":"N","76872636-1":"N","76874470-K":"N","76874736-9":"N","76875110-2":"N","76875960-K":"S","76882460-6":"S","76888855-8":"N","76893250-6":"N","76899286-K":"N","76900438-6":"N","76904780-8":"N","76905799-4":"N","76906920-8":"N","76917494-K":"N","76919295-6":"N","76922839-K":"N","76925471-4":"N","76927993-8":"N","76930221-2":"N","76932320-1":"N","76932877-7":"S","76933415-7":"N","76933672-9":"N","76935087-K":"N","76935433-6":"N","76940791-K":"N","76944154-9":"N","76944990-6":"N","76946917-6":"N","76947586-9":"N","76951815-0":"N","76955780-6":"N","76960384-0":"N","76962510-0":"N","76965042-3":"N","76972192-4":"N","76973766-9":"N","76977755-5":"N","76979182-5":"N","76987478-K":"N","76989563-9":"S","76990215-5":"N","76992477-9":"N","76995312-4":"N","76997285-4":"N","77003128-1":"N","77005284-K":"N","77006054-0":"N","77008059-2":"N","77012616-9":"N","77015298-4":"N","77019294-3":"N","77022938-3":"N","77025922-3":"N","77026600-9":"N","77032004-6":"N","77033990-1":"N","77035420-K":"N","77039868-1":"N","77041690-6":"N","77046940-6":"N","77048151-1":"N","77055981-2":"N","77057086-7":"N","77057743-8":"N","77059383-2":"N","77065986-8":"N","77067116-7":"N","77067410-7":"N","77073845-8":"N","77074249-8":"N","77080655-0":"N","77085835-6":"N","77089102-7":"N","77091289-K":"N","77093922-4":"S","77097312-0":"N","77101993-5":"N","77111638-8":"N","77119080-4":"S","77126320-8":"N","77129869-9":"N","77140572-K":"N","77141898-8":"N","77146631-1":"N","77147355-5":"N","77153884-3":"N","77160348-3":"N","77168492-0":"N","77169774-7":"S","77170560-K":"S","77179498-K":"N","77179750-4":"N","77184405-7":"N","77184447-2":"N","77185713-2":"N","77195607-6":"N","77195704-8":"N","77197820-7":"N","77197860-6":"N","77200946-1":"N","77202585-8":"N","77206347-4":"N","77206499-3":"N","77213339-1":"N","77217653-8":"N","7721877-7":"S","77220080-3":"N","77222225-4":"N","77235372-3":"N","77238453-K":"N","77241850-7":"N","77243778-1":"N","77243852-4":"N","77245761-8":"N","77248155-1":"S","77251249-K":"N","77252408-0":"N","77253403-5":"N","77256180-6":"N","77260626-5":"S","77261280-K":"N","77274753-5":"N","77276653-K":"N","77291693-0":"N","77295292-9":"N","77297462-0":"S","77306846-1":"N","77308753-9":"N","77309238-9":"N","77309980-4":"S","77311402-1":"N","77317837-2":"N","77317967-0":"N","77321050-0":"N","77329670-7":"N","77338307-3":"N","77341352-5":"N","77352044-5":"N","77354084-5":"N","77360530-0":"N","77363060-7":"N","77363250-2":"N","77363557-9":"N","77364100-5":"N","77364310-5":"S","77367732-8":"N","77371242-5":"N","77380406-0":"N","773911120-4":"N","77391112-6":"N","77397738-0":"N","77398220-1":"N","77401780-1":"N","77407266-7":"N","77408513-0":"N","77408760-5":"N","77414521-4":"N","77419500-9":"N","7742664-7":"N","77427263-1":"N","77431100-9":"N","77437747-6":"N","77443195-0":"N","77443218-3":"N","77444770-9":"N","77448630-5":"N","77450316-1":"N","77468377-1":"S","77468760-2":"N","77470065-K":"N","77471038-8":"S","77482416-2":"N","77490670-3":"N","77494798-1":"N","77497098-3":"N","77501510-1":"N","77533053-8":"N","77533746-K":"N","77534062-2":"N","77541020-5":"N","77543080-K":"N","77547456-4":"N","77552130-9":"N","77552500-2":"N","77552870-2":"N","77573552-K":"N","77580772-5":"N","77580853-5":"N","77590805-K":"N","77590941-2":"N","77592580-9":"S","77594265-7":"N","77598300-0":"N","77599790-7":"N","77600870-2":"N","77601648-9":"N","77602822-3":"N","77607849-2":"S","77610450-7":"N","77616490-9":"S","77617324-K":"N","77624670-0":"N","77624823-1":"N","77627860-2":"N","77629170-6":"N","77631090-5":"N","77636680-3":"N","77640847-6":"N","77647789-3":"N","77648190-4":"N","77655730-7":"N","77656939-9":"N","77660232-9":"N","77662410-1":"N","77673913-8":"N","77690600-K":"S","77692110-6":"N","77694905-1":"N","77696663-0":"N","77697260-6":"N","77708540-9":"N","77710011-4":"N","77714680-7":"S","77716337-K":"S","77717748-6":"N","77722020-9":"N","77730863-7":"N","77734918-K":"S","77746653-4":"N","77747732-3":"N","77753408-4":"N","77771040-0":"N","77779100-1":"S","77786460-2":"S","77787804-2":"N","77795790-2":"N","77797990-6":"S","77813340-7":"N","77814850-1":"N","77816500-7":"N","77818820-1":"N","77821027-4":"N","77822880-7":"N","77823728-8":"N","77828926-1":"N","77831310-3":"N","77832170-K":"N","77834250-2":"N","778381950-8":"N","77838195-8":"N","77838830-8":"N","77847840-4":"N","77850508-8":"N","77851150-9":"N","77851400-1":"N","77858991-5":"N","77859490-0":"N","77861240-2":"N","77874750-2":"N","77880840-4":"N","77881010-7":"N","77883007-8":"N","77890767-4":"N","77898980-8":"N","77908645-3":"N","77911906-8":"S","77911925-4":"N","77921516-4":"N","77913831-3":"N","77934480-0":"N","77935890-9":"N","77941810-3":"N","77955840-1":"N","77958770-3":"N","77965485-0":"N","77974760-3":"N","77976920-8":"N","77985570-8":"N","77991824-6":"N","77992950-7":"N","77998386-2":"N","78001693-0":"N","78014930-2":"N","78028700-4":"N","78030120-1":"N","78037798-4":"N","78038254-6":"N","78042368-4":"N","78046904-8":"N","78070330-K":"N","78072759-4":"N","78074083-3":"N","78076859-2":"S","78077349-9":"N","78078290-0":"N","78084506-6":"S","78087500-3":"S","78099176-3":"N","78099383-9":"N","78099603-K":"N","78113276-4":"N","78114240-9":"N","78126703-1":"N","78131806-K":"N","78134603-9":"N","78153100-6":"N","78156164-9":"N","78169742-7":"N","78179007-9":"N","78194420-3":"N","78201283-5":"N","78223650-4":"N","78236410-3":"N","78246246-6":"N","78249130-K":"N","78266140-K":"N","78287840-9":"N","78333550-6":"N","78348101-4":"N","78348830-2":"N","78376540-3":"N","78377260-4":"N","78383131-7":"N","78385210-1":"N","78394135-K":"N","78407681-4":"N","78408440-K":"N","78411012-5":"N","78416698-8":"N","78418385-8":"N","78424040-1":"S","78428147-7":"N","78430830-8":"N","78445250-6":"N","78453180-5":"N","78483600-2":"N","78497830-3":"N","78561570-0":"N","78568830-9":"N","78588000-5":"S","78599920-7":"N","78602110-3":"N","78607100-3":"N","78613420-K":"S","78621340-1":"N","78637400-6":"N","78648590-8":"N","78727870-1":"N","78731270-5":"N","78737210-4":"N","78757550-1":"N","78773430-8":"N","78802940-3":"S","78815840-8":"N","78827140-9":"N","78831630-5":"S","78837270-1":"N","78837490-9":"N","78837690-1":"N","78856860-6":"N","78880560-8":"N","78901250-4":"N","78907850-5":"N","78928030-4":"N","78929050-4":"N","78939740-6":"N","78954130-2":"N","78968870-2":"N","78987590-1":"N","78998890-0":"N","7910358-6":"N","7941300-3":"N","79503620-2":"N","79504200-8":"N","7952203-1":"S","79523450-0":"N","79550730-2":"N","79556040-8":"N","79588380-0":"N","79591480-3":"N","79602650-2":"N","79607960-6":"N","79659100-5":"N","79666120-8":"N","79705760-6":"S","79727620-0":"N","79748470-9":"N","79768480-5":"N","79794890-K":"N","79862000-2":"N","79872390-1":"N","79872420-7":"N","79883640-4":"N","79890370-5":"S","79890410-8":"N","79913160-9":"N","79921500-4":"N","79942900-4":"N","79947410-7":"N","8022738-8":"N","8032272-0":"N","80432900-5":"N","80444200-6":"N","80461600-4":"N","80565900-9":"S","81031100-2":"N","8108161-1":"N","81116000-8":"N","8112790-5":"N","8112942-8":"N","81134200-9":"S","81151900-6":"S","81185000-4":"N","81187800-6":"N","8130625-7":"N","81312600-1":"N","81501500-2":"N","81515100-3":"N","81609600-6":"N","81761200-8":"N","81847600-0":"N","81866400-1":"N","82161000-1":"N","82648400-4":"N","82925600-2":"N","83033500-5":"S","83090400-K":"N","8311315-4":"N","8311673-0":"S","83206500-5":"N","83241300-3":"N","83484700-0":"N","8365676-K":"S","83728100-8":"N","83732700-8":"N","8377896-2":"N","83957900-4":"N","8399002-3":"N","83998600-9":"N","84071600-7":"N","84210100-K":"N","84238600-4":"N","84249300-5":"N","8434322-6":"N","84626200-8":"N","84938600-K":"N","85026100-8":"N","85067500-7":"N","85170500-7":"N","8519105-5":"N","85240500-7":"S","85254800-2":"N","8538666-2":"N","85479600-3":"N","85512100-K":"N","85845500-6":"N","86053400-2":"N","86356400-K":"N","8636814-5":"S","86385500-4":"N","86551700-9":"N","8717178-7":"N","87597100-K":"N","8765465-6":"N","87658500-6":"S","8770529-3":"N","87816400-8":"N","87825600-K":"N","87851700-8":"N","87889500-2":"N","8817727-4":"N","8819268-0":"N","88269400-3":"N","88460000-6":"N","88481800-1":"N","8861144-6":"N","8868963-1":"N","8870332-4":"N","8870764-8":"S","88792300-0":"N","88983600-8":"N","89258800-7":"N","89010200-K":"N","89037500-6":"N","89203200-9":"N","89231700-3":"N","8932714-8":"N","89396900-4":"N","89502700-6":"N","8957292-4":"N","89573900-6":"N","89853600-9":"N","89992900-4":"N","9001910-4":"N","9007917-4":"N","90299000-3":"N","9033708-4":"N","90871000-2":"N","91361000-8":"N","9152965-3":"N","92033000-2":"N","9282770-4":"N","92874000-5":"N","9298808-2":"N","9324196-7":"N","9324990-9":"N","93464000-4":"N","93689000-8":"N","93706000-9":"N","93720000-5":"N","93737000-8":"N","93779000-7":"N","9438253-K":"N","94707000-2":"N","9511043-6":"N","9521227-1":"N","79521910-2":"N","9522053-3":"N","95345000-3":"N","95748000-4":"S","9617114-5":"N","9633707-8":"N","96355000-6":"N","96357000-7":"N","96501610-4":"N","96511460-2":"N","96516630-0":"S","96518070-2":"N","96518090-7":"N","96527370-0":"N","96531740-6":"N","96534100-5":"N","96543670-7":"N","96565580-8":"N","96565670-7":"N","96566940-K":"N","96568780-7":"N","96569370-K":"N","96572360-9":"N","96596450-9":"N","96605410-7":"N","96617610-5":"N","96650510-9":"S","96661820-5":"S","96671320-8":"N","96679310-4":"N","96675100-2":"N","9668253-0":"N","96691680-K":"N","96692790-9":"N","96702710-3":"N","96702950-5":"N","96722810-9":"S","96726970-0":"N","96753420-K":"N","96762520-5":"N","96784540-K":"N","96792430-K":"N","96800570-7":"N","96806250-6":"N","96806980-2":"N","96812450-1":"N","96817880-6":"N","96830390-2":"N","96830710-K":"N","96832300-8":"N","96840500-4":"N","96841270-1":"N","9684711-4":"N","96847110-4":"N","96850690-0":"N","96857820-0":"N","96861270-0":"N","96868560-0":"N","96870830-9":"N","96883310-3":"N","96891730-7":"N","9689608-5":"N","96896480-1":"N","96899860-9":"N","96909270-0":"N","96928180-5":"N","96934010-0":"N","96936160-4":"N","96943820-8":"N","96945990-6":"N","96949830-8":"N","96952720-0":"N","96954630-2":"N","96959690-3":"N","96965060-6":"N","96967010-0":"N","96969470-0":"N","96977750-9":"N","96979680-5":"N","96981550-8":"N","96989610-9":"N","96992030-1":"N","96999710-K":"N","9786354-7":"N","9855795-4":"N","9879200-7":"N","9908299-2":"N","99502720-8":"N","99506670-K":"N","99516360-8":"N","99523430-0":"N","99529490-7":"N","99531960-8":"N","99532520-9":"N","99533280-9":"N","99535580-9":"N","99540130-4":"N","99555680-4":"N","99558680-0":"N","99565230-7":"N","99568820-4":"S","99570030-1":"N","99576700-7":"N","99582060-9":"N","99582120-6":"N","99586830-K":"N","99590630-9":"N","99595210-6":"N","9964913-5":"N","9966727-3":"N","9986467-2":"N","9987627-1":"N","6-K":"N"},"archivoClientes":"CLIENTES23SEP.xlsx","archivoBloqueados":"bloqueados23sep2026 2.xlsx","actualizado":"2026-09-23T20:06:53.012Z"}</script>
+</body>
+</html>

@@ -807,11 +807,8 @@
         <button type="button" class="login-role-card" onclick="loginElegirRol('gerencia')">
           <span class="login-role-icon">👔</span><span class="login-role-label">Gerencia</span>
         </button>
-        <button type="button" class="login-role-card" onclick="loginElegirRol('contabilidad')">
-          <span class="login-role-icon">📊</span><span class="login-role-label">Contabilidad</span>
-        </button>
-        <button type="button" class="login-role-card" onclick="loginElegirRol('bodega')">
-          <span class="login-role-icon">📦</span><span class="login-role-label">Bodega</span>
+        <button type="button" class="login-role-card" onclick="loginElegirRol('usuarios')">
+          <span class="login-role-icon">👤</span><span class="login-role-label">Usuarios</span>
         </button>
       </div>
     </div>
@@ -4077,9 +4074,8 @@ async function segEliminarPoliza(id) {
 // (pensado para que cada área vea/edite lo que le corresponde), no
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
-  gerencia:     { label: 'Gerencia',     password: 'Gerencia2026',     tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja','cartera'], canEdit: true,  puedeActualizarMayor: false },
-  contabilidad: { label: 'Contabilidad', password: 'Contabilidad2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja','cartera'], canEdit: true,  puedeActualizarMayor: true  },
-  bodega:       { label: 'Bodega',       password: 'Bodega2026',       tabs: ['seguros'], canEdit: true, puedeActualizarMayor: false },
+  gerencia: { label: 'Gerencia', password: 'Gerencia2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja','cartera'], canEdit: true,  puedeActualizarMayor: true },
+  usuarios: { label: 'Usuarios', password: 'Usuarios2026', tabs: ['seguros','cartera'],                                                                          canEdit: false, puedeActualizarMayor: false },
 };
 
 let CURRENT_ROLE = null;

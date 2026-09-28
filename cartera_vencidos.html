@@ -546,6 +546,25 @@ function renderMeta(){
 }
 function renderAll(){renderMeta();fillTipos();fillVends();render()}
 
+// ---------- Supabase sync ----------
+const SB_URL='https://eeildclikddchxybqkyc.supabase.co';
+const SB_KEY='sb_publishable_-S0wswGOsmUn-jhaxHBGaQ_gzoK39Y4';
+const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+async function sbSave(data){
+  try{
+    await fetch(SB_URL+'/rest/v1/cartera_data',{method:'POST',headers:{...SB_HDR,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:1,data,updated_at:new Date().toISOString()})});
+    return true;
+  }catch(e){return false;}
+}
+async function sbLoad(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/cartera_data?id=eq.1&select=data',{headers:SB_HDR});
+    if(!r.ok)return null;
+    const rows=await r.json();
+    return rows.length?rows[0].data:null;
+  }catch(e){return null;}
+}
+
 // ---------- Actualizar datos ----------
 let pend={cli:null,bl:null};
 const LS='cartera_vencidos_data';
@@ -638,10 +657,13 @@ function preview(){
 });
 bApply.addEventListener('click',async()=>{
   const n=nextData();if(!n)return;bApply.disabled=true;msg.className='msg';
+  msg.textContent='Guardando…';
   const apply=()=>{build(n);renderAll();pend={cli:null,bl:null};inCli.value='';inBl.value='';resetDrops();prev.hidden=true};
   apply();
-  try{localStorage.setItem(LS,JSON.stringify(n));msg.className='msg ok';msg.textContent='Listo. Dashboard actualizado y guardado en este navegador. Usa "Descargar data.json" para actualizar el archivo del proyecto.'}
-  catch(e){msg.className='msg err';msg.textContent='Dashboard actualizado, pero no se pudo guardar en este navegador. Usa "Descargar data.json" para conservarlo.'}
+  try{localStorage.setItem(LS,JSON.stringify(n));}catch(e){}
+  const ok=await sbSave(n);
+  if(ok){msg.className='msg ok';msg.textContent='✓ Datos actualizados y disponibles para todos los usuarios.';}
+  else{msg.className='msg err';msg.textContent='Dashboard actualizado localmente, pero no se pudo sincronizar. Verifica la conexión.';}
 });
 
 // ---------- Descargar Excel ----------
@@ -659,11 +681,16 @@ bXls.addEventListener('click',async()=>{
 });
 
 // ---------- Inicio ----------
-// Orden de carga: 1) lo guardado en este navegador (si es más nuevo), 2) data.json junto al HTML, 3) datos incluidos en la página.
+// Orden de carga: 1) Supabase (compartido), 2) data.json, 3) localStorage, 4) seed embebido.
 const boot=async()=>{
   let d=null;
-  try{const r=await fetch('data.json',{cache:'no-store'});if(r.ok)d=await r.json()}catch(e){}
+  // 1) Supabase — fuente compartida para todos los usuarios
+  d=await sbLoad();
+  // 2) data.json del servidor
+  if(!d){try{const r=await fetch('data.json',{cache:'no-store'});if(r.ok)d=await r.json()}catch(e){}}
+  // 3) seed embebido
   if(!d){try{d=JSON.parse(document.getElementById('seed').textContent)}catch(e){}}
+  // 4) localStorage (fallback local)
   try{const l=JSON.parse(localStorage.getItem(LS)||'null');if(l&&(!d||(l.actualizado||'')>(d.actualizado||'')))d=l}catch(e){}
   if(!d){document.querySelector('.kpis').insertAdjacentHTML('beforebegin','<p class="msg err">No hay datos. Usa "Actualizar datos" para subir los archivos.</p>');upd.hidden=false;return}
   build(d);renderAll();

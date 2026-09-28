@@ -114,6 +114,14 @@ table.inv tr:last-child td{border-bottom:0}
 @media (max-width:420px){.kpi .val{font-size:20px}}
 
 .hbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.vend-multi-wrap{position:relative}
+.vend-multi-btn{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;min-width:180px;text-align:left;white-space:nowrap}
+.vend-multi-btn.active{border-color:var(--accent);color:var(--accent);font-weight:600}
+.vend-multi-drop{position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:240px;max-height:280px;overflow-y:auto;padding:4px 0}
+.vend-multi-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:13px;user-select:none}
+.vend-multi-item:hover{background:var(--hover)}
+.vend-multi-item input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.vend-multi-clear{display:block;padding:6px 14px;font-size:12px;color:var(--accent);cursor:pointer;border-top:1px solid var(--border);margin-top:2px;background:none;border-left:none;border-right:none;border-bottom:none;width:100%;text-align:left;font:inherit}
 .btn{font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:7px 12px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink)}
 .btn.pri{background:var(--accent);color:var(--surface);border-color:transparent}
 .btn:disabled{opacity:.45;cursor:default}
@@ -210,7 +218,10 @@ details.rules ol{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:co
       <button type="button" data-v="v" aria-pressed="false">Vencidos</button>
       <button type="button" data-v="p" aria-pressed="false">Por vencer</button>
     </div>
-    <select id="fVend" aria-label="Vendedor"><option value="">Todos los vendedores</option></select>
+    <div class="vend-multi-wrap" id="fVendWrap">
+      <button type="button" class="vend-multi-btn" id="fVendBtn">Todos los vendedores ▾</button>
+      <div class="vend-multi-drop" id="fVendDrop" hidden></div>
+    </div>
     <select id="fTipo" aria-label="Tipo de documento"><option value="">Todo tipo de documento</option></select>
     <input type="search" id="fQ" placeholder="Buscar cliente o RUT" aria-label="Buscar cliente o RUT">
     <button type="button" id="reset">Limpiar</button>
@@ -331,7 +342,7 @@ const BUCKETS=[
   {k:'4',lab:'91–180',t:d=>d>=91&&d<=180},
   {k:'5',lab:'+180',t:d=>d>180}
 ];
-const st={estado:'',venc:'',tipo:'',vend:'',q:'',bucket:'',sk:'def',sd:-1,modo:'c',gk:'def',gd:-1};
+const st={estado:'',venc:'',tipo:'',vends:new Set(),q:'',bucket:'',sk:'def',sd:-1,modo:'c',gk:'def',gd:-1};
 const OPEN=new Set();
 const fmt=n=>'$'+Math.round(n).toLocaleString('es-CL');
 const short=n=>{const a=Math.abs(n);if(a>=1e6)return '$'+(n/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' M';if(a>=1e3)return '$'+Math.round(n/1e3).toLocaleString('es-CL')+' mil';return fmt(n)};
@@ -341,12 +352,30 @@ const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\
 
 const sel=document.getElementById('fTipo');
 function fillTipos(){const cur=sel.value;sel.length=1;[...new Set(D.map(r=>r[3]))].sort().forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o)});sel.value=[...sel.options].some(o=>o.value===cur)?cur:'';st.tipo=sel.value}
-const vsel=document.getElementById('fVend');
-function fillVends(){const cur=vsel.value;vsel.length=1;const vs=[...new Set(D.map(r=>r[9]))].sort((a,b)=>a===SINV?1:b===SINV?-1:a.localeCompare(b,'es'));vs.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;vsel.appendChild(o)});vsel.value=vs.includes(cur)?cur:'';st.vend=vsel.value}
+const fVendBtn=document.getElementById('fVendBtn');
+const fVendDrop=document.getElementById('fVendDrop');
+function updateVendBtn(){const n=st.vends.size;fVendBtn.textContent=n===0?'Todos los vendedores ▾':n===1?[...st.vends][0]+' ▾':n+' vendedores ▾';fVendBtn.classList.toggle('active',n>0)}
+function fillVends(){
+  const vs=[...new Set(D.map(r=>r[9]))].sort((a,b)=>a===SINV?1:b===SINV?-1:a.localeCompare(b,'es'));
+  fVendDrop.innerHTML='';
+  vs.forEach(v=>{
+    const item=document.createElement('label');item.className='vend-multi-item';
+    const cb=document.createElement('input');cb.type='checkbox';cb.value=v;cb.checked=st.vends.has(v);
+    cb.addEventListener('change',()=>{if(cb.checked)st.vends.add(v);else st.vends.delete(v);updateVendBtn();render()});
+    item.appendChild(cb);item.appendChild(document.createTextNode(v));
+    fVendDrop.appendChild(item);
+  });
+  const clr=document.createElement('button');clr.className='vend-multi-clear';clr.textContent='✕ Limpiar selección';
+  clr.addEventListener('click',()=>{st.vends.clear();fVendDrop.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);updateVendBtn();render()});
+  fVendDrop.appendChild(clr);
+  updateVendBtn();
+}
+fVendBtn.addEventListener('click',e=>{e.stopPropagation();fVendDrop.hidden=!fVendDrop.hidden});
+document.addEventListener('click',e=>{if(!document.getElementById('fVendWrap').contains(e.target))fVendDrop.hidden=true});
 
 function base(skipBucket){
   const q=norm(st.q.trim());
-  return D.filter(r=>(!st.estado||r[2]===st.estado)&&(!st.tipo||r[3]===st.tipo)&&(!st.vend||r[9]===st.vend)
+  return D.filter(r=>(!st.estado||r[2]===st.estado)&&(!st.tipo||r[3]===st.tipo)&&(!st.vends.size||st.vends.has(r[9]))
     &&(!st.venc||(st.venc==='v'?r[7]>0:r[7]<=0))
     &&(!q||norm(r[1]).includes(q)||norm(r[0]).includes(q))
     &&(skipBucket||!st.bucket||BUCKETS.find(b=>b.k===st.bucket).t(r[7])));
@@ -439,7 +468,8 @@ function groups(rows){
 }
 function renderTable(rows){
   const b=st.bucket&&BUCKETS.find(x=>x.k===st.bucket);
-  tTitle.textContent=(st.modo==='c'?'Deuda por cliente':'Detalle de documentos')+(st.vend?' · '+st.vend:'')+(b?' · '+(b.k==='p'?'Por vencer':b.lab+' días'):'');
+  const vendLabel=st.vends.size===0?'':st.vends.size===1?' · '+[...st.vends][0]:' · '+st.vends.size+' vendedores';
+  tTitle.textContent=(st.modo==='c'?'Deuda por cliente':'Detalle de documentos')+vendLabel+(b?' · '+(b.k==='p'?'Por vencer':b.lab+' días'):'');
   bExp.hidden=st.modo!=='c';
   if(st.modo==='c'){
     const G=groups(rows);const k=st.gk,d=st.gd;
@@ -475,7 +505,7 @@ function renderTable(rows){
 bExp.addEventListener('click',()=>{const G=groups(base(false));const all=G.every(g=>OPEN.has(g.rut));G.forEach(g=>all?OPEN.delete(g.rut):OPEN.add(g.rut));renderTable(base(false))});
 
 function renderVend(){
-  const vs=st.vend; st.vend=''; const rows=base(false); st.vend=vs;
+  const vs=new Set(st.vends); st.vends=new Set(); const rows=base(false); st.vends=vs;
   const m=new Map();
   rows.forEach(r=>{let o=m.get(r[9]);if(!o){o={n:r[9],v:0,p:0,c:0,cl:new Set()};m.set(r[9],o)}if(r[7]>0)o.v+=r[6];else o.p+=r[6];o.c++;o.cl.add(r[0])});
   const arr=[...m.values()].sort((a,b)=>(b.v+b.p)-(a.v+a.p));
@@ -484,8 +514,8 @@ function renderVend(){
   const max=Math.max(...arr.map(a=>a.v+a.p)),pw=W-LW-RW-8;
   let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Saldo por vendedor">`;
   arr.forEach((a,i)=>{
-    const y=T+i*rh,bh=14,by=y+(rh-bh)/2,on=!st.vend||st.vend===a.n;
-    s+=`<text class="clab" x="${LW-10}" y="${y+rh/2+4}" text-anchor="end" ${st.vend===a.n?'font-weight="700"':''} opacity="${on?1:.45}">${esc(a.n)}</text>`;
+    const y=T+i*rh,bh=14,by=y+(rh-bh)/2,on=!st.vends.size||st.vends.has(a.n);
+    s+=`<text class="clab" x="${LW-10}" y="${y+rh/2+4}" text-anchor="end" ${st.vends.has(a.n)?'font-weight="700"':''} opacity="${on?1:.45}">${esc(a.n)}</text>`;
     const wv=a.v/max*pw,wp=a.p/max*pw;
     if(wv>0)s+=`<rect x="${LW}" y="${by}" width="${Math.max(wv-(wp>0?1:0),1)}" height="${bh}" fill="var(--bar)" opacity="${on?1:.3}"/>`;
     if(wp>0)s+=`<rect x="${LW+wv+(wv>0?1:0)}" y="${by}" width="${Math.max(wp-(wv>0?1:0),1)}" height="${bh}" fill="var(--bar-soft)" opacity="${on?1:.3}"/>`;
@@ -497,7 +527,7 @@ function renderVend(){
     const a=arr[+el.dataset.i];
     el.addEventListener('mousemove',e=>showTip(e,`<b>${esc(a.n)}</b>Vencido: ${fmt(a.v)}<br>Por vencer: ${fmt(a.p)}<br>${a.cl.size} clientes · ${a.c} documentos`));
     el.addEventListener('mouseleave',hideTip);
-    el.addEventListener('click',()=>{st.vend=st.vend===a.n?'':a.n;vsel.value=st.vend;hideTip();render()});
+    el.addEventListener('click',()=>{if(st.vends.has(a.n))st.vends.delete(a.n);else st.vends.add(a.n);fVendDrop.querySelectorAll('input[type=checkbox]').forEach(c=>{if(c.value===a.n)c.checked=st.vends.has(a.n)});updateVendBtn();hideTip();render()});
   });
 }
 function render(){const rows=base(false);renderKpis(rows);renderAging();renderTop(rows);renderVend();renderTable(rows)}
@@ -506,9 +536,8 @@ function seg(id,key){document.getElementById(id).addEventListener('click',e=>{co
 function syncSeg(){[['fEstado','estado'],['fVenc','venc'],['fModo','modo']].forEach(([id,k])=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st[k])))}
 seg('fEstado','estado');seg('fVenc','venc');seg('fModo','modo');
 sel.addEventListener('change',()=>{st.tipo=sel.value;render()});
-vsel.addEventListener('change',()=>{st.vend=vsel.value;render()});
 fQ.addEventListener('input',()=>{st.q=fQ.value;render()});
-reset.addEventListener('click',()=>{Object.assign(st,{estado:'',venc:'',tipo:'',vend:'',q:'',bucket:'',gk:'def',gd:-1,sk:'def',sd:-1});fQ.value='';sel.value='';vsel.value='';syncSeg();render()});
+reset.addEventListener('click',()=>{Object.assign(st,{estado:'',venc:'',tipo:'',q:'',bucket:'',gk:'def',gd:-1,sk:'def',sd:-1});st.vends=new Set();fQ.value='';sel.value='';fVendDrop.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);updateVendBtn();syncSeg();render()});
 
 function renderMeta(){
   asof.textContent='Saldos al '+fdateIso(DATA.corte);
@@ -625,7 +654,8 @@ bXls.addEventListener('click',async()=>{
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(det),'Detalle');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([...m.values()].sort((a,b)=>b.Saldo-a.Saldo)),'Por Cliente');
   const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-  saveFile('Cartera_vencidos_'+DATA.corte+(st.vend?'_'+st.vend.replace(/[^\wÀ-ÿ]+/g,'_'):'')+'.xlsx',new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  const vendSuffix=st.vends.size?'_'+[...st.vends].join('-').replace(/[^\wÀ-ÿ]+/g,'_'):'';
+  saveFile('Cartera_vencidos_'+DATA.corte+vendSuffix+'.xlsx',new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
 });
 
 // ---------- Inicio ----------

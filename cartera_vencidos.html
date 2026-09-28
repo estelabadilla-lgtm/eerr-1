@@ -251,6 +251,8 @@ details.rules ol{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:co
           <button type="button" data-v="d" aria-pressed="false">Por documento</button>
         </div>
         <button type="button" class="btn sm" id="bExp">Expandir todo</button>
+        <button type="button" class="btn sm" id="bTblXls">⬇ Excel</button>
+        <button type="button" class="btn sm" id="bTblPdf">⬇ PDF</button>
         <span class="count" id="tCount"></span>
       </div>
     </div>
@@ -520,6 +522,46 @@ let pend={cli:null,bl:null};
 const LS='cartera_vencidos_data';
 function saveFile(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 bJson.addEventListener('click',()=>location.reload());
+
+// ---------- Excel tabla actual ----------
+bTblXls.addEventListener('click', async () => {
+  if (!window.XLSX) { alert('XLSX no cargado'); return; }
+  const tbl = document.getElementById('tbl');
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.table_to_sheet(tbl);
+  XLSX.utils.book_append_sheet(wb, ws, 'Cartera');
+  const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const titulo = document.getElementById('tTitle').textContent.replace(/[^\wÀ-ÿ\s]/g,'').trim().replace(/\s+/g,'_');
+  saveFile('Cartera_' + titulo + '.xlsx', new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+});
+
+// ---------- PDF tabla actual ----------
+bTblPdf.addEventListener('click', () => {
+  const titulo = document.getElementById('tTitle').textContent;
+  const tbl = document.getElementById('tbl').outerHTML;
+  const asof = document.querySelector('.asof') ? document.querySelector('.asof').textContent : '';
+  const w = window.open('', '_blank');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8">
+    <title>${titulo}</title>
+    <style>
+      body{font:12px system-ui,sans-serif;padding:20px;color:#000}
+      h2{font-size:15px;margin:0 0 4px}
+      p{font-size:11px;color:#555;margin:0 0 12px}
+      table{border-collapse:collapse;width:100%;font-size:11px}
+      th,td{padding:5px 8px;border:1px solid #ccc;text-align:left}
+      th{background:#f0f0f0;font-weight:600;text-transform:uppercase;font-size:10px}
+      td.num,th.num{text-align:right}
+      tr:nth-child(even){background:#fafafa}
+      @media print{body{padding:0}}
+    </style>
+  </head><body>
+    <h2>${titulo}</h2><p>${asof}</p>
+    ${tbl}
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 400);
+});
 const setDrop=(id,cls,txt)=>{const d=document.getElementById('d'+id),s=document.getElementById('s'+id);d.classList.remove('ok','err');if(cls)d.classList.add(cls);s.textContent=txt};
 bUpd.addEventListener('click',()=>{const o=upd.hidden;upd.hidden=!o;bUpd.setAttribute('aria-expanded',o)});
 bCancel.addEventListener('click',()=>{pend={cli:null,bl:null};inCli.value='';inBl.value='';resetDrops();prev.hidden=true;msg.textContent='';bApply.disabled=true;upd.hidden=true;bUpd.setAttribute('aria-expanded',false)});

@@ -164,9 +164,14 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
     <option value="56">Nota Débito (56)</option>
   </select>
   <input type="search" id="fBuscar" placeholder="Buscar cliente…">
-  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-    <input type="checkbox" id="fRech"> Solo rechazadas
-  </label>
+  <span class="flabel">Estado NC</span>
+  <select id="fRech">
+    <option value="">Todos</option>
+    <option value="rech_sin_nc">⚠ Rechazadas sin NC</option>
+    <option value="rech_parcial">⚠ Rechazadas parciales</option>
+    <option value="rech_anulada">✓ Rechazadas anuladas</option>
+    <option value="rech_any">Todas las rechazadas</option>
+  </select>
   <button id="reset">✕ Limpiar</button>
 </div>
 
@@ -230,7 +235,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
 const LS = 'libro_ventas_data';
 let ROWS = []; // array of parsed row objects
 let filtered = [];
-const st = { mes:'', tipo:'', buscar:'', fRech:false, sortCol:'fecha', sortDir:1 };
+const st = { mes:'', tipo:'', buscar:'', fRech:'', sortCol:'fecha', sortDir:1 };
 
 const TIPOS = {
   '33':'Factura Afecta','34':'Factura Exenta',
@@ -372,13 +377,13 @@ bApply.addEventListener('click',()=>{
 document.getElementById('fMes').addEventListener('change',e=>{st.mes=e.target.value;render()});
 document.getElementById('fTipo').addEventListener('change',e=>{st.tipo=e.target.value;render()});
 document.getElementById('fBuscar').addEventListener('input',e=>{st.buscar=e.target.value.toLowerCase();render()});
-document.getElementById('fRech').addEventListener('change',e=>{st.fRech=e.target.checked;render()});
+document.getElementById('fRech').addEventListener('change',e=>{st.fRech=e.target.value;render()});
 document.getElementById('reset').addEventListener('click',()=>{
-  st.mes='';st.tipo='';st.buscar='';st.fRech=false;
+  st.mes='';st.tipo='';st.buscar='';st.fRech='';
   document.getElementById('fMes').value='';
   document.getElementById('fTipo').value='';
   document.getElementById('fBuscar').value='';
-  document.getElementById('fRech').checked=false;
+  document.getElementById('fRech').value='';
   render();
 });
 
@@ -429,12 +434,39 @@ function renderAll(){
   renderRechazadas();
 }
 
+function ncEstado(folio,neto){
+  const lista=(ncIdxGlobal[folio]||[]);
+  if(!lista.length) return 'sin_nc';
+  const saldo=neto-lista.reduce((a,n)=>a+n.neto,0);
+  return saldo<=0?'anulada':'parcial';
+}
+
+// Índice global de NCs (sobre todos los ROWS, se recalcula en render)
+let ncIdxGlobal={};
+
 function render(){
+  // Reconstruir índice global de NCs
+  ncIdxGlobal={};
+  for(const r of ROWS){
+    if(r.tipo==='61'&&r.folioRef){
+      if(!ncIdxGlobal[r.folioRef])ncIdxGlobal[r.folioRef]=[];
+      ncIdxGlobal[r.folioRef].push(r);
+    }
+  }
+
   filtered=ROWS.filter(r=>{
     if(st.mes&&r.mes!==st.mes) return false;
     if(st.tipo&&r.tipo!==st.tipo) return false;
     if(st.buscar&&!r.razon.toLowerCase().includes(st.buscar)&&!r.rut.includes(st.buscar)) return false;
-    if(st.fRech&&!r.rechazada) return false;
+    if(st.fRech){
+      if(!r.rechazada) return false;
+      const esFactura=r.tipo==='33'||r.tipo==='34';
+      if(!esFactura) return false; // solo facturas rechazadas en este filtro
+      const est=ncEstado(r.folio,r.neto);
+      if(st.fRech==='rech_sin_nc'&&est!=='sin_nc') return false;
+      if(st.fRech==='rech_parcial'&&est!=='parcial') return false;
+      if(st.fRech==='rech_anulada'&&est!=='anulada') return false;
+    }
     return true;
   });
 
@@ -474,16 +506,8 @@ function render(){
   if(!filtered.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:24px">Sin resultados</td></tr>';
     document.getElementById('tfoot').innerHTML='';return;}
 
-  // Índice NCs: folioRef → lista de NCs (sobre todo ROWS, no solo filtered)
-  const ncIdx={};
-  for(const r of ROWS){
-    if(r.tipo==='61'&&r.folioRef){
-      if(!ncIdx[r.folioRef])ncIdx[r.folioRef]=[];
-      ncIdx[r.folioRef].push(r);
-    }
-  }
   function ncBadge(folio,neto){
-    const lista=ncIdx[folio]||[];
+    const lista=ncIdxGlobal[folio]||[];
     if(!lista.length) return '';
     const totalNC=lista.reduce((a,n)=>a+n.neto,0);
     const saldo=neto-totalNC;

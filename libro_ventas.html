@@ -436,7 +436,7 @@ function render(){
       <td>${r.rut}</td>
       <td class="name" style="white-space:normal;min-width:180px">${r.razon}</td>
       <td>${r.rechazada?'<span class="pill nc">⚠ Rechazada</span>':''}</td>
-      <td>${r.tipoRef&&r.folioRef?`Tipo ${r.tipoRef} / Folio ${r.folioRef}`:''}</td>
+      <td>${r.tipoRef==='52'&&r.folioRef?`G/D #${r.folioRef}`:r.tipoRef&&r.folioRef?`Tipo ${r.tipoRef} / Folio ${r.folioRef}`:''}</td>
       <td class="num">${r.exento?fmtFull(r.exento*signo):'-'}</td>
       <td class="num">${fmtFull(r.neto*signo)}</td>
       <td class="num">${fmtFull(r.iva*signo)}</td>

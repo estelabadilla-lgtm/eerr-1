@@ -891,6 +891,7 @@
     <button data-tab="seguros" onclick="showTab('seguros')">Vehículos</button>
     <button data-tab="flujo_caja" onclick="showTab('flujo_caja')">Flujo de Caja</button>
     <button data-tab="cartera" onclick="showTab('cartera')">Cartera Vencidos</button>
+    <button data-tab="libro_ventas" onclick="showTab('libro_ventas')">Libro de Ventas</button>
   </nav>
 </div>
 
@@ -1229,6 +1230,11 @@
   <iframe src="./cartera_vencidos.html" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
 </div>
 
+<!-- ══════════════════ TAB: LIBRO DE VENTAS ══════════════════ -->
+<div id="tab-libro_ventas" class="tab">
+  <iframe src="./libro_ventas.html" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════
 //  GLOBALS
@@ -1545,7 +1551,7 @@ function showTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
-  document.querySelector('.toolbar').style.display = (name === 'flujo_caja' || name === 'cartera') ? 'none' : '';
+  document.querySelector('.toolbar').style.display = (name === 'flujo_caja' || name === 'cartera' || name === 'libro_ventas') ? 'none' : '';
   if (name === 'graficos') renderCharts();
   if (name === 'seguros' && !SEG_LOADED) segInit();
 }
@@ -4085,7 +4091,7 @@ async function segEliminarPoliza(id) {
 // (pensado para que cada área vea/edite lo que le corresponde), no
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
-  gerencia: { label: 'Gerencia', password: 'Gerencia2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja','cartera'], canEdit: true,  puedeActualizarMayor: true },
+  gerencia: { label: 'Gerencia', password: 'Gerencia2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja','cartera','libro_ventas'], canEdit: true,  puedeActualizarMayor: true },
   usuarios: { label: 'Usuarios', password: 'grantt2026', tabs: ['seguros','cartera'],                                                                          canEdit: false, puedeActualizarMayor: false },
 };
 

@@ -212,6 +212,8 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
 <div id="rechSection" hidden>
   <div class="tbl-toolbar">
     <span class="tbl-title" style="color:var(--crit-ink)">⚠ Análisis de Facturas Rechazadas</span>
+    <button class="btn sm" id="bRechXls">⬇ Excel</button>
+    <button class="btn sm" id="bRechPdf">⬇ PDF</button>
   </div>
   <div class="rech-kpis" id="rechKpis"></div>
   <!-- Filtro multi-estado -->
@@ -776,6 +778,55 @@ function renderTablaRech(){
     <td>${estadoPill(a.estado)}</td>
   </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:16px">Sin resultados con los filtros seleccionados</td></tr>';
 }
+
+// --- Excel y PDF del análisis de rechazadas ---
+document.getElementById('bRechXls').addEventListener('click',()=>{
+  if(!window.XLSX||!analisisRech.length)return;
+  const activos=new Set([...document.querySelectorAll('#rechFilter input[type=checkbox]')].filter(cb=>cb.checked).map(cb=>cb.value));
+  const visible=analisisRech.filter(a=>activos.has(a.estado));
+  const data=[['Fecha','Folio Fac.','RUT','Razón Social','Neto Factura','NCs Asociadas','Total NC','Saldo','Estado']];
+  for(const a of visible){
+    const estLabel={anulada:'Anulada',parcial:'Parcial',sin_nc:'Sin NC'}[a.estado]||a.estado;
+    const ncs=a.ncList.length?a.ncList.map(n=>`Folio ${n.folio}: $${n.neto.toLocaleString('es-CL')}`).join(' | '):'—';
+    data.push([a.fechaRaw,a.folio,a.rut,a.razon,a.neto,ncs,a.ncList.length?a.totalNC:'',Math.max(a.saldo,0),estLabel]);
+  }
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb,ws,'Rechazadas');
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  saveFile('Rechazadas_Analisis.xlsx',new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+});
+
+document.getElementById('bRechPdf').addEventListener('click',()=>{
+  if(!analisisRech.length)return;
+  const activos=new Set([...document.querySelectorAll('#rechFilter input[type=checkbox]')].filter(cb=>cb.checked).map(cb=>cb.value));
+  const visible=analisisRech.filter(a=>activos.has(a.estado));
+  const filas=visible.map(a=>{
+    const estStyle={anulada:'color:green',parcial:'color:#8a4a00',sin_nc:'color:red'}[a.estado]||'';
+    const estLabel={anulada:'✓ Anulada',parcial:'⚠ Parcial',sin_nc:'✗ Sin NC'}[a.estado]||a.estado;
+    const ncs=a.ncList.length?a.ncList.map(n=>`Folio ${n.folio}: $${n.neto.toLocaleString('es-CL')}`).join('<br>'):'—';
+    return `<tr>
+      <td>${a.fechaRaw}</td><td>${a.folio}</td><td>${a.rut}</td><td>${a.razon}</td>
+      <td align="right">$${a.neto.toLocaleString('es-CL')}</td>
+      <td style="font-size:10px">${ncs}</td>
+      <td align="right">${a.ncList.length?'$'+a.totalNC.toLocaleString('es-CL'):'—'}</td>
+      <td align="right" style="color:${a.saldo>0?'red':'green'}">$${Math.max(a.saldo,0).toLocaleString('es-CL')}</td>
+      <td style="${estStyle};font-weight:600">${estLabel}</td>
+    </tr>`;
+  }).join('');
+  const w=window.open('','_blank');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Análisis Rechazadas</title>
+  <style>body{font:12px system-ui,sans-serif;padding:20px}h2{font-size:15px;color:#a32020}
+  table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:5px 7px;font-size:11px;vertical-align:top}
+  th{background:#f5f5f5;font-size:10px;text-transform:uppercase;text-align:left}
+  @media print{button{display:none}}</style></head>
+  <body><h2>⚠ Análisis de Facturas Rechazadas</h2>
+  <p style="font-size:11px;color:#666">Mostrando ${visible.length} de ${analisisRech.length} · Generado ${new Date().toLocaleDateString('es-CL')}</p>
+  <table><thead><tr><th>Fecha</th><th>Folio</th><th>RUT</th><th>Razón Social</th>
+  <th>Neto Fac.</th><th>NCs Asociadas</th><th>Total NC</th><th>Saldo</th><th>Estado</th></tr></thead>
+  <tbody>${filas}</tbody></table></body></html>`);
+  w.document.close();w.focus();setTimeout(()=>{w.print();},400);
+});
 
 // Resize chart on window resize
 let resizeT;window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(ROWS.length)renderChart();},150)});

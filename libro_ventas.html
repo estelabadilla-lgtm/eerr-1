@@ -88,6 +88,15 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.f{background:#1c3a6b;color:#86b6ef}
 :root:not([data-theme="light"]) .pill.fe{background:#1a3d1a;color:#5fd35f}
 :root:not([data-theme="light"]) .pill.nd{background:#3d2800;color:#f2c35a}}
+/* rechazadas */
+.rech-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.rech-kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;display:flex;flex-direction:column;gap:2px}
+.rech-kpi .lab{font-size:11px;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
+.rech-kpi .val{font-size:18px;font-weight:700}
+.pill.anulada{background:var(--good-bg);color:var(--good-ink)}
+.pill.parcial{background:var(--warn-bg,#fff3e0);color:var(--warn-ink,#8a4a00)}
+.pill.sin-nc{background:var(--crit-bg);color:var(--crit-ink)}
+.nc-list{font-size:11px;color:var(--ink2);display:flex;flex-direction:column;gap:2px}
 </style>
 </head>
 <body>
@@ -187,6 +196,28 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
       </thead>
       <tbody id="tbody"></tbody>
       <tfoot id="tfoot"></tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- Análisis facturas rechazadas -->
+<div id="rechSection" hidden>
+  <div class="tbl-toolbar">
+    <span class="tbl-title" style="color:var(--crit-ink)">⚠ Análisis de Facturas Rechazadas</span>
+  </div>
+  <div class="rech-kpis" id="rechKpis"></div>
+  <div class="tablewrap" style="margin-top:8px">
+    <table id="tblRech">
+      <thead><tr>
+        <th>Fecha</th><th>Folio Fac.</th><th>RUT</th>
+        <th style="min-width:160px">Razón Social</th>
+        <th class="num">Neto Factura</th>
+        <th>NCs asociadas</th>
+        <th class="num">Total NC</th>
+        <th class="num">Saldo</th>
+        <th>Estado</th>
+      </tr></thead>
+      <tbody id="tbodyRech"></tbody>
     </table>
   </div>
 </div>
@@ -380,6 +411,7 @@ function renderAll(){
 
   renderChart();
   render();
+  renderRechazadas();
 }
 
 function render(){
@@ -572,6 +604,64 @@ document.getElementById('bTblPdf').addEventListener('click',()=>{
   <body><h2>Libro de Ventas — ${titulo}</h2><p style="color:#666;font-size:12px">${asof}</p>${tbl}</body></html>`);
   w.document.close();w.focus();setTimeout(()=>{w.print();},400);
 });
+
+// --- Análisis facturas rechazadas ---
+function renderRechazadas(){
+  const sec=document.getElementById('rechSection');
+  const rechazadas=ROWS.filter(r=>r.rechazada&&r.tipo!=='61');
+  if(!rechazadas.length){sec.hidden=true;return;}
+  sec.hidden=false;
+
+  // Índice de NCs por folio referenciado
+  const ncs=ROWS.filter(r=>r.tipo==='61'&&r.folioRef);
+  const ncIdx={};
+  for(const nc of ncs){
+    const k=nc.folioRef;
+    if(!ncIdx[k])ncIdx[k]=[];
+    ncIdx[k].push(nc);
+  }
+
+  // Analizar cada rechazada
+  const analisis=rechazadas.map(fac=>{
+    const ncList=ncIdx[fac.folio]||[];
+    const totalNC=ncList.reduce((a,nc)=>a+nc.neto,0);
+    const saldo=fac.neto-totalNC;
+    const estado=ncList.length===0?'sin_nc':saldo<=0?'anulada':'parcial';
+    return{...fac,ncList,totalNC,saldo,estado};
+  });
+
+  // KPIs del panel
+  const tot=analisis.length;
+  const anuladas=analisis.filter(a=>a.estado==='anulada').length;
+  const parciales=analisis.filter(a=>a.estado==='parcial').length;
+  const sinNC=analisis.filter(a=>a.estado==='sin_nc').length;
+  const saldoPend=analisis.reduce((a,f)=>a+Math.max(f.saldo,0),0);
+
+  document.getElementById('rechKpis').innerHTML=`
+    <div class="rech-kpi"><div class="lab">Total rechazadas</div><div class="val" style="color:var(--crit-ink)">${tot}</div></div>
+    <div class="rech-kpi"><div class="lab">✓ Anuladas completo</div><div class="val" style="color:var(--good-ink)">${anuladas}</div></div>
+    <div class="rech-kpi"><div class="lab">⚠ Parcialmente cubiertas</div><div class="val" style="color:#8a4a00">${parciales}</div></div>
+    <div class="rech-kpi"><div class="lab">✗ Sin nota de crédito</div><div class="val" style="color:var(--crit-ink)">${sinNC}</div></div>
+    <div class="rech-kpi"><div class="lab">Saldo pendiente</div><div class="val" style="color:var(--crit-ink)">${fmtFull(saldoPend)}</div></div>`;
+
+  const estadoPill=e=>({
+    anulada:'<span class="pill anulada">✓ Anulada</span>',
+    parcial:'<span class="pill parcial">⚠ Parcial</span>',
+    sin_nc:'<span class="pill sin-nc">✗ Sin NC</span>'
+  }[e]||'');
+
+  document.getElementById('tbodyRech').innerHTML=analisis.map(a=>`<tr>
+    <td>${a.fechaRaw||a.fecha}</td>
+    <td>${a.folio}</td>
+    <td>${a.rut}</td>
+    <td style="white-space:normal;min-width:160px">${a.razon}</td>
+    <td class="num">${fmtFull(a.neto)}</td>
+    <td><div class="nc-list">${a.ncList.length?a.ncList.map(nc=>`Folio ${nc.folio}: ${fmtFull(nc.neto)}`).join('<br>'):'—'}</div></td>
+    <td class="num">${a.ncList.length?fmtFull(a.totalNC):'—'}</td>
+    <td class="num" style="${a.saldo>0?'color:var(--crit-ink)':'color:var(--good-ink)'}">${fmtFull(Math.max(a.saldo,0))}</td>
+    <td>${estadoPill(a.estado)}</td>
+  </tr>`).join('');
+}
 
 // Resize chart on window resize
 let resizeT;window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(ROWS.length)renderChart();},150)});

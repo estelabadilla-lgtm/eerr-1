@@ -474,16 +474,50 @@ function render(){
   if(!filtered.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:24px">Sin resultados</td></tr>';
     document.getElementById('tfoot').innerHTML='';return;}
 
+  // Índice NCs: folioRef → lista de NCs (sobre todo ROWS, no solo filtered)
+  const ncIdx={};
+  for(const r of ROWS){
+    if(r.tipo==='61'&&r.folioRef){
+      if(!ncIdx[r.folioRef])ncIdx[r.folioRef]=[];
+      ncIdx[r.folioRef].push(r);
+    }
+  }
+  function ncBadge(folio,neto){
+    const lista=ncIdx[folio]||[];
+    if(!lista.length) return '';
+    const totalNC=lista.reduce((a,n)=>a+n.neto,0);
+    const saldo=neto-totalNC;
+    const cls=saldo<=0?'anulada':'parcial';
+    const lbl=saldo<=0?'✓ Anulada':'⚠ Parcial';
+    const folios=lista.map(n=>`#${n.folio}`).join(', ');
+    return `<div style="display:flex;flex-direction:column;gap:2px">
+      <span class="pill ${cls}" style="font-size:10px">${lbl}</span>
+      <span style="font-size:10px;color:var(--muted)">NC: ${folios}</span>
+    </div>`;
+  }
+
   tbody.innerHTML=filtered.map(r=>{
     const signo=r.tipo==='61'?-1:1;
-    return `<tr>
+    const esFactura=r.tipo==='33'||r.tipo==='34';
+    const esNC=r.tipo==='61';
+    const esND=r.tipo==='56';
+    // columna Estado
+    let estadoCell='';
+    if(r.rechazada) estadoCell+='<span class="pill nc" style="font-size:10px">⚠ Rechazada</span> ';
+    if(esFactura) estadoCell+=ncBadge(r.folio,r.neto);
+    // columna Ref
+    let refCell='';
+    if(r.tipoRef==='52'&&r.folioRef) refCell=`<span style="font-size:11px;color:var(--muted)">G/D #${r.folioRef}</span>`;
+    else if(esNC&&r.folioRef) refCell=`<span style="font-size:11px;color:var(--crit-ink)">Anula Fac. #${r.folioRef}</span>`;
+    else if(esND&&r.folioRef) refCell=`<span style="font-size:11px;color:var(--bar-nd)">Aumenta #${r.folioRef}</span>`;
+    return `<tr style="${esNC?'background:rgba(208,59,59,.04)':''}${esND?'background:rgba(230,130,10,.04)':''}">
       <td>${r.fechaRaw||r.fecha}</td>
       <td><span class="pill ${tipoCls(r.tipo)}">${tipoLabel(r.tipo)}</span></td>
       <td>${r.folio}</td>
       <td>${r.rut}</td>
       <td class="name" style="white-space:normal;min-width:180px">${r.razon}</td>
-      <td>${r.rechazada?'<span class="pill nc">⚠ Rechazada</span>':''}</td>
-      <td>${r.tipoRef==='52'&&r.folioRef?`G/D #${r.folioRef}`:r.tipoRef&&r.folioRef?`Tipo ${r.tipoRef} / Folio ${r.folioRef}`:''}</td>
+      <td style="min-width:110px">${estadoCell}</td>
+      <td>${refCell}</td>
       <td class="num">${r.exento?fmtFull(r.exento*signo):'-'}</td>
       <td class="num">${fmtFull(r.neto*signo)}</td>
       <td class="num">${fmtFull(r.iva*signo)}</td>

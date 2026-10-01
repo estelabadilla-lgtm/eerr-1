@@ -97,6 +97,9 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
 .pill.parcial{background:var(--warn-bg,#fff3e0);color:var(--warn-ink,#8a4a00)}
 .pill.sin-nc{background:var(--crit-bg);color:var(--crit-ink)}
 .nc-list{font-size:11px;color:var(--ink2);display:flex;flex-direction:column;gap:2px}
+.rech-filter{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-top:4px}
+.rech-chk{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;user-select:none}
+.rech-chk input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -211,6 +214,14 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
     <span class="tbl-title" style="color:var(--crit-ink)">⚠ Análisis de Facturas Rechazadas</span>
   </div>
   <div class="rech-kpis" id="rechKpis"></div>
+  <!-- Filtro multi-estado -->
+  <div class="rech-filter" id="rechFilter">
+    <span class="flabel">Filtrar por estado:</span>
+    <label class="rech-chk"><input type="checkbox" value="sin_nc" checked> <span class="pill sin-nc" style="font-size:11px">✗ Sin NC</span></label>
+    <label class="rech-chk"><input type="checkbox" value="parcial" checked> <span class="pill parcial" style="font-size:11px">⚠ Parcial</span></label>
+    <label class="rech-chk"><input type="checkbox" value="anulada" checked> <span class="pill anulada" style="font-size:11px">✓ Anulada</span></label>
+    <span id="rechCount" style="font-size:12px;color:var(--muted);margin-left:4px"></span>
+  </div>
   <div class="tablewrap" style="margin-top:8px">
     <table id="tblRech">
       <thead><tr>
@@ -679,23 +690,25 @@ document.getElementById('bTblPdf').addEventListener('click',()=>{
 });
 
 // --- Análisis facturas rechazadas ---
+let analisisRech=[];
+
 function renderRechazadas(){
   const sec=document.getElementById('rechSection');
-  const rechazadas=ROWS.filter(r=>r.rechazada&&r.tipo!=='61');
+  const rechazadas=ROWS.filter(r=>r.rechazada&&(r.tipo==='33'||r.tipo==='34'));
   if(!rechazadas.length){sec.hidden=true;return;}
   sec.hidden=false;
 
   // Índice de NCs por folio referenciado
-  const ncs=ROWS.filter(r=>r.tipo==='61'&&r.folioRef);
   const ncIdx={};
-  for(const nc of ncs){
-    const k=nc.folioRef;
-    if(!ncIdx[k])ncIdx[k]=[];
-    ncIdx[k].push(nc);
+  for(const r of ROWS){
+    if(r.tipo==='61'&&r.folioRef){
+      if(!ncIdx[r.folioRef])ncIdx[r.folioRef]=[];
+      ncIdx[r.folioRef].push(r);
+    }
   }
 
-  // Analizar cada rechazada
-  const analisis=rechazadas.map(fac=>{
+  // Analizar cada rechazada (todos, sin filtro de estado aún)
+  analisisRech=rechazadas.map(fac=>{
     const ncList=ncIdx[fac.folio]||[];
     const totalNC=ncList.reduce((a,nc)=>a+nc.neto,0);
     const saldo=fac.neto-totalNC;
@@ -703,19 +716,47 @@ function renderRechazadas(){
     return{...fac,ncList,totalNC,saldo,estado};
   });
 
-  // KPIs del panel
-  const tot=analisis.length;
-  const anuladas=analisis.filter(a=>a.estado==='anulada').length;
-  const parciales=analisis.filter(a=>a.estado==='parcial').length;
-  const sinNC=analisis.filter(a=>a.estado==='sin_nc').length;
-  const saldoPend=analisis.reduce((a,f)=>a+Math.max(f.saldo,0),0);
+  // KPIs siempre sobre el total completo
+  const tot=analisisRech.length;
+  const anuladas=analisisRech.filter(a=>a.estado==='anulada').length;
+  const parciales=analisisRech.filter(a=>a.estado==='parcial').length;
+  const sinNC=analisisRech.filter(a=>a.estado==='sin_nc').length;
+  const saldoPend=analisisRech.reduce((a,f)=>a+Math.max(f.saldo,0),0);
 
   document.getElementById('rechKpis').innerHTML=`
-    <div class="rech-kpi"><div class="lab">Total rechazadas</div><div class="val" style="color:var(--crit-ink)">${tot}</div></div>
-    <div class="rech-kpi"><div class="lab">✓ Anuladas completo</div><div class="val" style="color:var(--good-ink)">${anuladas}</div></div>
-    <div class="rech-kpi"><div class="lab">⚠ Parcialmente cubiertas</div><div class="val" style="color:#8a4a00">${parciales}</div></div>
-    <div class="rech-kpi"><div class="lab">✗ Sin nota de crédito</div><div class="val" style="color:var(--crit-ink)">${sinNC}</div></div>
-    <div class="rech-kpi"><div class="lab">Saldo pendiente</div><div class="val" style="color:var(--crit-ink)">${fmtFull(saldoPend)}</div></div>`;
+    <div class="rech-kpi" style="cursor:pointer" onclick="toggleRechFiltro('all')" title="Ver todas">
+      <div class="lab">Total rechazadas</div><div class="val" style="color:var(--crit-ink)">${tot}</div></div>
+    <div class="rech-kpi" style="cursor:pointer" onclick="toggleRechFiltro('anulada')" title="Ver solo anuladas">
+      <div class="lab">✓ Anuladas completo</div><div class="val" style="color:var(--good-ink)">${anuladas}</div></div>
+    <div class="rech-kpi" style="cursor:pointer" onclick="toggleRechFiltro('parcial')" title="Ver solo parciales">
+      <div class="lab">⚠ Parcialmente cubiertas</div><div class="val" style="color:#8a4a00">${parciales}</div></div>
+    <div class="rech-kpi" style="cursor:pointer" onclick="toggleRechFiltro('sin_nc')" title="Ver sin NC">
+      <div class="lab">✗ Sin nota de crédito</div><div class="val" style="color:var(--crit-ink)">${sinNC}</div></div>
+    <div class="rech-kpi">
+      <div class="lab">Saldo pendiente</div><div class="val" style="color:var(--crit-ink)">${fmtFull(saldoPend)}</div></div>`;
+
+  renderTablaRech();
+
+  // Ligar checkboxes al render de tabla
+  document.querySelectorAll('#rechFilter input[type=checkbox]').forEach(cb=>{
+    cb.onchange=renderTablaRech;
+  });
+}
+
+function toggleRechFiltro(estado){
+  const cbs=document.querySelectorAll('#rechFilter input[type=checkbox]');
+  if(estado==='all'){cbs.forEach(cb=>cb.checked=true);}
+  else{cbs.forEach(cb=>{cb.checked=(cb.value===estado);});}
+  renderTablaRech();
+}
+
+function renderTablaRech(){
+  const activos=new Set([...document.querySelectorAll('#rechFilter input[type=checkbox]')]
+    .filter(cb=>cb.checked).map(cb=>cb.value));
+  const visible=analisisRech.filter(a=>activos.has(a.estado));
+
+  document.getElementById('rechCount').textContent=
+    visible.length!==analisisRech.length?`Mostrando ${visible.length} de ${analisisRech.length}`:'';
 
   const estadoPill=e=>({
     anulada:'<span class="pill anulada">✓ Anulada</span>',
@@ -723,7 +764,7 @@ function renderRechazadas(){
     sin_nc:'<span class="pill sin-nc">✗ Sin NC</span>'
   }[e]||'');
 
-  document.getElementById('tbodyRech').innerHTML=analisis.map(a=>`<tr>
+  document.getElementById('tbodyRech').innerHTML=visible.length?visible.map(a=>`<tr>
     <td>${a.fechaRaw||a.fecha}</td>
     <td>${a.folio}</td>
     <td>${a.rut}</td>
@@ -733,7 +774,7 @@ function renderRechazadas(){
     <td class="num">${a.ncList.length?fmtFull(a.totalNC):'—'}</td>
     <td class="num" style="${a.saldo>0?'color:var(--crit-ink)':'color:var(--good-ink)'}">${fmtFull(Math.max(a.saldo,0))}</td>
     <td>${estadoPill(a.estado)}</td>
-  </tr>`).join('');
+  </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:16px">Sin resultados con los filtros seleccionados</td></tr>';
 }
 
 // Resize chart on window resize

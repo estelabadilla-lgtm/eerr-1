@@ -331,10 +331,9 @@ async function loadFiles(files){
     const parsed=parseCSV(text);
     newRows=newRows.concat(parsed);
   }
-  // Merge with existing: remove rows from same months, add new
+  // Solo las filas nuevas; el merge con ROWS se hace al aplicar
   const newMeses=new Set(newRows.map(r=>r.mes));
-  const kept=ROWS.filter(r=>!newMeses.has(r.mes));
-  pendingRows=[...kept,...newRows];
+  pendingRows=newRows;
   bApply.disabled=false;
   msg.textContent=`${newRows.length} registros listos para cargar (${newMeses.size} mes${newMeses.size!==1?'es':''}).`;
   msg.className='msg ok';
@@ -851,8 +850,10 @@ let resizeT;window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=
 
 // --- Restricción: solo últimos 2 meses editables ---
 function mesesEditables(){
-  const meses=[...new Set(ROWS.map(r=>r.mes))].filter(Boolean).sort();
-  return new Set(meses.slice(-2));
+  // Mes actual y anterior según la fecha de hoy
+  const hoy=new Date();
+  const ym=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  return new Set([ym(new Date(hoy.getFullYear(),hoy.getMonth()-1,1)),ym(hoy)]);
 }
 
 function validarMesesUpload(nuevosRows){

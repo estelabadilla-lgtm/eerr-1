@@ -2901,8 +2901,8 @@ function meliLeerArchivo(input) {
       const meta    = all[1] || [];                                    // row 2
       const headers = all[3] || [];                                    // row 4
       const data    = all.slice(4).filter(r => r && r.some(v=>v!=null)); // rows 5+
-      // Transformar HX- → EK- en SKU al momento de carga
-      data.forEach(r => { if (r[MC.sku]) r[MC.sku] = String(r[MC.sku]).replace(/^HX-/i, 'EK-'); });
+      // Transformar HX-AAR6A-N → EK-AAR6A-N al momento de carga (solo ese código)
+      data.forEach(r => { if (/^HX-AAR6A-N$/i.test(String(r[MC.sku]||''))) r[MC.sku] = 'EK-AAR6A-N'; });
 
       // Auto-fill date range from metadata
       const rango = String(meta[2] || '').replace(/\n/g,' ').trim();
@@ -3310,7 +3310,7 @@ async function meliGenerarNV() {
       row.getCell(6).value  = MELI_RUT_PROV;
       row.getCell(7).value  = MELI_COL7;
       const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
-      row.getCell(36).value = p.sku.replace(/^EK-/i, 'HX-');
+      row.getCell(36).value = /^EK-AAR6A-N$/i.test(p.sku) ? 'HX-AAR6A-N' : p.sku;
       row.getCell(38).value = p.qty;
       row.getCell(39).value = nu;
     });

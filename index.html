@@ -3001,36 +3001,66 @@ function meliClasificar(rows) {
 function meliCalcTotales() {
   const { sec1, sec2, sec3 } = MELI_RAW;
   const toN = v => { const n = Number(v); return isNaN(n) ? 0 : n; };
-  const bruto = r => toN(r[MC.neto]) + toN(r[MC.iva]);
-  const sec1_qty    = sec1.reduce((s,r) => s + toN(r[MC.qty]), 0);
-  const sec2_bruto  = sec2.reduce((s,r) => s + bruto(r), 0);
-  // Suma TODAS las filas de sec3: las vendidas (positivo) y devueltas (negativo) se cancelan ≈ 0
-  // Igual que la fórmula original: SUM(T385:T425) que incluye ambas y resulta ~0
-  const sec3_bruto  = sec3.reduce((s,r) => s + bruto(r), 0);
-  const f381 = sec1_qty > 0 ? (sec2_bruto - sec3_bruto) / sec1_qty : 0;
+  const bruto   = r => toN(r[MC.neto]) + toN(r[MC.iva]);
+  const rawNeto = r => toN(r[MC.neto]);
+  const sec1_qty   = sec1.reduce((s,r) => s + toN(r[MC.qty]), 0);
+  const sec2_bruto = sec2.reduce((s,r) => s + bruto(r), 0);
+  const sec2_neto  = sec2.reduce((s,r) => s + rawNeto(r), 0);
+  const sec3_bruto = sec3.reduce((s,r) => s + bruto(r), 0);
+  const sec3_neto  = sec3.reduce((s,r) => s + rawNeto(r), 0);
+  // f381: tasa por unidad NETO = (neto_envíos + neto_nc_neta) / qty_sec1
+  // Coincide con N301 del Excel original: fórmula U = +O + ($N$301 * H)
+  const f381       = sec1_qty > 0 ? (sec2_neto - sec3_neto) / sec1_qty : 0;
+  // f381_bruto: tasa bruto por unidad (aparece en el Excel como celda auxiliar)
+  const f381_bruto = sec1_qty > 0 ? (sec2_bruto - sec3_bruto) / sec1_qty : 0;
   console.log('[MELI] sec1:', sec1.length, 'sec2:', sec2.length, 'sec3:', sec3.length,
-              '| qty_total:', sec1_qty, '| bruto_envíos:', sec2_bruto,
-              '| bruto_dev:', sec3_bruto, '| f381:', f381);
-  return { sec1_qty, sec2_bruto, sec3_bruto, f381 };
+              '| qty_total:', sec1_qty, '| neto_envíos:', sec2_neto, '| neto_nc:', sec3_neto,
+              '| f381 (tasa neto):', f381, '| f381_bruto:', f381_bruto);
+  return { sec1_qty, sec2_bruto, sec2_neto, sec3_bruto, sec3_neto, f381, f381_bruto };
 }
 
 function meliPivot() {
-  const { sec1 } = MELI_RAW;
+  const { sec1, sec3 } = MELI_RAW;
   const { f381 } = meliCalcTotales();
   const toN = v => { const n = Number(v); return isNaN(n) ? 0 : n; };
   const map = new Map();
-  for (const row of sec1) {
-    const sku = String(row[MC.sku] || '');
-    if (!sku) continue;
+
+  // U = O + f381 * H  (igual a fórmula Excel: =+O5+($N$301*H5))
+  const addRow = (sku, qty, rawNeto) => {
+    if (!sku || qty <= 0) return;
     if (!map.has(sku)) map.set(sku, {sku, qty:0, neto:0});
-    const e     = map.get(sku);
-    const bruto = toN(row[MC.neto]) + toN(row[MC.iva]);
-    const qty   = toN(row[MC.qty]);
-    const total = bruto + f381 * qty;
+    const e = map.get(sku);
     e.qty  += qty;
-    e.neto += total / 1.19;
+    e.neto += rawNeto + f381 * qty;
+  };
+
+  // Sección 1: ventas sin devolución
+  for (const row of sec1) {
+    addRow(String(row[MC.sku] || ''), toN(row[MC.qty]), toN(row[MC.neto]));
   }
-  return [...map.values()].sort((a,b) => a.sku.localeCompare(b.sku, 'es-CL', {ignorePunctuation: true}));
+
+  // Sección 3: puede haber devolución PARCIAL (vendió 2, devolvió 1 → queda 1 neto)
+  const s3 = new Map(); // sku -> {saleQty, saleNeto, retQty, retNeto}
+  for (const row of sec3) {
+    const sku     = String(row[MC.sku] || '');
+    if (!sku) continue;
+    const tipoDev = String(row[MC.tipo_dev] || '').toLowerCase().trim();
+    const isRet   = tipoDev === 'fulfillment';
+    const qty     = Math.abs(toN(row[MC.qty]));
+    const rNeto   = Math.abs(toN(row[MC.neto]));
+    if (!s3.has(sku)) s3.set(sku, {saleQty:0, saleNeto:0, retQty:0, retNeto:0});
+    const e = s3.get(sku);
+    if (isRet) { e.retQty += qty; e.retNeto += rNeto; }
+    else       { e.saleQty += qty; e.saleNeto += rNeto; }
+  }
+  for (const [sku, e] of s3) {
+    const netQty  = e.saleQty - e.retQty;
+    const netNeto = e.saleNeto - e.retNeto;
+    if (netQty > 0) addRow(sku, netQty, netNeto);
+  }
+
+  return [...map.values()].filter(e => e.qty > 0)
+    .sort((a,b) => a.sku.localeCompare(b.sku, 'es-CL', {ignorePunctuation: true}));
 }
 
 function meliRenderPivot() {
@@ -3056,7 +3086,11 @@ async function meliGenerarHECHO() {
   if (!MELI_RAW) return;
   meliStatus1('Generando archivo…');
   try {
+    // DEBUG TEMPORAL: muestra valores clave antes de generar
+    const _dbg = meliCalcTotales();
+    alert(`DEBUG MELI:\nsec1 filas: ${MELI_RAW.sec1.length}\nsec2 filas: ${MELI_RAW.sec2.length}\nsec3 filas: ${MELI_RAW.sec3.length}\nsec1_qty: ${_dbg.sec1_qty}\nsec2_neto: ${_dbg.sec2_neto}\nsec3_neto: ${_dbg.sec3_neto}\nf381: ${_dbg.f381}`);
     const wb  = new ExcelJS.Workbook();
+    wb.calcProperties = { fullCalcOnLoad: true };
     const wsD = wb.addWorksheet('detalles');
     const wsP = wb.addWorksheet('Hoja1');
     meliEscribirDetalles(wsD);
@@ -3101,13 +3135,16 @@ function meliEstiloEncabezado(cell, fill, opts) {
 function meliEscribirDetalles(ws) {
   const { sec1, sec2, sec3, meta, headers } = MELI_RAW;
   const n1 = sec1.length, n2 = sec2.length, n3 = sec3.length;
-  const { f381 } = meliCalcTotales(); // Calcular en JS para evitar DIV/0 en fórmula Excel
+  const { f381 } = meliCalcTotales(); // Para meliPivot/NV; Excel usa fórmula propia
 
   // Filas de referencia
   const R1s = 5,          R1e = 4 + n1,       R1sum = 5 + n1;
   const R2s = 10 + n1,    R2e = 9 + n1 + n2,  R2sum = 10 + n1 + n2;
   const Rf  = 11 + n1 + n2;                    // fila F381
   const R3s = 15 + n1 + n2, R3e = 14 + n1 + n2 + n3, R3sum = 15 + n1 + n2 + n3;
+  // Fila de tasa neto (N301 en el Excel original) — se calcula ANTES de writeRow
+  const RAD  = R3sum + 2;   // fila A DIFERIR
+  const RADr = RAD + 1;     // fila tasa unitaria neta (= O_RAD / H_R1sum)
 
   // Fila 1: título (deja la col. A libre para el logo)
   const tituloCell = ws.getRow(1).getCell(2);
@@ -3161,6 +3198,10 @@ function meliEscribirDetalles(ws) {
   const NUM_COLS = new Set([7, 14, 15, 16, 17]);
 
   // Escribir una fila de datos con valores calculados en JS
+  // Fórmulas exactas del Excel original:
+  //   U (neto)  = O + N301 * H  →  rawNeto + f381 * qty
+  //   V (iva)   = U * 19%
+  //   W (total) = U + V
   const writeRow = (rowNum, row, withCalc) => {
     const r = ws.getRow(rowNum);
     for (let c = 0; c < 19; c++) {
@@ -3168,16 +3209,19 @@ function meliEscribirDetalles(ws) {
         r.getCell(c+1).value = NUM_COLS.has(c) ? (Number(row[c]) || 0) : row[c];
       }
     }
-    const bruto = (Number(row[14])||0) + (Number(row[15])||0);
+    const rawNeto = Number(row[14]) || 0;
+    const bruto   = rawNeto + (Number(row[15]) || 0);
     r.getCell(20).value = bruto;
     if (withCalc) {
+      // Fórmulas exactas del Excel original + resultado pre-calculado en JS (caché para SUMIF)
+      const n301 = `$N$${RADr}`;
       const qty   = Number(row[7]) || 0;
-      const total = bruto + f381 * qty;
-      const neto  = total / 1.19;
-      const iva   = neto * 0.19;
-      r.getCell(21).value = Math.round(neto);
-      r.getCell(22).value = Math.round(iva);
-      r.getCell(23).value = Math.round(total);
+      const neto  = rawNeto + f381 * qty;
+      const iva   = Math.round(neto * 0.19);
+      const total = Math.round(neto) + iva;
+      r.getCell(21).value = { formula: `+O${rowNum}+(${n301}*H${rowNum})`, result: Math.round(neto) };
+      r.getCell(22).value = { formula: `+U${rowNum}*19%`, result: iva };
+      r.getCell(23).value = { formula: `+U${rowNum}+V${rowNum}`, result: total };
     }
     for (let c = 1; c <= 23; c++) r.getCell(c).border = MELI_BORDER_ROW;
     r.getCell(20).fill = MELI_FILL_CALC;
@@ -3204,21 +3248,47 @@ function meliEscribirDetalles(ws) {
   });
   estiloFilaSuma(s1);
 
+  const { f381_bruto } = meliCalcTotales();
+
   // Sección 2
   sec2.forEach((row, i) => writeRow(R2s + i, row, true));
-  // Fila suma sección 2 (solo bruto)
-  ws.getRow(R2sum).getCell(20).value = {formula: `SUM(T${R2s}:T${R2e})`};
-  estiloFilaSuma(ws.getRow(R2sum));
+  // Fila COSTO DE ENVIO (igual al Excel original: etiqueta en N, neto en O, bruto en T)
+  const s2 = ws.getRow(R2sum);
+  s2.getCell(14).value = 'COSTO DE ENVIO';
+  s2.getCell(15).value = { formula: `SUM(O${R2s}:O${R2e})` };  // neto
+  s2.getCell(20).value = { formula: `SUM(T${R2s}:T${R2e})` };  // bruto
+  estiloFilaSuma(s2);
 
-  // Fila F381: escribir valor pre-calculado en JS para evitar DIV/0 por tipos de datos
-  ws.getRow(Rf).getCell(20).value = f381;
+  // Fila f381_bruto (tasa bruto, celda auxiliar igual a T261 en Excel original)
+  const rfRow = ws.getRow(Rf);
+  rfRow.getCell(20).value = f381_bruto;
+  rfRow.getCell(20).numFmt = '#,##0.000000';
+  rfRow.getCell(20).font = { italic: true, size: 9, name: 'Arial', color: { argb: 'FF666666' } };
 
-  // Sección 3
+  // Sección 3 (sin cálculo neto/iva/total en detalles — igual al Excel original)
   sec3.forEach((row, i) => writeRow(R3s + i, row, false));
-  // Fila suma sección 3 (solo bruto)
-  const s3formula = n3 > 0 ? `SUM(T${R3s}:T${R3e})` : '0';
-  ws.getRow(R3sum).getCell(20).value = n3 > 0 ? {formula: s3formula} : 0;
-  estiloFilaSuma(ws.getRow(R3sum));
+  // Fila DIFERENCIA NC (etiqueta en N, neto en O, bruto en T)
+  const s3row = ws.getRow(R3sum);
+  s3row.getCell(14).value = 'DIFERENCIA NC';
+  s3row.getCell(15).value = n3 > 0 ? { formula: `SUM(O${R3s}:O${R3e})` } : 0;
+  s3row.getCell(20).value = n3 > 0 ? { formula: `SUM(T${R3s}:T${R3e})` } : 0;
+  estiloFilaSuma(s3row);
+
+  // Fila A DIFERIR (etiqueta en N, valor neto en O = O_R2sum + O_R3sum)
+  const rAD = ws.getRow(RAD);
+  rAD.getCell(14).value = 'A DIFERIR';
+  rAD.getCell(15).value = { formula: `O${R2sum}+O${R3sum}` };
+  for (let c = 1; c <= 23; c++) {
+    const cell = rAD.getCell(c);
+    cell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FFFFFFFF' } };
+    cell.fill = MELI_FILL_TOTAL;
+    cell.border = MELI_BORDER_HDR;
+  }
+  // Fila tasa neto por unidad N301 = O_ADIFERIR / H_R1sum (igual al Excel original)
+  const rADr = ws.getRow(RADr);
+  rADr.getCell(14).value = { formula: `+O${RAD}/H${R1sum}` };
+  rADr.getCell(14).numFmt = '#,##0.000000';
+  rADr.getCell(14).font = { italic: true, size: 9, name: 'Arial', color: { argb: 'FF666666' } };
 
   // Anchos de columna
   [18,12,15,18,42,15,12,10,12,20,10,10,12,12,12,12,10,10,12,12,12,12,14]

@@ -3310,7 +3310,7 @@ async function meliGenerarNV() {
       row.getCell(6).value  = MELI_RUT_PROV;
       row.getCell(7).value  = MELI_COL7;
       const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
-      row.getCell(36).value = p.sku;
+      row.getCell(36).value = p.sku.replace(/^EK-/i, 'HX-');
       row.getCell(38).value = p.qty;
       row.getCell(39).value = nu;
     });

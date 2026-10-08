@@ -3010,7 +3010,7 @@ function meliCalcTotales() {
   const sec3_neto  = sec3.reduce((s,r) => s + rawNeto(r), 0);
   // f381: tasa por unidad NETO = (neto_envíos + neto_nc_neta) / qty_sec1
   // Coincide con N301 del Excel original: fórmula U = +O + ($N$301 * H)
-  const f381       = sec1_qty > 0 ? (sec2_neto - sec3_neto) / sec1_qty : 0;
+  const f381       = sec1_qty > 0 ? (sec2_neto + sec3_neto) / sec1_qty : 0;
   // f381_bruto: tasa bruto por unidad (aparece en el Excel como celda auxiliar)
   const f381_bruto = sec1_qty > 0 ? (sec2_bruto - sec3_bruto) / sec1_qty : 0;
   console.log('[MELI] sec1:', sec1.length, 'sec2:', sec2.length, 'sec3:', sec3.length,

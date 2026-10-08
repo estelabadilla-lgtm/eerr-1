@@ -3086,9 +3086,6 @@ async function meliGenerarHECHO() {
   if (!MELI_RAW) return;
   meliStatus1('Generando archivo…');
   try {
-    // DEBUG TEMPORAL: muestra valores clave antes de generar
-    const _dbg = meliCalcTotales();
-    alert(`DEBUG MELI:\nsec1 filas: ${MELI_RAW.sec1.length}\nsec2 filas: ${MELI_RAW.sec2.length}\nsec3 filas: ${MELI_RAW.sec3.length}\nsec1_qty: ${_dbg.sec1_qty}\nsec2_neto: ${_dbg.sec2_neto}\nsec3_neto: ${_dbg.sec3_neto}\nf381: ${_dbg.f381}`);
     const wb  = new ExcelJS.Workbook();
     wb.calcProperties = { fullCalcOnLoad: true };
     const wsD = wb.addWorksheet('detalles');

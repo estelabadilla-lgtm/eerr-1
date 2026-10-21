@@ -96,8 +96,8 @@ tr:hover td{background:var(--hover)}
     <h2>1. Selecciona el Retailer</h2>
     <div class="retailers">
       <button class="ret-btn active" data-ret="imperial" onclick="selRetailer('imperial',this)">🏪 Imperial</button>
-      <button class="ret-btn" data-ret="sodimac" onclick="selRetailer('sodimac',this)" disabled title="Próximamente">🏪 Sodimac</button>
-      <button class="ret-btn" data-ret="construmart" onclick="selRetailer('construmart',this)" disabled title="Próximamente">🏪 Construmart</button>
+      <button class="ret-btn" data-ret="sodimac" onclick="selRetailer('sodimac',this)">🏪 Sodimac</button>
+      <button class="ret-btn" data-ret="construmart" onclick="selRetailer('construmart',this)">🏪 Construmart</button>
     </div>
   </div>
 
@@ -154,10 +154,11 @@ tr:hover td{background:var(--hover)}
 
 <script>
 // ── Constantes por retailer ──────────────────────────────
+// col6=Código Cliente, cod=Código Vendedor (col7)
 const RETAILERS = {
-  imperial: { rut: 76821330, cod: 21, label: 'Imperial', ext: ['zip','xls','xlsx'] },
-  sodimac:  { rut: 0,        cod: 0,  label: 'Sodimac',  ext: [] },
-  construmart:{ rut:0,       cod: 0,  label: 'Construmart', ext:[] },
+  imperial:   { col6: 76821330,  cod: 21, label: 'Imperial',   zipOk: true  },
+  sodimac:    { col6: 96792430,  cod: 23, label: 'Sodimac',    zipOk: false },
+  construmart:{ col6: 905114600, cod: 13, label: 'Construmart', zipOk: false },
 };
 const NV_MAX = 30; // máx productos por NV
 
@@ -202,49 +203,61 @@ fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.
 async function handleFile(file) {
   setStatus('loadStatus', '⏳ Leyendo archivo…', '');
   try {
-    let rows;
+    let result;
     const name = file.name.toLowerCase();
     if (name.endsWith('.zip')) {
-      rows = await parseImperialZip(file);
+      result = await parseZip(file);
     } else if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
       const buf = await file.arrayBuffer();
-      rows = parseImperialXls(buf);
+      result = parseXls(buf, currentRetailer);
     } else {
-      throw new Error('Formato no reconocido. Sube un ZIP o XLS de Imperial.');
+      throw new Error('Formato no reconocido. Sube un ZIP, XLS o XLSX.');
     }
-    if (!rows.length) throw new Error('No se encontraron productos en el archivo.');
+    if (!result.rows.length) throw new Error('No se encontraron productos en el archivo.');
 
-    productos = rows;
+    productos = result.rows;
+    ocNum = result.ocNum;
     mostrarPreview();
     dropZone.classList.add('ok');
-    document.getElementById('dropLabel').textContent = `✅ ${file.name} — ${rows.length} producto(s) cargados`;
-    setStatus('loadStatus', `✅ ${rows.length} productos leídos correctamente.`, 'ok');
+    document.getElementById('dropLabel').textContent = `✅ ${file.name} — ${result.rows.length} producto(s) cargados`;
+    setStatus('loadStatus', `✅ ${result.rows.length} productos leídos. OC N° ${result.ocNum || '–'}`, 'ok');
   } catch(err) {
     setStatus('loadStatus', '❌ ' + err.message, 'err');
     console.error(err);
   }
 }
 
-// ── Parser Imperial ZIP ──────────────────────────────────
-async function parseImperialZip(file) {
+let ocNum = '';
+
+// ── Parser ZIP (Imperial viene en ZIP) ───────────────────
+async function parseZip(file) {
   const zip = await JSZip.loadAsync(file);
   const xlsFiles = Object.values(zip.files).filter(f => !f.dir && /\.(xls|xlsx)$/i.test(f.name));
   if (!xlsFiles.length) throw new Error('El ZIP no contiene ningún archivo XLS/XLSX.');
   const buf = await xlsFiles[0].async('arraybuffer');
-  return parseImperialXls(buf);
+  return parseXls(buf, currentRetailer);
 }
 
-// ── Parser Imperial XLS ──────────────────────────────────
-// Estructura: fila 0 = encabezados, filas 1+ = datos
-// Col 16 = Cod Proveedor (SKU), Col 14 = Cantidad, Col 18 = Precio unit neto, Col 17 = Descripción
-function parseImperialXls(buf) {
+// ── Parser unificado según retailer ──────────────────────
+function parseXls(buf, retailer) {
   const wb = XLSX.read(buf, { type: 'array' });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
+  if (retailer === 'imperial')    return parseImperial(data);
+  if (retailer === 'sodimac')     return parseSodimac(data);
+  if (retailer === 'construmart') return parseConstrumart(data);
+  throw new Error('Retailer no reconocido.');
+}
+
+// ── Imperial: fila 0=headers, datos desde fila 1 ─────────
+// Col0=N°OC, Col1=Fecha, Col14=Qty, Col16=SKU, Col17=Desc, Col18=Precio
+function parseImperial(data) {
   const rows = [];
+  let ocNum = '';
   for (let i = 1; i < data.length; i++) {
     const r = data[i];
+    if (i === 1) ocNum = String(r[0] || '').trim();
     const sku   = String(r[16] || '').trim();
     const desc  = String(r[17] || '').trim();
     const qty   = Number(r[14]) || 0;
@@ -252,7 +265,44 @@ function parseImperialXls(buf) {
     if (!sku || qty <= 0) continue;
     rows.push({ sku, desc, qty, precio });
   }
-  return rows;
+  return { rows, ocNum };
+}
+
+// ── Sodimac: fila 0=headers, datos desde fila 1 ──────────
+// Col1=N°OC, Col8=Fecha, Col21=VIN/SKU, Col36=Costo(precio), Col40=Unidades compradas
+function parseSodimac(data) {
+  const rows = [];
+  let ocNum = '';
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i];
+    if (i === 1) ocNum = String(r[1] || '').trim();
+    const sku   = String(r[21] || '').trim();
+    const desc  = String(r[20] || '').trim();
+    const qty   = Number(r[40]) || 0;
+    const precio= Number(r[36]) || 0;
+    if (!sku || qty <= 0) continue;
+    rows.push({ sku, desc, qty, precio });
+  }
+  return { rows, ocNum };
+}
+
+// ── Construmart: fila 0=headers, datos desde fila 1 ──────
+// Col0=N°OC, Col7=Fecha, Col16=SKU, Col17=Desc, Col20=Precio(coma dec), Col31=Qty(coma dec)
+function parseConstrumart(data) {
+  const toNum = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
+  const rows = [];
+  let ocNum = '';
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i];
+    if (i === 1) ocNum = String(r[0] || '').trim();
+    const sku   = String(r[16] || '').trim();
+    const desc  = String(r[17] || '').trim();
+    const qty   = Math.round(toNum(r[31]));
+    const precio= Math.round(toNum(r[20]));
+    if (!sku || qty <= 0) continue;
+    rows.push({ sku, desc, qty, precio });
+  }
+  return { rows, ocNum };
 }
 
 // ── Mostrar preview de productos ─────────────────────────
@@ -362,7 +412,8 @@ async function generarNV() {
         const row = ws.getRow(i + 1);
         row.getCell(1).value  = nvNum;
         const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
-        row.getCell(6).value  = ret.rut;
+        if (ocNum) row.getCell(5).value = ocNum;
+        row.getCell(6).value  = ret.col6;
         row.getCell(7).value  = ret.cod;
         const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
         row.getCell(36).value = p.sku;

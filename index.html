@@ -816,6 +816,9 @@
         <button type="button" class="login-role-card" onclick="loginElegirRol('gerencia')">
           <span class="login-role-icon">👔</span><span class="login-role-label">Gerencia</span>
         </button>
+        <button type="button" class="login-role-card" onclick="loginElegirRol('asistentes')">
+          <span class="login-role-icon">🗂️</span><span class="login-role-label">Asistentes</span>
+        </button>
         <button type="button" class="login-role-card" onclick="loginElegirRol('usuarios')">
           <span class="login-role-icon">👤</span><span class="login-role-label">Usuarios</span>
         </button>
@@ -4166,8 +4169,9 @@ async function segEliminarPoliza(id) {
 // (pensado para que cada área vea/edite lo que le corresponde), no
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
-  gerencia: { label: 'Gerencia', password: 'Gerencia2026', tabs: '*', canEdit: true,  puedeActualizarMayor: true },
-  usuarios: { label: 'Usuarios', password: 'grantt2026', tabs: ['seguros','cartera'],                                                                          canEdit: false, puedeActualizarMayor: false },
+  gerencia:   { label: 'Gerencia',   password: 'Gerencia2026',   tabs: '*',                                                                      canEdit: true,  puedeActualizarMayor: true  },
+  asistentes: { label: 'Asistentes', password: 'Asistentes2026', tabs: ['meli','seguros','cartera','libro_ventas','nv_retail'],                   canEdit: true,  puedeActualizarMayor: false },
+  usuarios:   { label: 'Usuarios',   password: 'grantt2026',     tabs: ['seguros','cartera'],                                                     canEdit: false, puedeActualizarMayor: false },
 };
 
 let CURRENT_ROLE = null;

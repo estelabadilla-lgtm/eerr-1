@@ -122,6 +122,7 @@ tr:hover td{background:var(--hover)}
             <th>#</th>
             <th>SKU</th>
             <th>Descripción</th>
+            <th>OC</th>
             <th class="num">Cantidad</th>
             <th class="num">Precio Neto Unit.</th>
             <th class="num">Total Neto</th>
@@ -164,7 +165,7 @@ const RETAILERS = {
 const NV_MAX = 30; // máx productos por NV
 
 let currentRetailer = 'imperial';
-let productos = []; // [{sku, desc, qty, precio}]
+let productos = []; // [{sku, desc, qty, precio, ocNum}]
 
 // ── Seleccionar retailer ─────────────────────────────────
 function selRetailer(name, btn) {
@@ -204,39 +205,45 @@ fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.
 async function handleFile(file) {
   setStatus('loadStatus', '⏳ Leyendo archivo…', '');
   try {
-    let result;
+    let allRows = [];
     const name = file.name.toLowerCase();
     if (name.endsWith('.zip')) {
-      result = await parseZip(file);
+      allRows = await parseZip(file);
     } else if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
       const buf = await file.arrayBuffer();
-      result = parseXls(buf, currentRetailer);
+      const res = parseXls(buf, currentRetailer);
+      allRows = res.rows.map(r => ({ ...r, ocNum: res.ocNum }));
     } else {
       throw new Error('Formato no reconocido. Sube un ZIP, XLS o XLSX.');
     }
-    if (!result.rows.length) throw new Error('No se encontraron productos en el archivo.');
+    if (!allRows.length) throw new Error('No se encontraron productos en el archivo.');
 
-    productos = result.rows;
-    ocNum = result.ocNum;
+    productos = allRows;
+    const ocs = [...new Set(allRows.map(r => r.ocNum).filter(Boolean))];
     mostrarPreview();
     dropZone.classList.add('ok');
-    document.getElementById('dropLabel').textContent = `✅ ${file.name} — ${result.rows.length} producto(s) cargados`;
-    setStatus('loadStatus', `✅ ${result.rows.length} productos leídos. OC N° ${result.ocNum || '–'}`, 'ok');
+    document.getElementById('dropLabel').textContent = `✅ ${file.name} — ${allRows.length} producto(s) cargados`;
+    setStatus('loadStatus', `✅ ${allRows.length} productos leídos. ${ocs.length > 1 ? ocs.length + ' OC: ' + ocs.join(', ') : 'OC N° ' + (ocs[0] || '–')}`, 'ok');
   } catch(err) {
     setStatus('loadStatus', '❌ ' + err.message, 'err');
     console.error(err);
   }
 }
 
-let ocNum = '';
-
-// ── Parser ZIP (Imperial viene en ZIP) ───────────────────
+// ── Parser ZIP (Imperial puede traer múltiples OC) ───────
 async function parseZip(file) {
   const zip = await JSZip.loadAsync(file);
-  const xlsFiles = Object.values(zip.files).filter(f => !f.dir && /\.(xls|xlsx)$/i.test(f.name));
+  const xlsFiles = Object.values(zip.files)
+    .filter(f => !f.dir && /\.(xls|xlsx)$/i.test(f.name))
+    .sort((a, b) => a.name.localeCompare(b.name));
   if (!xlsFiles.length) throw new Error('El ZIP no contiene ningún archivo XLS/XLSX.');
-  const buf = await xlsFiles[0].async('arraybuffer');
-  return parseXls(buf, currentRetailer);
+  const allRows = [];
+  for (const f of xlsFiles) {
+    const buf = await f.async('arraybuffer');
+    const res = parseXls(buf, currentRetailer);
+    res.rows.forEach(r => allRows.push({ ...r, ocNum: res.ocNum }));
+  }
+  return allRows;
 }
 
 // ── Parser unificado según retailer ──────────────────────
@@ -306,26 +313,52 @@ function parseConstrumart(data) {
   return { rows, ocNum };
 }
 
+// Calcula asignación NV por OC: cada OC empieza un nuevo NV,
+// y si tiene >30 productos, usa NVs consecutivos.
+function calcNvMap() {
+  // nvMap[i] = número relativo de NV para el producto i (1-based offset desde nvBase)
+  const nvMap = [];
+  let nvOffset = 0;
+  let currentOc = null;
+  let posEnOc = 0;
+  for (let i = 0; i < productos.length; i++) {
+    const oc = productos[i].ocNum || '';
+    if (oc !== currentOc) {
+      // Nueva OC: si no es la primera, avanzar al siguiente NV
+      if (currentOc !== null) nvOffset++;
+      currentOc = oc;
+      posEnOc = 0;
+    } else if (posEnOc > 0 && posEnOc % NV_MAX === 0) {
+      // Misma OC pero superó el límite de 30
+      nvOffset++;
+    }
+    nvMap.push(nvOffset + 1); // 1-based
+    posEnOc++;
+  }
+  return nvMap;
+}
+
 // ── Mostrar preview de productos ─────────────────────────
 function mostrarPreview() {
   const panel = document.getElementById('previewPanel');
   const tbody = document.getElementById('prodTbody');
   const total = productos.length;
-  const nvCount = Math.ceil(total / NV_MAX);
+  const nvMap = calcNvMap();
+  const nvCount = nvMap.length ? nvMap[nvMap.length - 1] : 0;
 
   document.getElementById('totalProds').textContent = total;
   tbody.innerHTML = '';
 
   function renderFila(tr, p, i) {
-    const nvIdx = Math.floor(i / NV_MAX) + 1;
     tr.innerHTML = `
       <td>${i+1}</td>
       <td><code>${escH(p.sku)}</code></td>
       <td>${escH(p.desc)}</td>
+      <td style="font-size:11px;color:var(--muted)">${escH(p.ocNum||'')}</td>
       <td class="num"><input type="number" min="1" value="${p.qty}" style="width:72px;text-align:right;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:inherit;background:var(--surface);color:var(--ink)" data-field="qty" data-idx="${i}"></td>
       <td class="num"><input type="number" min="0" value="${p.precio}" style="width:90px;text-align:right;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:inherit;background:var(--surface);color:var(--ink)" data-field="precio" data-idx="${i}"></td>
       <td class="num" id="total-${i}">$${fmt(p.qty * p.precio)}</td>
-      <td><span class="badge">NV ${nvIdx}</span></td>
+      <td><span class="badge">NV ${nvMap[i]}</span></td>
       <td><button onclick="eliminarFila(${i})" style="border:none;background:none;cursor:pointer;color:var(--crit);font-size:16px;padding:0 4px" title="Eliminar">✕</button></td>
     `;
     tr.querySelector('[data-field="qty"]').addEventListener('input', e => {
@@ -390,14 +423,15 @@ function mostrarConfigPanel(nvCount) {
 
 function actualizarChips() {
   const base = parseInt(document.getElementById('nvNum').value) || 0;
-  const nvCount = Math.ceil(productos.length / NV_MAX);
-  for (let i = 1; i <= nvCount; i++) {
-    const chip = document.getElementById(`chip${i}`);
+  const nvMap = calcNvMap();
+  const nvCount = nvMap.length ? nvMap[nvMap.length - 1] : 0;
+  for (let nv = 1; nv <= nvCount; nv++) {
+    const chip = document.getElementById(`chip${nv}`);
     if (!chip) continue;
-    const desde = (i-1)*NV_MAX + 1;
-    const hasta = Math.min(i*NV_MAX, productos.length);
-    const nvNum = base > 0 ? ` (N° ${base + i - 1})` : '';
-    chip.textContent = `NV ${i}${nvNum}: prods ${desde}–${hasta}`;
+    const indices = nvMap.map((v,i) => v===nv ? i+1 : null).filter(Boolean);
+    const nvNum = base > 0 ? ` (N° ${base + nv - 1})` : '';
+    const oc = productos[nvMap.indexOf(nv)]?.ocNum || '';
+    chip.textContent = `NV ${nv}${nvNum}: ${indices.length} prods${oc ? ' · OC '+oc : ''}`;
   }
 }
 
@@ -413,7 +447,8 @@ async function generarNV() {
   const ret = RETAILERS[currentRetailer];
   const [y,m,d] = nvFecha.split('-').map(Number);
   const dateVal = new Date(y, m-1, d);
-  const nvCount = Math.ceil(productos.length / NV_MAX);
+  const nvMap = calcNvMap();
+  const nvCount = nvMap.length ? nvMap[nvMap.length - 1] : 0;
 
   try {
     setStatus('genStatus', '⏳ Generando…', '');
@@ -421,12 +456,13 @@ async function generarNV() {
     wb.calcProperties = { fullCalcOnLoad: true };
     const ws = wb.addWorksheet('NV');
 
+    const nvMap = calcNvMap();
     productos.forEach((p, i) => {
-      const nvNum = nvBase + Math.floor(i / NV_MAX);
+      const nvNum = nvBase + nvMap[i] - 1;
       const row = ws.getRow(i + 1);
       row.getCell(1).value  = nvNum;
       const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
-      if (ocNum) row.getCell(5).value = ocNum;
+      if (p.ocNum) row.getCell(5).value = p.ocNum;
       row.getCell(6).value  = ret.col6;
       row.getCell(7).value  = ret.cod;
       const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';

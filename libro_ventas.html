@@ -68,6 +68,15 @@ h1{font-size:22px;margin:0;letter-spacing:-.01em}
 .flabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 select,input[type=search]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
 input[type=search]{flex:1 1 180px;min-width:0}
+/* multiselect dropdown */
+.ms-wrap{position:relative}
+.ms-btn{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 28px 6px 10px;cursor:pointer;min-width:170px;text-align:left;position:relative}
+.ms-btn::after{content:'▾';position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
+.ms-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:6px 0;min-width:200px;display:none}
+.ms-panel.open{display:block}
+.ms-panel label{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:13px}
+.ms-panel label:hover{background:var(--hover)}
+.ms-panel input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
 #reset{margin-left:auto;font:inherit;font-size:13px;background:none;border:0;color:var(--accent);cursor:pointer;padding:6px}
 /* table */
 .tbl-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
@@ -178,13 +187,14 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
   </select>
   <input type="search" id="fBuscar" placeholder="Buscar cliente…">
   <span class="flabel">Estado NC</span>
-  <select id="fRech">
-    <option value="">Todos</option>
-    <option value="rech_sin_nc">⚠ Rechazadas sin NC</option>
-    <option value="rech_parcial">⚠ Rechazadas parciales</option>
-    <option value="rech_anulada">✓ Rechazadas anuladas</option>
-    <option value="rech_any">Todas las rechazadas</option>
-  </select>
+  <div class="ms-wrap" id="msWrap">
+    <button type="button" class="ms-btn" id="msBtn">Todos</button>
+    <div class="ms-panel" id="msPanel">
+      <label><input type="checkbox" value="rech_sin_nc">⚠ Rechazadas sin NC</label>
+      <label><input type="checkbox" value="rech_parcial">⚠ Rechazadas parciales</label>
+      <label><input type="checkbox" value="rech_anulada">✓ Rechazadas anuladas</label>
+    </div>
+  </div>
   <button id="reset">✕ Limpiar</button>
 </div>
 
@@ -258,7 +268,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
 const LS = 'libro_ventas_data';
 let ROWS = []; // array of parsed row objects
 let filtered = [];
-const st = { mes:'', tipo:'', buscar:'', fRech:'', sortCol:'fecha', sortDir:1 };
+const st = { mes:'', tipo:'', buscar:'', fRech:new Set(), sortCol:'fecha', sortDir:1 };
 
 const TIPOS = {
   '33':'Factura Afecta','34':'Factura Exenta',
@@ -399,13 +409,29 @@ bApply.addEventListener('click',()=>{
 document.getElementById('fMes').addEventListener('change',e=>{st.mes=e.target.value;render()});
 document.getElementById('fTipo').addEventListener('change',e=>{st.tipo=e.target.value;render()});
 document.getElementById('fBuscar').addEventListener('input',e=>{st.buscar=e.target.value.toLowerCase();render()});
-document.getElementById('fRech').addEventListener('change',e=>{st.fRech=e.target.value;render()});
+// multiselect Estado NC
+(function(){
+  const btn=document.getElementById('msBtn');
+  const panel=document.getElementById('msPanel');
+  const checks=[...panel.querySelectorAll('input[type=checkbox]')];
+  btn.addEventListener('click',e=>{e.stopPropagation();panel.classList.toggle('open')});
+  document.addEventListener('click',e=>{if(!document.getElementById('msWrap').contains(e.target))panel.classList.remove('open')});
+  const LABELS={'rech_sin_nc':'Sin NC','rech_parcial':'Parciales','rech_anulada':'Anuladas'};
+  function updateBtn(){
+    const sel=checks.filter(c=>c.checked).map(c=>LABELS[c.value]);
+    btn.textContent=sel.length?sel.join(', '):'Todos';
+    st.fRech=new Set(checks.filter(c=>c.checked).map(c=>c.value));
+    render();
+  }
+  checks.forEach(c=>c.addEventListener('change',updateBtn));
+  window._resetFRech=function(){checks.forEach(c=>c.checked=false);btn.textContent='Todos';st.fRech=new Set();};
+})();
 document.getElementById('reset').addEventListener('click',()=>{
-  st.mes='';st.tipo='';st.buscar='';st.fRech='';
+  st.mes='';st.tipo='';st.buscar='';
   document.getElementById('fMes').value='';
   document.getElementById('fTipo').value='';
   document.getElementById('fBuscar').value='';
-  document.getElementById('fRech').value='';
+  window._resetFRech();
   render();
 });
 
@@ -480,14 +506,14 @@ function render(){
     if(st.mes&&r.mes!==st.mes) return false;
     if(st.tipo&&r.tipo!==st.tipo) return false;
     if(st.buscar&&!r.razon.toLowerCase().includes(st.buscar)&&!r.rut.includes(st.buscar)) return false;
-    if(st.fRech){
+    if(st.fRech.size){
       if(!r.rechazada) return false;
       const esFactura=r.tipo==='33'||r.tipo==='34';
-      if(!esFactura) return false; // solo facturas rechazadas en este filtro
+      if(!esFactura) return false;
       const est=ncEstado(r.folio,r.neto);
-      if(st.fRech==='rech_sin_nc'&&est!=='sin_nc') return false;
-      if(st.fRech==='rech_parcial'&&est!=='parcial') return false;
-      if(st.fRech==='rech_anulada'&&est!=='anulada') return false;
+      const MAP={'rech_sin_nc':'sin_nc','rech_parcial':'parcial','rech_anulada':'anulada'};
+      const match=[...st.fRech].some(v=>MAP[v]===est);
+      if(!match) return false;
     }
     return true;
   });

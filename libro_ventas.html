@@ -120,7 +120,17 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
 <!-- Panel carga -->
 <section class="upd-panel" id="upd" hidden>
   <h2>Cargar archivos RCV de Ventas</h2>
-  <p>Selecciona uno o varios archivos CSV del SII. <strong>Solo puedes actualizar los 2 últimos meses</strong> — los meses anteriores están bloqueados para no sobreescribir el histórico.</p>
+  <p>Selecciona uno o varios archivos CSV del SII. <strong>Solo puedes actualizar los 2 últimos meses</strong> (<span id="mesesPermitidos"></span>) — los meses anteriores están bloqueados para no sobreescribir el histórico.</p>
+  <script>
+  (function(){
+    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const hoy = new Date();
+    const m0 = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    const m1 = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
+    document.getElementById('mesesPermitidos').textContent =
+      MESES[m1.getMonth()] + ' y ' + MESES[m0.getMonth()];
+  })();
+  </script>
   <label class="drop" id="dCsv" for="inCsv">
     <span class="d1">📂 Archivos CSV del RCV de Ventas</span>
     <span class="st" id="sCsv">Arrastra aquí o haz clic para elegir (puedes seleccionar varios)</span>

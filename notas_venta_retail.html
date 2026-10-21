@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notas de Venta Retail</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f6f6f3;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;
+  --grid:#e1e0d9;--border:rgba(11,11,11,.10);
+  --accent:#1c5cab;--bar:#2a78d6;
+  --good:#0ca30c;--good-bg:#e6f4e6;--good-ink:#006300;
+  --crit:#d03b3b;--crit-bg:#fbe9e9;
+  --hover:rgba(42,120,214,.07);--radius:10px;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0d0d0d;--surface:#1a1a19;--ink:#ffffff;--ink2:#c3c2b7;--muted:#898781;
+  --grid:#2c2c2a;--border:rgba(255,255,255,.10);--accent:#86b6ef;--bar:#3987e5;
+  --hover:rgba(57,135,229,.12);
+}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:20px 16px 40px}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:20px;margin:0;letter-spacing:-.01em}
+h2{font-size:15px;margin:0 0 12px;font-weight:600}
+
+/* Retailer selector */
+.retailers{display:flex;gap:10px;flex-wrap:wrap}
+.ret-btn{padding:9px 20px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
+.ret-btn:hover{border-color:var(--accent)}
+.ret-btn.active{border-color:var(--accent);background:var(--hover);color:var(--accent);font-weight:700}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
+
+/* Drop zone */
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--border);border-radius:var(--radius);padding:32px 20px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--hover)}
+.drop.ok{border-color:var(--good);background:var(--good-bg)}
+.drop .d1{font-size:28px}
+.drop .d2{font-size:13px;color:var(--muted)}
+.drop input{display:none}
+
+/* Form */
+.form-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:4px}
+label.flabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+input[type=number],input[type=date]{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;width:160px}
+
+/* Summary */
+.summary{background:var(--hover);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 16px;font-size:13px}
+.summary strong{font-size:15px}
+.nv-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--accent);color:#fff;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{background:var(--bg);font-weight:600;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--ink2);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+td{padding:7px 10px;border-bottom:1px solid var(--grid);color:var(--ink)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--hover)}
+.num{text-align:right}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:var(--accent);color:#fff}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:0;font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--ink)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Status */
+.status{font-size:13px;padding:6px 0;color:var(--ink2);min-height:22px}
+.status.ok{color:var(--good-ink)}
+.status.err{color:var(--crit)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Notas de Venta Retail</h1>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Convierte Órdenes de Compra de retailers en Notas de Venta para Softland</div>
+    </div>
+  </header>
+
+  <!-- 1. Seleccionar retailer -->
+  <div class="panel">
+    <h2>1. Selecciona el Retailer</h2>
+    <div class="retailers">
+      <button class="ret-btn active" data-ret="imperial" onclick="selRetailer('imperial',this)">🏪 Imperial</button>
+      <button class="ret-btn" data-ret="sodimac" onclick="selRetailer('sodimac',this)" disabled title="Próximamente">🏪 Sodimac</button>
+      <button class="ret-btn" data-ret="construmart" onclick="selRetailer('construmart',this)" disabled title="Próximamente">🏪 Construmart</button>
+    </div>
+  </div>
+
+  <!-- 2. Cargar OC -->
+  <div class="panel">
+    <h2>2. Cargar Orden de Compra</h2>
+    <label class="drop" id="dropZone" for="fileInput">
+      <span class="d1">📂</span>
+      <span id="dropLabel" class="d2">Arrastra el archivo ZIP o XLS de Imperial, o haz clic para elegir</span>
+      <input type="file" id="fileInput" accept=".zip,.xls,.xlsx">
+    </label>
+    <div class="status" id="loadStatus"></div>
+  </div>
+
+  <!-- 3. Vista previa de productos -->
+  <div class="panel" id="previewPanel" hidden>
+    <h2>3. Productos en la OC (<span id="totalProds">0</span> ítems)</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>SKU</th>
+            <th>Descripción</th>
+            <th class="num">Cantidad</th>
+            <th class="num">Precio Neto Unit.</th>
+            <th class="num">Total Neto</th>
+            <th>NV</th>
+          </tr>
+        </thead>
+        <tbody id="prodTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. Configurar NVs -->
+  <div class="panel" id="configPanel" hidden>
+    <h2>4. Configurar Notas de Venta</h2>
+    <div id="nvSummary" class="summary" style="margin-bottom:14px"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="flabel">N° primera Nota de Venta</label>
+        <input type="number" id="nvNum" placeholder="ej: 1250" min="1">
+      </div>
+      <div class="form-group">
+        <label class="flabel">Fecha de la NV</label>
+        <input type="date" id="nvFecha">
+      </div>
+      <button class="btn btn-primary" id="btnGenerar" onclick="generarNV()" disabled>⬇ Descargar NV(s).xlsx</button>
+    </div>
+    <div class="status" id="genStatus"></div>
+  </div>
+</div>
+
+<script>
+// ── Constantes por retailer ──────────────────────────────
+const RETAILERS = {
+  imperial: { rut: 76821330, cod: 21, label: 'Imperial', ext: ['zip','xls','xlsx'] },
+  sodimac:  { rut: 0,        cod: 0,  label: 'Sodimac',  ext: [] },
+  construmart:{ rut:0,       cod: 0,  label: 'Construmart', ext:[] },
+};
+const NV_MAX = 30; // máx productos por NV
+
+let currentRetailer = 'imperial';
+let productos = []; // [{sku, desc, qty, precio}]
+
+// ── Seleccionar retailer ─────────────────────────────────
+function selRetailer(name, btn) {
+  if (btn.disabled) return;
+  currentRetailer = name;
+  document.querySelectorAll('.ret-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  resetAll();
+}
+
+function resetAll() {
+  productos = [];
+  document.getElementById('previewPanel').hidden = true;
+  document.getElementById('configPanel').hidden = true;
+  document.getElementById('dropZone').classList.remove('ok');
+  document.getElementById('dropLabel').textContent = 'Arrastra el archivo ZIP o XLS, o haz clic para elegir';
+  document.getElementById('fileInput').value = '';
+  setStatus('loadStatus', '', '');
+  setStatus('genStatus', '', '');
+}
+
+// ── Drop zone ────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+// ── Cargar archivo ───────────────────────────────────────
+async function handleFile(file) {
+  setStatus('loadStatus', '⏳ Leyendo archivo…', '');
+  try {
+    let rows;
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.zip')) {
+      rows = await parseImperialZip(file);
+    } else if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
+      const buf = await file.arrayBuffer();
+      rows = parseImperialXls(buf);
+    } else {
+      throw new Error('Formato no reconocido. Sube un ZIP o XLS de Imperial.');
+    }
+    if (!rows.length) throw new Error('No se encontraron productos en el archivo.');
+
+    productos = rows;
+    mostrarPreview();
+    dropZone.classList.add('ok');
+    document.getElementById('dropLabel').textContent = `✅ ${file.name} — ${rows.length} producto(s) cargados`;
+    setStatus('loadStatus', `✅ ${rows.length} productos leídos correctamente.`, 'ok');
+  } catch(err) {
+    setStatus('loadStatus', '❌ ' + err.message, 'err');
+    console.error(err);
+  }
+}
+
+// ── Parser Imperial ZIP ──────────────────────────────────
+async function parseImperialZip(file) {
+  const zip = await JSZip.loadAsync(file);
+  const xlsFiles = Object.values(zip.files).filter(f => !f.dir && /\.(xls|xlsx)$/i.test(f.name));
+  if (!xlsFiles.length) throw new Error('El ZIP no contiene ningún archivo XLS/XLSX.');
+  const buf = await xlsFiles[0].async('arraybuffer');
+  return parseImperialXls(buf);
+}
+
+// ── Parser Imperial XLS ──────────────────────────────────
+// Estructura: fila 0 = encabezados, filas 1+ = datos
+// Col 16 = Cod Proveedor (SKU), Col 14 = Cantidad, Col 18 = Precio unit neto, Col 17 = Descripción
+function parseImperialXls(buf) {
+  const wb = XLSX.read(buf, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  const rows = [];
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i];
+    const sku   = String(r[16] || '').trim();
+    const desc  = String(r[17] || '').trim();
+    const qty   = Number(r[14]) || 0;
+    const precio= Number(r[18]) || 0;
+    if (!sku || qty <= 0) continue;
+    rows.push({ sku, desc, qty, precio });
+  }
+  return rows;
+}
+
+// ── Mostrar preview de productos ─────────────────────────
+function mostrarPreview() {
+  const panel = document.getElementById('previewPanel');
+  const tbody = document.getElementById('prodTbody');
+  const total = productos.length;
+  const nvCount = Math.ceil(total / NV_MAX);
+
+  document.getElementById('totalProds').textContent = total;
+  tbody.innerHTML = '';
+
+  productos.forEach((p, i) => {
+    const nvIdx = Math.floor(i / NV_MAX) + 1;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td><code>${escH(p.sku)}</code></td>
+      <td>${escH(p.desc)}</td>
+      <td class="num">${fmt(p.qty)}</td>
+      <td class="num">$${fmt(p.precio)}</td>
+      <td class="num">$${fmt(p.qty * p.precio)}</td>
+      <td><span class="badge">NV ${nvIdx}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  panel.hidden = false;
+  mostrarConfigPanel(nvCount);
+}
+
+// ── Panel de configuración ───────────────────────────────
+function mostrarConfigPanel(nvCount) {
+  const panel = document.getElementById('configPanel');
+  const sumDiv = document.getElementById('nvSummary');
+  const total = productos.length;
+
+  sumDiv.innerHTML = `
+    <strong>${total} productos</strong> → <strong>${nvCount} Nota${nvCount>1?'s':''} de Venta</strong>
+    (máx. ${NV_MAX} productos c/u)
+    <div class="nv-chips" id="nvChips"></div>
+  `;
+
+  const chips = document.getElementById('nvChips');
+  for (let i = 1; i <= nvCount; i++) {
+    const desde = (i-1)*NV_MAX + 1;
+    const hasta = Math.min(i*NV_MAX, total);
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.id = `chip${i}`;
+    chip.textContent = `NV ${i}: prods ${desde}–${hasta}`;
+    chips.appendChild(chip);
+  }
+
+  // Fecha por defecto = hoy
+  const hoy = new Date();
+  document.getElementById('nvFecha').value = hoy.toISOString().slice(0,10);
+
+  panel.hidden = false;
+
+  // Actualizar chips cuando cambia número de NV
+  const nvNumInput = document.getElementById('nvNum');
+  nvNumInput.addEventListener('input', actualizarChips);
+  actualizarChips();
+
+  document.getElementById('btnGenerar').disabled = false;
+}
+
+function actualizarChips() {
+  const base = parseInt(document.getElementById('nvNum').value) || 0;
+  const nvCount = Math.ceil(productos.length / NV_MAX);
+  for (let i = 1; i <= nvCount; i++) {
+    const chip = document.getElementById(`chip${i}`);
+    if (!chip) continue;
+    const desde = (i-1)*NV_MAX + 1;
+    const hasta = Math.min(i*NV_MAX, productos.length);
+    const nvNum = base > 0 ? ` (N° ${base + i - 1})` : '';
+    chip.textContent = `NV ${i}${nvNum}: prods ${desde}–${hasta}`;
+  }
+}
+
+// ── Generar Excel con NVs ────────────────────────────────
+async function generarNV() {
+  const nvBase = parseInt(document.getElementById('nvNum').value);
+  const nvFecha = document.getElementById('nvFecha').value;
+  if (!nvBase || !nvFecha) {
+    setStatus('genStatus', '❌ Ingresa el número de NV y la fecha.', 'err');
+    return;
+  }
+
+  const ret = RETAILERS[currentRetailer];
+  const [y,m,d] = nvFecha.split('-').map(Number);
+  const dateVal = new Date(y, m-1, d);
+  const nvCount = Math.ceil(productos.length / NV_MAX);
+
+  try {
+    setStatus('genStatus', '⏳ Generando…', '');
+    const wb = new ExcelJS.Workbook();
+    wb.calcProperties = { fullCalcOnLoad: true };
+
+    for (let nv = 0; nv < nvCount; nv++) {
+      const nvNum = nvBase + nv;
+      const lote = productos.slice(nv * NV_MAX, (nv+1) * NV_MAX);
+      const ws = wb.addWorksheet(`NV${nvNum}`);
+
+      lote.forEach((p, i) => {
+        const row = ws.getRow(i + 1);
+        row.getCell(1).value  = nvNum;
+        const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
+        row.getCell(6).value  = ret.rut;
+        row.getCell(7).value  = ret.cod;
+        const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
+        row.getCell(36).value = p.sku;
+        row.getCell(38).value = p.qty;
+        row.getCell(39).value = p.precio;
+      });
+
+      // Anchos de columnas
+      [1,2,6,7,35,36,38,39].forEach(c => {
+        ws.getColumn(c).width = c <= 7 ? 11 : c === 36 ? 22 : 10;
+      });
+      for (let c = 8; c <= 34; c++) ws.getColumn(c).width = 2.5;
+      ws.getColumn(37).width = 2.5;
+    }
+
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `NV${nvBase}${nvCount>1?`-${nvBase+nvCount-1}`:'_'}${ret.label}.xlsx`;
+    a.click();
+    setStatus('genStatus', `✅ ${nvCount} Nota${nvCount>1?'s':''} de Venta descargada${nvCount>1?'s':''} (NV ${nvBase}${nvCount>1?' a '+(nvBase+nvCount-1):''}).`, 'ok');
+  } catch(err) {
+    setStatus('genStatus', '❌ Error: ' + err.message, 'err');
+    console.error(err);
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────
+function setStatus(id, msg, cls) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status' + (cls ? ' '+cls : '');
+}
+function fmt(n) { return Number(n).toLocaleString('es-CL'); }
+function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

@@ -419,40 +419,36 @@ async function generarNV() {
     setStatus('genStatus', '⏳ Generando…', '');
     const wb = new ExcelJS.Workbook();
     wb.calcProperties = { fullCalcOnLoad: true };
+    const ws = wb.addWorksheet('NV');
 
-    for (let nv = 0; nv < nvCount; nv++) {
-      const nvNum = nvBase + nv;
-      const lote = productos.slice(nv * NV_MAX, (nv+1) * NV_MAX);
-      const ws = wb.addWorksheet(`NV${nvNum}`);
+    productos.forEach((p, i) => {
+      const nvNum = nvBase + Math.floor(i / NV_MAX);
+      const row = ws.getRow(i + 1);
+      row.getCell(1).value  = nvNum;
+      const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
+      if (ocNum) row.getCell(5).value = ocNum;
+      row.getCell(6).value  = ret.col6;
+      row.getCell(7).value  = ret.cod;
+      const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
+      row.getCell(36).value = p.sku;
+      row.getCell(38).value = p.qty;
+      row.getCell(39).value = p.precio;
+    });
 
-      lote.forEach((p, i) => {
-        const row = ws.getRow(i + 1);
-        row.getCell(1).value  = nvNum;
-        const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
-        if (ocNum) row.getCell(5).value = ocNum;
-        row.getCell(6).value  = ret.col6;
-        row.getCell(7).value  = ret.cod;
-        const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
-        row.getCell(36).value = p.sku;
-        row.getCell(38).value = p.qty;
-        row.getCell(39).value = p.precio;
-      });
-
-      // Anchos de columnas
-      [1,2,6,7,35,36,38,39].forEach(c => {
-        ws.getColumn(c).width = c <= 7 ? 11 : c === 36 ? 22 : 10;
-      });
-      for (let c = 8; c <= 34; c++) ws.getColumn(c).width = 2.5;
-      ws.getColumn(37).width = 2.5;
-    }
+    // Anchos de columnas
+    [1,2,6,7,35,36,38,39].forEach(c => {
+      ws.getColumn(c).width = c <= 7 ? 11 : c === 36 ? 22 : 10;
+    });
+    for (let c = 8; c <= 34; c++) ws.getColumn(c).width = 2.5;
+    ws.getColumn(37).width = 2.5;
 
     const buf  = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const a    = document.createElement('a');
     a.href     = URL.createObjectURL(blob);
-    a.download = `NV${nvBase}${nvCount>1?`-${nvBase+nvCount-1}`:'_'}${ret.label}.xlsx`;
+    a.download = `NV${nvBase}${nvCount>1?`-${nvBase+nvCount-1}`:''}${ret.label}.xlsx`;
     a.click();
-    setStatus('genStatus', `✅ ${nvCount} Nota${nvCount>1?'s':''} de Venta descargada${nvCount>1?'s':''} (NV ${nvBase}${nvCount>1?' a '+(nvBase+nvCount-1):''}).`, 'ok');
+    setStatus('genStatus', `✅ Descargado: 1 archivo, ${productos.length} productos, ${nvCount} NV (NV ${nvBase}${nvCount>1?' a '+(nvBase+nvCount-1):''}).`, 'ok');
   } catch(err) {
     setStatus('genStatus', '❌ Error: ' + err.message, 'err');
     console.error(err);

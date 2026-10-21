@@ -4166,7 +4166,7 @@ async function segEliminarPoliza(id) {
 // (pensado para que cada área vea/edite lo que le corresponde), no
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
-  gerencia: { label: 'Gerencia', password: 'Gerencia2026', tabs: ['eerr','auditoria','graficos','presupuesto','centros','meli','seguros','flujo_caja','cartera','libro_ventas','nv_retail'], canEdit: true,  puedeActualizarMayor: true },
+  gerencia: { label: 'Gerencia', password: 'Gerencia2026', tabs: '*', canEdit: true,  puedeActualizarMayor: true },
   usuarios: { label: 'Usuarios', password: 'grantt2026', tabs: ['seguros','cartera'],                                                                          canEdit: false, puedeActualizarMayor: false },
 };
 
@@ -4229,7 +4229,7 @@ function aplicarPermisos(rol) {
 
   let activeSigueVisible = false;
   document.querySelectorAll('nav button[data-tab]').forEach(btn => {
-    const permitido = cfg.tabs.includes(btn.dataset.tab);
+    const permitido = cfg.tabs === '*' || cfg.tabs.includes(btn.dataset.tab);
     btn.style.display = permitido ? '' : 'none';
     if (btn.classList.contains('active') && permitido) activeSigueVisible = true;
   });

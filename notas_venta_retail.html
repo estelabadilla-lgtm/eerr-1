@@ -206,6 +206,22 @@ let productos = []; // [{sku, desc, qty, precio, ocNum}]
 let codigosMap = {}; // e.g. { '9247': '09247', '140814': '140814' }
 let codigosCargados = false;
 
+// ── Restaurar tabla de códigos desde localStorage ────────
+(function() {
+  try {
+    const saved = localStorage.getItem('grantt_codigos');
+    if (saved) {
+      codigosMap = JSON.parse(saved);
+      codigosCargados = true;
+      const count = Object.values(codigosMap).filter((v, i, a) => a.indexOf(v) === i).length;
+      document.getElementById('codigosLabel').textContent = `✅ Tabla guardada — ${count} códigos`;
+      document.getElementById('codigosStatus').textContent = `(${count} códigos)`;
+      document.getElementById('codigosStatus').style.color = 'var(--good-ink)';
+      document.getElementById('dropCodigos').classList.add('ok');
+    }
+  } catch(e) {}
+})();
+
 // ── Recibir rol desde index.html (iframe postMessage) ────
 window.addEventListener('message', e => {
   if (e.data && e.data.type === 'rol') {
@@ -244,6 +260,7 @@ async function cargarCodigos(file) {
       count++;
     }
     codigosCargados = true;
+    try { localStorage.setItem('grantt_codigos', JSON.stringify(codigosMap)); } catch(e) {}
     document.getElementById('codigosLabel').textContent = `✅ ${file.name} — ${count} códigos cargados`;
     document.getElementById('codigosStatus').textContent = `(${count} códigos)`;
     document.getElementById('codigosStatus').style.color = 'var(--good-ink)';

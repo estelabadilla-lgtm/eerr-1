@@ -166,9 +166,9 @@ tr:hover td{background:var(--hover)}
 // ── Constantes por retailer ──────────────────────────────
 // col6=Código Cliente, cod=Código Vendedor (col7)
 const RETAILERS = {
-  imperial:   { col6: 76821330,  cod: 21, label: 'Imperial',    zipOk: true,  contacto: 'Mauricio del Rio' },
-  sodimac:    { col6: 96792430,  cod: 23, label: 'Sodimac',     zipOk: false, contacto: '' },
-  construmart:{ col6: 905114600, cod: 13, label: 'Construmart', zipOk: false, contacto: '' },
+  imperial:   { col6: 76821330,  cod: 21, label: 'Imperial',    zipOk: true,  contacto: 'Mauricio del Rio', moneda: '01', listaPrecio: '03' },
+  sodimac:    { col6: 96792430,  cod: 23, label: 'Sodimac',     zipOk: false, contacto: '',                 moneda: '01', listaPrecio: '' },
+  construmart:{ col6: 905114600, cod: 13, label: 'Construmart', zipOk: false, contacto: '',                 moneda: '01', listaPrecio: '' },
 };
 const NV_MAX = 30; // máx productos por NV
 
@@ -477,7 +477,9 @@ async function generarNV() {
       row.getCell(1).value  = nvNum;
       const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
       const c3 = row.getCell(3); c3.value = dateEntrega; c3.numFmt = 'DD-MM-YYYY';
-      if (nvContacto) row.getCell(13).value = nvContacto;
+      if (ret.moneda)      row.getCell(8).value  = ret.moneda;
+      if (ret.listaPrecio) row.getCell(9).value  = ret.listaPrecio;
+      if (nvContacto)      row.getCell(13).value = nvContacto;
       if (p.ocNum) row.getCell(5).value = p.ocNum;
       row.getCell(6).value  = ret.col6;
       row.getCell(7).value  = ret.cod;

@@ -546,16 +546,16 @@ function mostrarPreview() {
 
   function renderFila(tr, p, i) {
     tr.innerHTML = `
-      <td><button onclick="eliminarFila(${i})" style="border:none;background:none;cursor:pointer;color:var(--crit);font-size:16px;padding:0 4px;line-height:1" title="Eliminar">✕</button></td>
-      <td style="color:var(--muted);font-size:12px">${i+1}</td>
-      <td style="font-size:12px;color:var(--muted);white-space:nowrap;display:${mostrarSkuRetailer?'':'none'}">${escH(p.skuRetailer||'')}</td>
-      <td><input type="text" value="${escH(p.sku)}" data-field="sku" data-idx="${i}" style="width:130px;padding:2px 4px;border:1px solid ${p.skuOk === false ? 'var(--crit)' : 'var(--border)'};border-radius:4px;font:inherit;font-size:12px;font-family:monospace;background:var(--surface);color:${p.skuOk === false ? 'var(--crit)' : 'var(--ink)'}" title="${p.skuOk === false ? '⚠️ Código no encontrado en tabla del sistema' : ''}"></td>
-      <td><input type="text" value="${escH(p.desc)}" data-field="desc" data-idx="${i}" style="width:180px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:inherit;font-size:12px;background:var(--surface);color:var(--ink)"></td>
-      <td style="font-size:11px;color:var(--muted)">${escH(p.ocNum||'')}</td>
-      <td class="num"><input type="number" min="1" value="${p.qty}" style="width:72px;text-align:right;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:inherit;background:var(--surface);color:var(--ink)" data-field="qty" data-idx="${i}"></td>
-      <td class="num"><input type="number" min="0" value="${p.precio}" style="width:90px;text-align:right;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:inherit;background:var(--surface);color:var(--ink)" data-field="precio" data-idx="${i}"></td>
-      <td class="num" id="total-${i}">$${fmt(p.qty * p.precio)}</td>
-      <td><span class="badge">NV ${nvMap[i]}</span></td>
+      <td style="padding:0 2px"><button onclick="eliminarFila(${i})" style="border:none;background:none;cursor:pointer;color:var(--crit);font-size:15px;padding:0 2px;line-height:1" title="Eliminar">✕</button></td>
+      <td style="color:var(--muted);font-size:11px;padding:0 4px">${i+1}</td>
+      <td style="font-size:11px;color:var(--muted);white-space:nowrap;display:${mostrarSkuRetailer?'':'none'};padding:0 4px">${escH(p.skuRetailer||'')}</td>
+      <td style="padding:0 2px"><input type="text" value="${escH(p.sku)}" data-field="sku" data-idx="${i}" style="width:120px;padding:2px 3px;border:1px solid ${p.skuOk === false ? 'var(--crit)' : 'var(--border)'};border-radius:4px;font:inherit;font-size:11px;font-family:monospace;background:var(--surface);color:${p.skuOk === false ? 'var(--crit)' : 'var(--ink)'}" title="${p.skuOk === false ? '⚠️ Código no encontrado en tabla del sistema' : ''}"></td>
+      <td style="padding:0 2px"><input type="text" value="${escH(p.desc)}" data-field="desc" data-idx="${i}" style="width:165px;padding:2px 3px;border:1px solid var(--border);border-radius:4px;font:inherit;font-size:11px;background:var(--surface);color:var(--ink)"></td>
+      <td style="font-size:10px;color:var(--muted);white-space:nowrap;padding:0 4px">${escH(p.ocNum||'')}</td>
+      <td class="num" style="padding:0 2px"><input type="number" min="1" value="${p.qty}" style="width:62px;text-align:right;padding:2px 3px;border:1px solid var(--border);border-radius:4px;font:inherit;font-size:11px;background:var(--surface);color:var(--ink)" data-field="qty" data-idx="${i}"></td>
+      <td class="num" style="padding:0 2px"><input type="number" min="0" value="${p.precio}" style="width:80px;text-align:right;padding:2px 3px;border:1px solid var(--border);border-radius:4px;font:inherit;font-size:11px;background:var(--surface);color:var(--ink)" data-field="precio" data-idx="${i}"></td>
+      <td class="num" id="total-${i}" style="font-size:11px;white-space:nowrap;padding:0 4px">$${fmt(p.qty * p.precio)}</td>
+      <td style="padding:0 2px"><span class="badge">NV ${nvMap[i]}</span></td>
     `;
     tr.querySelector('[data-field="sku"]').addEventListener('input', e => {
       productos[i].sku = e.target.value.trim();

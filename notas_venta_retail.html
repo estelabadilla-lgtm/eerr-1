@@ -91,8 +91,8 @@ tr:hover td{background:var(--hover)}
     </div>
   </header>
 
-  <!-- 0. Tabla de códigos -->
-  <div class="panel">
+  <!-- 0. Tabla de códigos (solo Gerencia) -->
+  <div class="panel" id="panelCodigos" hidden>
     <h2>0. Tabla de Códigos del Sistema <span id="codigosStatus" style="font-size:12px;font-weight:400;color:var(--muted)">(no cargada)</span></h2>
     <div style="font-size:12px;color:var(--ink2);margin-bottom:10px">Carga el archivo <strong>codigos en sistema.xlsx</strong> una sola vez. Se usará para parear los códigos de la OC con los códigos correctos de Softland.</div>
     <label class="drop" id="dropCodigos" for="codigosInput" style="padding:16px 20px">
@@ -188,6 +188,13 @@ let productos = []; // [{sku, desc, qty, precio, ocNum}]
 // Mapa de pareo: clave = valor numérico del código (sin ceros), valor = código completo del sistema
 let codigosMap = {}; // e.g. { '9247': '09247', '140814': '140814' }
 let codigosCargados = false;
+
+// ── Recibir rol desde index.html (iframe postMessage) ────
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'rol') {
+    document.getElementById('panelCodigos').hidden = (e.data.value !== 'gerencia');
+  }
+});
 
 // ── Cargar tabla de códigos del sistema ──────────────────
 document.getElementById('codigosInput').addEventListener('change', e => {

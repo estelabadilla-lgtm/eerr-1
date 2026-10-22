@@ -1563,6 +1563,10 @@ function showTab(name) {
   document.querySelector('.toolbar').style.display = (name === 'flujo_caja' || name === 'cartera' || name === 'libro_ventas') ? 'none' : '';
   if (name === 'graficos') renderCharts();
   if (name === 'seguros' && !SEG_LOADED) segInit();
+  if (name === 'nv_retail') {
+    const iframe = document.querySelector('#tab-nv_retail iframe');
+    if (iframe) iframe.contentWindow.postMessage({ type: 'rol', value: CURRENT_ROLE }, '*');
+  }
 }
 
 function setLoading(show, msg = '') {

@@ -548,7 +548,7 @@ function mostrarPreview() {
     tr.innerHTML = `
       <td><button onclick="eliminarFila(${i})" style="border:none;background:none;cursor:pointer;color:var(--crit);font-size:16px;padding:0 4px;line-height:1" title="Eliminar">✕</button></td>
       <td style="color:var(--muted);font-size:12px">${i+1}</td>
-      <td style="font-size:10px;color:var(--muted);white-space:nowrap;display:${mostrarSkuRetailer?'':'none'};max-width:60px;overflow:hidden">${escH(p.skuRetailer||'')}</td>
+      <td style="font-size:10px;color:var(--muted);display:${mostrarSkuRetailer?'':'none'};width:58px;max-width:58px;padding:0 2px;overflow:hidden;text-overflow:ellipsis">${escH(p.skuRetailer||'')}</td>
       <td><input type="text" value="${escH(p.sku)}" data-field="sku" data-idx="${i}" style="width:130px;padding:2px 4px;border:1px solid ${p.skuOk === false ? 'var(--crit)' : 'var(--border)'};border-radius:4px;font:inherit;font-size:12px;font-family:monospace;background:var(--surface);color:${p.skuOk === false ? 'var(--crit)' : 'var(--ink)'}" title="${p.skuOk === false ? '⚠️ Código no encontrado en tabla del sistema' : ''}"></td>
       <td><input type="text" value="${escH(p.desc)}" data-field="desc" data-idx="${i}" style="width:180px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:inherit;font-size:12px;background:var(--surface);color:var(--ink)"></td>
       <td style="font-size:10px;color:var(--muted);white-space:nowrap">${escH(p.ocNum||'')}</td>

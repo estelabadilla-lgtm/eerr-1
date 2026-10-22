@@ -183,6 +183,12 @@ const RETAILERS = {
 };
 const NV_MAX = 30; // máx productos por NV
 
+// Mapeo fijo de códigos retail → código sistema (equivalencias conocidas)
+const CODIGOS_EXCEPCIONES = {
+  'EK-AC4-40':  'EK-AC4HD-40',
+  'EK-AC4-25':  'EK-AC4HD-25',
+};
+
 let currentRetailer = 'imperial';
 let productos = []; // [{sku, desc, qty, precio, ocNum}]
 // Mapa de pareo: clave = valor numérico del código (sin ceros), valor = código completo del sistema
@@ -241,6 +247,10 @@ async function cargarCodigos(file) {
 // Parear SKU de la OC con el código correcto del sistema
 // Retorna { sku, encontrado }
 function parearSku(sku) {
+  // 0. Excepciones fijas conocidas (independiente de si hay tabla cargada)
+  const excepcion = CODIGOS_EXCEPCIONES[sku] || CODIGOS_EXCEPCIONES[sku.toUpperCase()];
+  if (excepcion) return { sku: excepcion, encontrado: true };
+
   if (!codigosCargados) return { sku, encontrado: true };
   // 1. Búsqueda numérica (maneja ceros faltantes: 9247 → 09247)
   const numKey = String(parseInt(sku, 10));

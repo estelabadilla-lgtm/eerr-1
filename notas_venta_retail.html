@@ -467,13 +467,6 @@ function parseSodimac(data) {
     if (!skuRaw || qty <= 0) continue;
     rows.push({ sku, skuOrig: skuRaw, skuOk: encontrado, skuRetailer, desc, qty, precio });
   }
-  // Ordenar: numéricos desc, luego los que terminan en 'x' al final
-  rows.sort((a, b) => {
-    const ax = /x$/i.test(a.skuRetailer), bx = /x$/i.test(b.skuRetailer);
-    if (ax !== bx) return ax ? 1 : -1;
-    const an = parseFloat(a.skuRetailer) || 0, bn = parseFloat(b.skuRetailer) || 0;
-    return bn - an;
-  });
   return { rows, ocNum };
 }
 
@@ -529,6 +522,16 @@ function mostrarPreview() {
   const total = productos.length;
   const nvMap = calcNvMap();
   const nvCount = nvMap.length ? nvMap[nvMap.length - 1] : 0;
+
+  // Ordenar por SKU Retailer numérico desc (x-codes al final) cuando aplica
+  if (currentRetailer === 'sodimac') {
+    productos.sort((a, b) => {
+      const ax = /x$/i.test(a.skuRetailer||''), bx = /x$/i.test(b.skuRetailer||'');
+      if (ax !== bx) return ax ? 1 : -1;
+      const an = parseFloat(a.skuRetailer) || 0, bn = parseFloat(b.skuRetailer) || 0;
+      return bn - an;
+    });
+  }
 
   document.getElementById('totalProds').textContent = total;
   tbody.innerHTML = '';

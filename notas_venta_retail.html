@@ -273,7 +273,7 @@ async function cargarCodigos(file) {
     codigosMap = {};
     let count = 0;
     for (const row of data) {
-      const raw = String(row[0] || '').trim();
+      const raw = String(row[1] || '').trim();
       if (!raw) continue;
       // clave 1: valor numérico sin ceros (para códigos como 9247 → 09247)
       const numKey = String(parseInt(raw, 10));

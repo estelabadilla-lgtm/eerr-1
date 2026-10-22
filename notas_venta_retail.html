@@ -433,7 +433,7 @@ function parseImperial(data) {
 }
 
 // ── Sodimac: fila 0=headers, datos desde fila 1 ──────────
-// Col1=N°OC, Col6=SKU Retailer, Col8=Fecha, Col21=VIN/SKU, Col36=Costo(precio), Col40=Unidades compradas
+// Col1=N°OC, Col19=SKU Retailer (col T), Col21=VIN/SKU, Col36=Costo(precio), Col40=Unidades compradas
 function parseSodimac(data) {
   const rows = [];
   let ocNum = '';
@@ -442,7 +442,7 @@ function parseSodimac(data) {
     if (i === 1) ocNum = String(r[1] || '').trim();
     const skuRaw     = String(r[21] || '').trim();
     const { sku, encontrado } = parearSku(skuRaw);
-    const skuRetailer= String(r[6]  || '').trim();
+    const skuRetailer= String(r[19] || '').trim();
     const desc       = String(r[20] || '').trim();
     const qty        = Number(r[40]) || 0;
     const precio     = Number(r[36]) || 0;

@@ -125,7 +125,10 @@ tr:hover td{background:var(--hover)}
 
   <!-- 3. Vista previa de productos -->
   <div class="panel" id="previewPanel" hidden>
-    <h2>3. Productos en la OC (<span id="totalProds">0</span> ítems)</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h2 style="margin:0">3. Productos en la OC (<span id="totalProds">0</span> ítems)</h2>
+      <button id="btnDeshacer" class="btn btn-outline" onclick="deshacerEliminar()" disabled style="font-size:13px;padding:6px 14px">↩ Deshacer</button>
+    </div>
     <div class="tbl-wrap">
       <table>
         <thead>
@@ -346,6 +349,7 @@ async function handleFiles(fileList) {
     if (!allRows.length) throw new Error('No se encontraron productos en los archivos.');
 
     productos = allRows;
+    papelera = [];
     const ocs = [...new Set(allRows.map(r => r.ocNum).filter(Boolean))];
     mostrarPreview();
     dropZone.classList.add('ok');
@@ -641,14 +645,35 @@ async function generarNV() {
 }
 
 // ── Eliminar fila ────────────────────────────────────────
+let papelera = []; // [{producto, idx}] — historial de eliminados
+
 function eliminarFila(idx) {
+  papelera.push({ producto: { ...productos[idx] }, idx });
   productos.splice(idx, 1);
+  actualizarBtnDeshacer();
   if (!productos.length) {
     document.getElementById('previewPanel').hidden = true;
     document.getElementById('configPanel').hidden = true;
     return;
   }
   mostrarPreview();
+}
+
+function deshacerEliminar() {
+  if (!papelera.length) return;
+  const { producto, idx } = papelera.pop();
+  // Reinsertar en la posición original (o al final si ya no cabe)
+  const pos = Math.min(idx, productos.length);
+  productos.splice(pos, 0, producto);
+  actualizarBtnDeshacer();
+  mostrarPreview();
+}
+
+function actualizarBtnDeshacer() {
+  const btn = document.getElementById('btnDeshacer');
+  if (!btn) return;
+  btn.disabled = papelera.length === 0;
+  btn.textContent = papelera.length ? `↩ Deshacer (${papelera.length})` : '↩ Deshacer';
 }
 
 // ── Helpers ──────────────────────────────────────────────

@@ -611,7 +611,7 @@ async function generarNV() {
       row.getCell(6).value  = ret.col6;
       row.getCell(7).value  = ret.cod;
       const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
-      row.getCell(36).value = p.sku;
+      const c36 = row.getCell(36); c36.value = p.sku; c36.numFmt = '@';
       row.getCell(38).value = p.qty;
       row.getCell(39).value = p.precio;
     });

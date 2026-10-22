@@ -91,6 +91,17 @@ tr:hover td{background:var(--hover)}
     </div>
   </header>
 
+  <!-- 0. Tabla de códigos -->
+  <div class="panel">
+    <h2>0. Tabla de Códigos del Sistema <span id="codigosStatus" style="font-size:12px;font-weight:400;color:var(--muted)">(no cargada)</span></h2>
+    <div style="font-size:12px;color:var(--ink2);margin-bottom:10px">Carga el archivo <strong>codigos en sistema.xlsx</strong> una sola vez. Se usará para parear los códigos de la OC con los códigos correctos de Softland.</div>
+    <label class="drop" id="dropCodigos" for="codigosInput" style="padding:16px 20px">
+      <span class="d1" style="font-size:20px">📋</span>
+      <span id="codigosLabel" class="d2">Arrastra el Excel de códigos o haz clic para elegir</span>
+      <input type="file" id="codigosInput" accept=".xlsx,.xls">
+    </label>
+  </div>
+
   <!-- 1. Seleccionar retailer -->
   <div class="panel">
     <h2>1. Selecciona el Retailer</h2>
@@ -174,6 +185,55 @@ const NV_MAX = 30; // máx productos por NV
 
 let currentRetailer = 'imperial';
 let productos = []; // [{sku, desc, qty, precio, ocNum}]
+// Mapa de pareo: clave = valor numérico del código (sin ceros), valor = código completo del sistema
+let codigosMap = {}; // e.g. { '9247': '09247', '140814': '140814' }
+let codigosCargados = false;
+
+// ── Cargar tabla de códigos del sistema ──────────────────
+document.getElementById('codigosInput').addEventListener('change', e => {
+  if (e.target.files[0]) cargarCodigos(e.target.files[0]);
+});
+const dropCodigos = document.getElementById('dropCodigos');
+dropCodigos.addEventListener('dragover', e => { e.preventDefault(); dropCodigos.classList.add('over'); });
+dropCodigos.addEventListener('dragleave', () => dropCodigos.classList.remove('over'));
+dropCodigos.addEventListener('drop', e => {
+  e.preventDefault(); dropCodigos.classList.remove('over');
+  if (e.dataTransfer.files[0]) cargarCodigos(e.dataTransfer.files[0]);
+});
+
+async function cargarCodigos(file) {
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array', raw: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    codigosMap = {};
+    let count = 0;
+    for (const row of data) {
+      const raw = String(row[0] || '').trim();
+      if (!raw) continue;
+      // clave = valor numérico (quitar ceros), valor = código completo
+      const key = String(parseInt(raw, 10));
+      if (key !== 'NaN') { codigosMap[key] = raw; count++; }
+    }
+    codigosCargados = true;
+    document.getElementById('codigosLabel').textContent = `✅ ${file.name} — ${count} códigos cargados`;
+    document.getElementById('codigosStatus').textContent = `(${count} códigos)`;
+    document.getElementById('codigosStatus').style.color = 'var(--good-ink)';
+    dropCodigos.classList.add('ok');
+  } catch(err) {
+    document.getElementById('codigosStatus').textContent = '(error al cargar)';
+    document.getElementById('codigosStatus').style.color = 'var(--crit)';
+    console.error(err);
+  }
+}
+
+// Parear SKU de la OC con el código correcto del sistema
+function parearSku(sku) {
+  if (!codigosCargados) return sku;
+  const key = String(parseInt(sku, 10));
+  return codigosMap[key] || sku; // si no encuentra, usa el original
+}
 
 // ── Seleccionar retailer ─────────────────────────────────
 function selRetailer(name, btn) {
@@ -274,11 +334,12 @@ function parseImperial(data) {
   for (let i = 1; i < data.length; i++) {
     const r = data[i];
     if (i === 1) ocNum = String(r[0] || '').trim();
-    const sku   = String(r[16] || '').trim();
+    const skuRaw= String(r[16] || '').trim();
+    const sku   = parearSku(skuRaw);
     const desc  = String(r[17] || '').trim();
     const qty   = Number(r[14]) || 0;
     const precio= Number(r[18]) || 0;
-    if (!sku || qty <= 0) continue;
+    if (!skuRaw || qty <= 0) continue;
     rows.push({ sku, desc, qty, precio });
   }
   return { rows, ocNum };
@@ -292,11 +353,12 @@ function parseSodimac(data) {
   for (let i = 1; i < data.length; i++) {
     const r = data[i];
     if (i === 1) ocNum = String(r[1] || '').trim();
-    const sku   = String(r[21] || '').trim();
+    const skuRaw= String(r[21] || '').trim();
+    const sku   = parearSku(skuRaw);
     const desc  = String(r[20] || '').trim();
     const qty   = Number(r[40]) || 0;
     const precio= Number(r[36]) || 0;
-    if (!sku || qty <= 0) continue;
+    if (!skuRaw || qty <= 0) continue;
     rows.push({ sku, desc, qty, precio });
   }
   return { rows, ocNum };
@@ -311,11 +373,12 @@ function parseConstrumart(data) {
   for (let i = 1; i < data.length; i++) {
     const r = data[i];
     if (i === 1) ocNum = String(r[0] || '').trim();
-    const sku   = String(r[16] || '').trim();
+    const skuRaw= String(r[16] || '').trim();
+    const sku   = parearSku(skuRaw);
     const desc  = String(r[17] || '').trim();
     const qty   = Math.round(toNum(r[31]));
     const precio= Math.round(toNum(r[20]));
-    if (!sku || qty <= 0) continue;
+    if (!skuRaw || qty <= 0) continue;
     rows.push({ sku, desc, qty, precio });
   }
   return { rows, ocNum };

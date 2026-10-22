@@ -137,6 +137,7 @@ tr:hover td{background:var(--hover)}
         <thead>
           <tr>
             <th>#</th>
+            <th id="thSkuRetailer">SKU Retailer</th>
             <th>SKU ✎</th>
             <th>Descripción ✎</th>
             <th>OC</th>
@@ -149,6 +150,11 @@ tr:hover td{background:var(--hover)}
         </thead>
         <tbody id="prodTbody"></tbody>
       </table>
+    </div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end">
+      <button class="btn btn-primary" onclick="document.getElementById('configPanel').scrollIntoView({behavior:'smooth'});document.getElementById('configPanel').hidden=false" id="btnIrGenerar">
+        Configurar y generar NV →
+      </button>
     </div>
   </div>
 
@@ -424,21 +430,29 @@ function parseImperial(data) {
 }
 
 // ── Sodimac: fila 0=headers, datos desde fila 1 ──────────
-// Col1=N°OC, Col8=Fecha, Col21=VIN/SKU, Col36=Costo(precio), Col40=Unidades compradas
+// Col1=N°OC, Col6=SKU Retailer, Col8=Fecha, Col21=VIN/SKU, Col36=Costo(precio), Col40=Unidades compradas
 function parseSodimac(data) {
   const rows = [];
   let ocNum = '';
   for (let i = 1; i < data.length; i++) {
     const r = data[i];
     if (i === 1) ocNum = String(r[1] || '').trim();
-    const skuRaw= String(r[21] || '').trim();
+    const skuRaw     = String(r[21] || '').trim();
     const { sku, encontrado } = parearSku(skuRaw);
-    const desc  = String(r[20] || '').trim();
-    const qty   = Number(r[40]) || 0;
-    const precio= Number(r[36]) || 0;
+    const skuRetailer= String(r[6]  || '').trim();
+    const desc       = String(r[20] || '').trim();
+    const qty        = Number(r[40]) || 0;
+    const precio     = Number(r[36]) || 0;
     if (!skuRaw || qty <= 0) continue;
-    rows.push({ sku, skuOrig: skuRaw, skuOk: encontrado, desc, qty, precio });
+    rows.push({ sku, skuOrig: skuRaw, skuOk: encontrado, skuRetailer, desc, qty, precio });
   }
+  // Ordenar: numéricos desc, luego los que terminan en 'x' al final
+  rows.sort((a, b) => {
+    const ax = /x$/i.test(a.skuRetailer), bx = /x$/i.test(b.skuRetailer);
+    if (ax !== bx) return ax ? 1 : -1;
+    const an = parseFloat(a.skuRetailer) || 0, bn = parseFloat(b.skuRetailer) || 0;
+    return bn - an;
+  });
   return { rows, ocNum };
 }
 
@@ -497,10 +511,14 @@ function mostrarPreview() {
 
   document.getElementById('totalProds').textContent = total;
   tbody.innerHTML = '';
+  // Columna SKU Retailer solo visible para Sodimac
+  const mostrarSkuRetailer = currentRetailer === 'sodimac';
+  document.getElementById('thSkuRetailer').style.display = mostrarSkuRetailer ? '' : 'none';
 
   function renderFila(tr, p, i) {
     tr.innerHTML = `
       <td>${i+1}</td>
+      <td style="font-size:12px;color:var(--muted);white-space:nowrap;display:${mostrarSkuRetailer?'':'none'}">${escH(p.skuRetailer||'')}</td>
       <td><input type="text" value="${escH(p.sku)}" data-field="sku" data-idx="${i}" style="width:130px;padding:2px 4px;border:1px solid ${p.skuOk === false ? 'var(--crit)' : 'var(--border)'};border-radius:4px;font:inherit;font-size:12px;font-family:monospace;background:var(--surface);color:${p.skuOk === false ? 'var(--crit)' : 'var(--ink)'}" title="${p.skuOk === false ? '⚠️ Código no encontrado en tabla del sistema' : ''}"></td>
       <td><input type="text" value="${escH(p.desc)}" data-field="desc" data-idx="${i}" style="width:180px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:inherit;font-size:12px;background:var(--surface);color:var(--ink)"></td>
       <td style="font-size:11px;color:var(--muted)">${escH(p.ocNum||'')}</td>

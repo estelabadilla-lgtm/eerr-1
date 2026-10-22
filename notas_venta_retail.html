@@ -247,9 +247,11 @@ async function cargarCodigos(file) {
 // Parear SKU de la OC con el código correcto del sistema
 // Retorna { sku, encontrado }
 function parearSku(sku) {
-  // 0. Excepciones fijas conocidas (independiente de si hay tabla cargada)
-  const excepcion = CODIGOS_EXCEPCIONES[sku] || CODIGOS_EXCEPCIONES[sku.toUpperCase()];
-  if (excepcion) return { sku: excepcion, encontrado: true };
+  // 0. Excepciones fijas conocidas (solo Imperial)
+  if (currentRetailer === 'imperial') {
+    const excepcion = CODIGOS_EXCEPCIONES[sku] || CODIGOS_EXCEPCIONES[sku.toUpperCase()];
+    if (excepcion) return { sku: excepcion, encontrado: true };
+  }
 
   if (!codigosCargados) return { sku, encontrado: true };
   // 1. Búsqueda numérica (maneja ceros faltantes: 9247 → 09247)

@@ -152,6 +152,10 @@ tr:hover td{background:var(--hover)}
         <label class="flabel">Fecha de Entrega</label>
         <input type="date" id="nvFechaEntrega">
       </div>
+      <div class="form-group">
+        <label class="flabel">Nombre de Contacto</label>
+        <input type="text" id="nvContacto" placeholder="Nombre del contacto" style="width:200px">
+      </div>
       <button class="btn btn-primary" id="btnGenerar" onclick="generarNV()" disabled>⬇ Descargar NV(s).xlsx</button>
     </div>
     <div class="status" id="genStatus"></div>
@@ -162,9 +166,9 @@ tr:hover td{background:var(--hover)}
 // ── Constantes por retailer ──────────────────────────────
 // col6=Código Cliente, cod=Código Vendedor (col7)
 const RETAILERS = {
-  imperial:   { col6: 76821330,  cod: 21, label: 'Imperial',   zipOk: true  },
-  sodimac:    { col6: 96792430,  cod: 23, label: 'Sodimac',    zipOk: false },
-  construmart:{ col6: 905114600, cod: 13, label: 'Construmart', zipOk: false },
+  imperial:   { col6: 76821330,  cod: 21, label: 'Imperial',    zipOk: true,  contacto: 'Mauricio del Rio' },
+  sodimac:    { col6: 96792430,  cod: 23, label: 'Sodimac',     zipOk: false, contacto: '' },
+  construmart:{ col6: 905114600, cod: 13, label: 'Construmart', zipOk: false, contacto: '' },
 };
 const NV_MAX = 30; // máx productos por NV
 
@@ -415,6 +419,7 @@ function mostrarConfigPanel(nvCount) {
   const hoy = new Date();
   document.getElementById('nvFecha').value = hoy.toISOString().slice(0,10);
   document.getElementById('nvFechaEntrega').value = hoy.toISOString().slice(0,10);
+  document.getElementById('nvContacto').value = RETAILERS[currentRetailer].contacto || '';
 
   panel.hidden = false;
 
@@ -445,6 +450,7 @@ async function generarNV() {
   const nvBase = parseInt(document.getElementById('nvNum').value);
   const nvFecha = document.getElementById('nvFecha').value;
   const nvFechaEntrega = document.getElementById('nvFechaEntrega').value;
+  const nvContacto = document.getElementById('nvContacto').value.trim();
   if (!nvBase || !nvFecha || !nvFechaEntrega) {
     setStatus('genStatus', '❌ Ingresa el número de NV, la fecha y la fecha de entrega.', 'err');
     return;
@@ -471,6 +477,7 @@ async function generarNV() {
       row.getCell(1).value  = nvNum;
       const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
       const c3 = row.getCell(3); c3.value = dateEntrega; c3.numFmt = 'DD-MM-YYYY';
+      if (nvContacto) row.getCell(13).value = nvContacto;
       if (p.ocNum) row.getCell(5).value = p.ocNum;
       row.getCell(6).value  = ret.col6;
       row.getCell(7).value  = ret.cod;

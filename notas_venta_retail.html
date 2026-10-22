@@ -236,10 +236,12 @@ async function cargarCodigos(file) {
 }
 
 // Parear SKU de la OC con el código correcto del sistema
+// Retorna { sku, encontrado }
 function parearSku(sku) {
-  if (!codigosCargados) return sku;
+  if (!codigosCargados) return { sku, encontrado: true };
   const key = String(parseInt(sku, 10));
-  return codigosMap[key] || sku; // si no encuentra, usa el original
+  if (codigosMap[key]) return { sku: codigosMap[key], encontrado: true };
+  return { sku, encontrado: false };
 }
 
 // ── Seleccionar retailer ─────────────────────────────────
@@ -298,7 +300,15 @@ async function handleFile(file) {
     mostrarPreview();
     dropZone.classList.add('ok');
     document.getElementById('dropLabel').textContent = `✅ ${file.name} — ${allRows.length} producto(s) cargados`;
-    setStatus('loadStatus', `✅ ${allRows.length} productos leídos. ${ocs.length > 1 ? ocs.length + ' OC: ' + ocs.join(', ') : 'OC N° ' + (ocs[0] || '–')}`, 'ok');
+    // Alerta de códigos no encontrados
+    const noEncontrados = codigosCargados ? allRows.filter(r => !r.skuOk) : [];
+    if (noEncontrados.length) {
+      const lista = [...new Set(noEncontrados.map(r => r.skuOrig))].join(', ');
+      setStatus('loadStatus', `⚠️ ${noEncontrados.length} producto(s) con código NO encontrado en la tabla del sistema: ${lista}. Revisa la tabla de códigos antes de generar el Excel.`, 'err');
+      document.getElementById('btnGenerar').disabled = true;
+    } else {
+      setStatus('loadStatus', `✅ ${allRows.length} productos leídos. ${ocs.length > 1 ? ocs.length + ' OC: ' + ocs.join(', ') : 'OC N° ' + (ocs[0] || '–')}`, 'ok');
+    }
   } catch(err) {
     setStatus('loadStatus', '❌ ' + err.message, 'err');
     console.error(err);
@@ -342,12 +352,12 @@ function parseImperial(data) {
     const r = data[i];
     if (i === 1) ocNum = String(r[0] || '').trim();
     const skuRaw= String(r[16] || '').trim();
-    const sku   = parearSku(skuRaw);
+    const { sku, encontrado } = parearSku(skuRaw);
     const desc  = String(r[17] || '').trim();
     const qty   = Number(r[14]) || 0;
     const precio= Number(r[18]) || 0;
     if (!skuRaw || qty <= 0) continue;
-    rows.push({ sku, desc, qty, precio });
+    rows.push({ sku, skuOrig: skuRaw, skuOk: encontrado, desc, qty, precio });
   }
   return { rows, ocNum };
 }
@@ -361,12 +371,12 @@ function parseSodimac(data) {
     const r = data[i];
     if (i === 1) ocNum = String(r[1] || '').trim();
     const skuRaw= String(r[21] || '').trim();
-    const sku   = parearSku(skuRaw);
+    const { sku, encontrado } = parearSku(skuRaw);
     const desc  = String(r[20] || '').trim();
     const qty   = Number(r[40]) || 0;
     const precio= Number(r[36]) || 0;
     if (!skuRaw || qty <= 0) continue;
-    rows.push({ sku, desc, qty, precio });
+    rows.push({ sku, skuOrig: skuRaw, skuOk: encontrado, desc, qty, precio });
   }
   return { rows, ocNum };
 }
@@ -381,12 +391,12 @@ function parseConstrumart(data) {
     const r = data[i];
     if (i === 1) ocNum = String(r[0] || '').trim();
     const skuRaw= String(r[16] || '').trim();
-    const sku   = parearSku(skuRaw);
+    const { sku, encontrado } = parearSku(skuRaw);
     const desc  = String(r[17] || '').trim();
     const qty   = Math.round(toNum(r[31]));
     const precio= Math.round(toNum(r[20]));
     if (!skuRaw || qty <= 0) continue;
-    rows.push({ sku, desc, qty, precio });
+    rows.push({ sku, skuOrig: skuRaw, skuOk: encontrado, desc, qty, precio });
   }
   return { rows, ocNum };
 }
@@ -430,7 +440,7 @@ function mostrarPreview() {
   function renderFila(tr, p, i) {
     tr.innerHTML = `
       <td>${i+1}</td>
-      <td><code>${escH(p.sku)}</code></td>
+      <td><code style="${p.skuOk === false ? 'color:var(--crit);font-weight:700' : ''}" title="${p.skuOk === false ? '⚠️ Código no encontrado en tabla del sistema (original: ' + escH(p.skuOrig||p.sku) + ')' : ''}">${escH(p.sku)}${p.skuOk === false ? ' ⚠️' : ''}</code></td>
       <td>${escH(p.desc)}</td>
       <td style="font-size:11px;color:var(--muted)">${escH(p.ocNum||'')}</td>
       <td class="num"><input type="number" min="1" value="${p.qty}" style="width:72px;text-align:right;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:inherit;background:var(--surface);color:var(--ink)" data-field="qty" data-idx="${i}"></td>

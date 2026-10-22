@@ -184,9 +184,20 @@ const RETAILERS = {
 const NV_MAX = 30; // máx productos por NV
 
 // Mapeo fijo de códigos retail → código sistema (equivalencias conocidas)
+// 'todos' aplica a los 3 retailers; los demás solo al retailer indicado
 const CODIGOS_EXCEPCIONES = {
-  'EK-AC4-40':  'EK-AC4HD-40',
-  'EK-AC4-25':  'EK-AC4HD-25',
+  todos: {
+    '9246':  '09257',
+    '09246': '09257',
+    '9247':  '09258',
+    '09247': '09258',
+  },
+  imperial: {
+    'EK-AC4-40': 'EK-AC4HD-40',
+    'EK-AC4-25': 'EK-AC4HD-25',
+  },
+  sodimac:    {},
+  construmart:{},
 };
 
 let currentRetailer = 'imperial';
@@ -247,11 +258,11 @@ async function cargarCodigos(file) {
 // Parear SKU de la OC con el código correcto del sistema
 // Retorna { sku, encontrado }
 function parearSku(sku) {
-  // 0. Excepciones fijas conocidas (solo Imperial)
-  if (currentRetailer === 'imperial') {
-    const excepcion = CODIGOS_EXCEPCIONES[sku] || CODIGOS_EXCEPCIONES[sku.toUpperCase()];
-    if (excepcion) return { sku: excepcion, encontrado: true };
-  }
+  // 0. Excepciones fijas conocidas (todos los retailers + específicas por retailer)
+  const mapTodos = CODIGOS_EXCEPCIONES.todos;
+  const mapRetailer = CODIGOS_EXCEPCIONES[currentRetailer] || {};
+  const excepcion = mapRetailer[sku] || mapRetailer[sku.toUpperCase()] || mapTodos[sku] || mapTodos[sku.toUpperCase()];
+  if (excepcion) return { sku: excepcion, encontrado: true };
 
   if (!codigosCargados) return { sku, encontrado: true };
   // 1. Búsqueda numérica (maneja ceros faltantes: 9247 → 09247)

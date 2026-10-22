@@ -118,7 +118,7 @@ tr:hover td{background:var(--hover)}
     <label class="drop" id="dropZone" for="fileInput">
       <span class="d1">📂</span>
       <span id="dropLabel" class="d2">Arrastra el archivo ZIP o XLS de Imperial, o haz clic para elegir</span>
-      <input type="file" id="fileInput" accept=".zip,.xls,.xlsx">
+      <input type="file" id="fileInput" accept=".zip,.xls,.xlsx" multiple>
     </label>
     <div class="status" id="loadStatus"></div>
   </div>
@@ -320,33 +320,37 @@ dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
 dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('over');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
 });
-fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFiles(e.target.files); });
 
-// ── Cargar archivo ───────────────────────────────────────
-async function handleFile(file) {
-  setStatus('loadStatus', '⏳ Leyendo archivo…', '');
+// ── Cargar archivo(s) ────────────────────────────────────
+async function handleFiles(fileList) {
+  const files = Array.from(fileList).sort((a, b) => a.name.localeCompare(b.name));
+  setStatus('loadStatus', `⏳ Leyendo ${files.length} archivo(s)…`, '');
   try {
     let allRows = [];
-    const name = file.name.toLowerCase();
-    if (name.endsWith('.zip')) {
-      allRows = await parseZip(file);
-    } else if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
-      const buf = await file.arrayBuffer();
-      const res = parseXls(buf, currentRetailer);
-      allRows = res.rows.map(r => ({ ...r, ocNum: res.ocNum }));
-    } else {
-      throw new Error('Formato no reconocido. Sube un ZIP, XLS o XLSX.');
+    for (const file of files) {
+      const name = file.name.toLowerCase();
+      if (name.endsWith('.zip')) {
+        const rows = await parseZip(file);
+        rows.forEach(r => allRows.push(r));
+      } else if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
+        const buf = await file.arrayBuffer();
+        const res = parseXls(buf, currentRetailer);
+        res.rows.forEach(r => allRows.push({ ...r, ocNum: res.ocNum }));
+      } else {
+        throw new Error(`Formato no reconocido: ${file.name}. Sube ZIP, XLS o XLSX.`);
+      }
     }
-    if (!allRows.length) throw new Error('No se encontraron productos en el archivo.');
+    if (!allRows.length) throw new Error('No se encontraron productos en los archivos.');
 
     productos = allRows;
     const ocs = [...new Set(allRows.map(r => r.ocNum).filter(Boolean))];
     mostrarPreview();
     dropZone.classList.add('ok');
-    document.getElementById('dropLabel').textContent = `✅ ${file.name} — ${allRows.length} producto(s) cargados`;
+    const nombresArchivos = files.map(f => f.name).join(', ');
+    document.getElementById('dropLabel').textContent = `✅ ${files.length > 1 ? files.length + ' archivos' : files[0].name} — ${allRows.length} producto(s) cargados`;
     // Alerta de códigos no encontrados
     const noEncontrados = codigosCargados ? allRows.filter(r => !r.skuOk) : [];
     if (noEncontrados.length) {

@@ -148,6 +148,10 @@ tr:hover td{background:var(--hover)}
         <label class="flabel">Fecha de la NV</label>
         <input type="date" id="nvFecha">
       </div>
+      <div class="form-group">
+        <label class="flabel">Fecha de Entrega</label>
+        <input type="date" id="nvFechaEntrega">
+      </div>
       <button class="btn btn-primary" id="btnGenerar" onclick="generarNV()" disabled>⬇ Descargar NV(s).xlsx</button>
     </div>
     <div class="status" id="genStatus"></div>
@@ -410,6 +414,7 @@ function mostrarConfigPanel(nvCount) {
   // Fecha por defecto = hoy
   const hoy = new Date();
   document.getElementById('nvFecha').value = hoy.toISOString().slice(0,10);
+  document.getElementById('nvFechaEntrega').value = hoy.toISOString().slice(0,10);
 
   panel.hidden = false;
 
@@ -439,14 +444,17 @@ function actualizarChips() {
 async function generarNV() {
   const nvBase = parseInt(document.getElementById('nvNum').value);
   const nvFecha = document.getElementById('nvFecha').value;
-  if (!nvBase || !nvFecha) {
-    setStatus('genStatus', '❌ Ingresa el número de NV y la fecha.', 'err');
+  const nvFechaEntrega = document.getElementById('nvFechaEntrega').value;
+  if (!nvBase || !nvFecha || !nvFechaEntrega) {
+    setStatus('genStatus', '❌ Ingresa el número de NV, la fecha y la fecha de entrega.', 'err');
     return;
   }
 
   const ret = RETAILERS[currentRetailer];
   const [y,m,d] = nvFecha.split('-').map(Number);
   const dateVal = new Date(y, m-1, d);
+  const [ye,me,de] = nvFechaEntrega.split('-').map(Number);
+  const dateEntrega = new Date(ye, me-1, de);
   const nvMap = calcNvMap();
   const nvCount = nvMap.length ? nvMap[nvMap.length - 1] : 0;
 
@@ -462,6 +470,7 @@ async function generarNV() {
       const row = ws.getRow(i + 1);
       row.getCell(1).value  = nvNum;
       const c2 = row.getCell(2); c2.value = dateVal; c2.numFmt = 'DD-MM-YYYY';
+      const c3 = row.getCell(3); c3.value = dateEntrega; c3.numFmt = 'DD-MM-YYYY';
       if (p.ocNum) row.getCell(5).value = p.ocNum;
       row.getCell(6).value  = ret.col6;
       row.getCell(7).value  = ret.cod;

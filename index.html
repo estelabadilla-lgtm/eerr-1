@@ -1257,6 +1257,11 @@ const CAT = {
   '40':'Costos y Gastos','41':'Gastos Financieros'
 };
 const EERR_CATS = ['30','31','40','41'];
+// Ajustes fijos por cuenta: se suma este valor a cada mes con datos
+// (positivo = resta una provisión que ya está incluida en el mayor)
+const AJUSTES_FIJOS = {
+  '40-01-04-21': 2500000, // se separa provisión Acuerdo Comercial Prcion Anual
+};
 
 let DATA = null;
 let charts = {};
@@ -1683,8 +1688,18 @@ function renderEERR(meses) {
       rows += `<tr class="ppto-seccion"><td></td><td colspan="99">${row[1]}</td></tr>`;
     } else if (tipo === 's') {
       rows += `<tr class="ppto-sub"><td></td><td colspan="99">${row[1]}</td></tr>`;
+    } else if (tipo === 'F') {
+      // Fila de provisión fija: monto fijo por cada mes con datos
+      const monto = row[2];
+      const vals = meses.map(() => monto);
+      secVals.push(vals);
+      rows += `<tr class="ppto-cuenta">
+        <td></td><td>${row[1]}</td>${cells(vals)}</tr>`;
     } else if (tipo === 'c') {
-      const vals = getValsMes(row[1]);
+      let vals = getValsMes(row[1]);
+      // Ajuste fijo: restar provisión si la cuenta la tiene separada
+      const ajusteFijo = AJUSTES_FIJOS[row[1]];
+      if (ajusteFijo) vals = vals.map(v => v + ajusteFijo);
       const allZero = vals.every(v => v === 0);
       secVals.push(vals);
       rows += `<tr class="ppto-cuenta${allZero ? ' ppto-zero' : ''}">
@@ -2500,6 +2515,7 @@ const PPTO_STRUCT = [
   ['m',['40-01-01-01','40-01-01-21'],'Costo De Ventas'],
   ['c','40-01-01-10','Costo Venta Otros Articulos'],
   ['c','40-01-04-21','Acuerdo Comercial / Rebate'],
+  ['F','Acuerdo Comercial Prcion Anual',-2500000],
   ['c','40-02-08-01','Comision Mercadolibre Y Otros'],
   ['t','TOTAL COSTOS DE VENTAS'],
   ['R','MARGEN DE VENTAS',['30-01-01-02','30-01-01-10','30-01-01-21','40-01-01-01','40-01-01-10','40-01-01-21','40-01-04-21','40-02-08-01']],

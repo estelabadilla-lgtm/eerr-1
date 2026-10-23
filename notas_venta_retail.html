@@ -368,7 +368,7 @@ async function handleFiles(fileList, agregar = false) {
       } else if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
         const buf = await file.arrayBuffer();
         const res = parseXls(buf, currentRetailer);
-        res.rows.forEach(r => allRows.push({ ...r, ocNum: res.ocNum }));
+        res.rows.forEach(r => allRows.push({ ...r, ocNum: r.ocNum || res.ocNum }));
       } else {
         throw new Error(`Formato no reconocido: ${file.name}. Sube ZIP, XLS o XLSX.`);
       }
@@ -413,7 +413,7 @@ async function parseZip(file) {
   for (const f of xlsFiles) {
     const buf = await f.async('arraybuffer');
     const res = parseXls(buf, currentRetailer);
-    res.rows.forEach(r => allRows.push({ ...r, ocNum: res.ocNum }));
+    res.rows.forEach(r => allRows.push({ ...r, ocNum: r.ocNum || res.ocNum }));
   }
   return allRows;
 }

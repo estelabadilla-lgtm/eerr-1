@@ -476,18 +476,18 @@ function parseSodimac(data) {
 function parseConstrumart(data) {
   const toNum = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
   const rows = [];
-  let ocNum = '';
   for (let i = 1; i < data.length; i++) {
     const r = data[i];
-    if (i === 1) ocNum = String(r[0] || '').trim();
-    const skuRaw= String(r[16] || '').trim();
+    const ocNum  = String(r[0] || '').trim();
+    const skuRaw = String(r[16] || '').trim();
     const { sku, encontrado } = parearSku(skuRaw);
-    const desc  = String(r[17] || '').trim();
-    const qty   = Math.round(toNum(r[31]));
-    const precio= Math.round(toNum(r[20]));
+    const desc   = String(r[17] || '').trim();
+    const qty    = Math.round(toNum(r[31]));
+    const precio = Math.round(toNum(r[20]));
     if (!skuRaw || qty <= 0) continue;
-    rows.push({ sku, skuOrig: skuRaw, skuOk: encontrado, desc, qty, precio });
+    rows.push({ sku, skuOrig: skuRaw, skuOk: encontrado, desc, qty, precio, ocNum });
   }
+  const ocNum = rows.length ? rows[0].ocNum : '';
   return { rows, ocNum };
 }
 

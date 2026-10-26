@@ -682,8 +682,34 @@ bXls.addEventListener('click',async()=>{
 
 // ---------- Inicio ----------
 // Orden de carga: 1) Supabase (compartido), 2) data.json, 3) localStorage, 4) seed embebido.
+// Arma los datos desde /api/cartera (Softland) con las mismas reglas que parseClientes.
+function fromSoftland(json){
+  const rows=[],vc={},bl={};
+  for(const f of json.filas||[]){
+    const rut=String(f.rut??'').trim();const k=rk(rut);
+    if(k){const b=String(f.bl??'').trim().toUpperCase();if(b==='S')bl[k]='S';else if(!bl[k])bl[k]='N'}
+    if(!CUENTAS[f.cuenta])continue;
+    const vn=vname(f.vendedor);if(vn)(vc[k]=vc[k]||{})[vn]=(vc[k][vn]||0)+1;
+    const sal=Number(f.saldo);if(!(sal>=2))continue;
+    if(EXC.has(k))continue;
+    if(!f.fv)continue;
+    rows.push([rut,String(f.nombre??'').trim(),String(f.tipo??'').trim(),Math.round(Number(f.doc)),f.fv,Math.round(sal),f.cuenta,vn]);
+  }
+  for(const r of rows){if(r[7])continue;const m=vc[rk(r[0])];r[7]=m?Object.entries(m).sort((a,b)=>b[1]-a[1])[0][0]:SINV}
+  return {corte:json.corte,rows,bl,archivoClientes:'Softland',archivoBloqueados:'Softland (ficha del cliente)',actualizado:json.generado};
+}
+async function softlandLoad(){
+  try{
+    const r=await fetch('/api/cartera',{cache:'no-store'});if(!r.ok)return null;
+    const d=fromSoftland(await r.json());return d.rows.length?d:null;
+  }catch(e){return null}
+}
+
 const boot=async()=>{
   let d=null;
+  // 0) Softland en línea (datos al cierre de ayer)
+  d=await softlandLoad();
+  if(d){build(d);renderAll();return}
   // 1) Supabase — fuente compartida para todos los usuarios
   d=await sbLoad();
   // 2) data.json del servidor

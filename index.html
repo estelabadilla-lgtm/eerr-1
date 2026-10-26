@@ -1392,7 +1392,77 @@ async function cargarMayorDesdeSupabase() {
   }
 }
 
-function autoLoadMayor() {
+// Arma DATA (mismo formato que parseLibroMayor) desde /api/eerr, que lee Softland.
+function buildDataFromSoftland(json) {
+  const rows = [];
+  const saldosAnt = {};
+  for (const f of json.filas || []) {
+    const codigo = String(f.cuenta || '').trim();
+    if (!/^\d{2}-\d{2}-\d{2}-\d{2}$/.test(codigo)) continue;
+    const debe = Number(f.debe) || 0;
+    const haber = Number(f.haber) || 0;
+    const mes = Number(f.mes);
+    if (mes === 0) { // comprobante de apertura = saldo anterior
+      saldosAnt[codigo] = (saldosAnt[codigo] || 0) + (debe - haber);
+      continue;
+    }
+    if (!(mes >= 1 && mes <= 12)) continue;
+    let cc = String(f.cc || '').trim().toUpperCase();
+    if (!cc || /^0+$/.test(cc)) cc = 'SIN CC';
+    rows.push({
+      codigo,
+      nombre: String(f.nombre || '').trim(),
+      cat2: codigo.substring(0, 2),
+      mes, cc, debe, haber,
+      neto: haber - debe, // REGLA: HABER - DEBE
+      desc: '',
+      n: Number(f.n) || 0
+    });
+  }
+  const agg = {};
+  const mesDebeTotal = {}, mesHaberTotal = {};
+  for (const row of rows) {
+    const k = row.codigo;
+    if (!agg[k]) agg[k] = { codigo: row.codigo, nombre: row.nombre, cat2: row.cat2, meses: {}, debeM: {}, haberM: {}, ccMeses: {} };
+    agg[k].meses[row.mes]  = (agg[k].meses[row.mes]  || 0) + row.neto;
+    agg[k].debeM[row.mes]  = (agg[k].debeM[row.mes]  || 0) + row.debe;
+    agg[k].haberM[row.mes] = (agg[k].haberM[row.mes] || 0) + row.haber;
+    if (!agg[k].ccMeses[row.cc]) agg[k].ccMeses[row.cc] = {};
+    agg[k].ccMeses[row.cc][row.mes] = (agg[k].ccMeses[row.cc][row.mes] || 0) + row.neto;
+    mesDebeTotal[row.mes]  = (mesDebeTotal[row.mes]  || 0) + row.debe;
+    mesHaberTotal[row.mes] = (mesHaberTotal[row.mes] || 0) + row.haber;
+  }
+  const allCCs = [...new Set(rows.map(r => r.cc).filter(Boolean))].sort();
+  return { rows, cuentas: Object.values(agg), saldosAnt, mesDebeTotal, mesHaberTotal, ccs: allCCs };
+}
+
+async function cargarMayorDesdeSoftland() {
+  try {
+    const r = await fetch('/api/eerr', { cache: 'no-store' });
+    if (!r.ok) return false;
+    const json = await r.json();
+    const data = buildDataFromSoftland(json);
+    if (!data.rows.length) return false;
+    DATA = data;
+    const nMov = data.rows.reduce((s, x) => s + x.n, 0);
+    document.getElementById('status').textContent =
+      `✅ Softland ${json.anio} — ${nMov.toLocaleString('es-CL')} movimientos · datos al cierre de ayer`;
+    const elUlt = document.getElementById('ultima-carga');
+    if (elUlt) elUlt.style.display = 'none';
+    actualizarBotonesMeses();
+    renderAll();
+    setLoading(false);
+    return true;
+  } catch (e) {
+    console.error('Softland:', e);
+    return false;
+  }
+}
+
+async function autoLoadMayor() {
+  setLoading(true, 'Cargando datos de Softland…');
+  if (await cargarMayorDesdeSoftland()) return;
+  // Si la API no responde, sigue como antes: el mayor guardado por Contabilidad
   setLoading(true, 'Cargando mayor…');
   cargarMayorDesdeSupabase().then(res => {
     if (res) {

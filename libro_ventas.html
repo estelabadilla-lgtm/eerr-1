@@ -119,6 +119,9 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
     <h1>📒 Libro de Ventas</h1>
     <div class="asof" id="asof">Sin datos cargados</div>
   </div>
+  <div id="ultima-actualizacion" style="position:fixed;bottom:12px;right:16px;font-size:11px;color:var(--text3,#888);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:6px;padding:4px 10px;z-index:99;display:none">
+    🕐 Últ. actualización: <span id="fecha-ultima-act"></span>
+  </div>
   <div class="hactions">
     <button class="btn" id="bUpd">⬆ Cargar archivos CSV</button>
     <button class="btn sm" id="bXls" hidden>⬇ Excel</button>
@@ -397,6 +400,9 @@ bApply.addEventListener('click',()=>{
   const updRows=ROWS.filter(r=>mesesUpd.has(r.mes));
   pendingRows=null;
   try{localStorage.setItem(LS+'_upd',JSON.stringify(updRows));
+    const ts = new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem(LS+'_ts', ts);
+    mostrarUltimaAct(ts);
     msg.className='msg ok';msg.textContent='✓ Datos cargados correctamente.';
   }catch(e){msg.className='msg err';msg.textContent='Datos cargados (no se pudo guardar en el navegador).';}
   document.getElementById('upd').hidden=true;
@@ -866,6 +872,14 @@ document.getElementById('bRechPdf').addEventListener('click',()=>{
 // Resize chart on window resize
 let resizeT;window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(ROWS.length)renderChart();},150)});
 
+function mostrarUltimaAct(ts) {
+  const el = document.getElementById('ultima-actualizacion');
+  const sp = document.getElementById('fecha-ultima-act');
+  if (!ts) { el.style.display='none'; return; }
+  sp.textContent = ts;
+  el.style.display = 'block';
+}
+
 // Boot: cargar data_ventas.json (base) + localStorage (actualizaciones de los 2 últimos meses)
 (async()=>{
   // 1) Cargar base desde servidor
@@ -881,6 +895,8 @@ let resizeT;window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=
       ROWS=ROWS.filter(r=>!mesesUpd.has(r.mes)).concat(upd);
     }
   }catch(e){}
+  // Mostrar última actualización guardada
+  try { mostrarUltimaAct(localStorage.getItem(LS+'_ts') || ''); } catch(e){}
   renderAll();
 })();
 

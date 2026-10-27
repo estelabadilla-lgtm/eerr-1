@@ -391,7 +391,7 @@
     <div class="modal-head">
       <div>
         <h2 id="modalTitle">🏭 Detalle Proveedores Nacionales</h2>
-        <p>Al 12/09/2026 · Estado de cuenta auxiliares · Pagado 18/09/2026</p>
+        <p id="modalProvSub">Cargando desde Softland…</p>
       </div>
       <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
     </div>
@@ -495,7 +495,7 @@
       <h1>💼 Flujo de Caja · Empresa Grantt</h1>
       <p class="header-sub">Representaciones Grantt Limitada &nbsp;·&nbsp; General Velásquez 5720, San Bernardo</p>
     </div>
-    <span class="badge-date">📅 Al 20/09/2026</span>
+    <span class="badge-date" id="headerDateBadge">📅 Al 20/09/2026</span>
   </div>
   <div class="header-note">
     <span><span class="dot-sm" style="background:#ef4444"></span>Pagos urgentes (vencidos esta semana)</span>
@@ -1641,6 +1641,16 @@ async function fromSoftlandProveedores(){
     const kpiAmber = document.querySelector('.k-amber');
     if(kpiAmber) kpiAmber.querySelector('.kpi-val').textContent = fmt(grand);
     if(document.getElementById('provModal').classList.contains('open')) renderProvModal();
+
+    // Actualizar fechas en header y modal
+    if(data.corte){
+      const [y,m,d] = data.corte.split('-');
+      const fechaFmt = `${d}/${m}/${y}`;
+      const badge = document.getElementById('headerDateBadge');
+      if(badge) badge.textContent = `📅 Al ${fechaFmt}`;
+      const sub = document.getElementById('modalProvSub');
+      if(sub) sub.textContent = `Al ${fechaFmt} · Softland directo · ${map.size} proveedores`;
+    }
 
     const skipMsg = skipped > 0 ? ` · ${skipped} excluidas` : '';
     showToast(`✅ Proveedores desde Softland · ${(data.filas||[]).length - skipped} facturas${skipMsg}`);

@@ -397,8 +397,9 @@
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer">
+      <button id="provActualizarBtn" class="upload-btn" style="font-size:11px;cursor:pointer" title="Cargar datos desde Softland">🔄 Softland</button>
       <label class="upload-btn" title="Subir Excel de estado de cuenta proveedores" style="font-size:11px">
-        📂 Actualizar con Excel
+        📂 Excel
         <input type="file" id="provUpload" accept=".xlsx,.xls,.csv">
       </label>
       <div style="text-align:right">
@@ -1277,7 +1278,7 @@ document.getElementById('sodimacModal').addEventListener('click', e=>{
 });
 
 // ── PROVEEDORES MODAL ──
-const provData = [
+let provData = [
   {rut:'76566490', nombre:'TRANSPORTE DE CONTENEDORES CHILE S.A.(TLI)', facturas:[
     {folio:'FL-2779', vcto:'29/07/2026', saldo:6965393},
   ]},
@@ -1609,6 +1610,45 @@ document.getElementById('sodimacUpload').addEventListener('change', function(e){
   reader.readAsArrayBuffer(file);
 });
 
+// ── SOFTLAND: cargar proveedores ──
+async function fromSoftlandProveedores(){
+  try {
+    showToast('⏳ Cargando proveedores desde Softland…', true);
+    const r = await fetch('/api/proveedores');
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    if(data.error) throw new Error(data.error);
+
+    const map = new Map();
+    let skipped = 0;
+    (data.filas || []).forEach(f => {
+      const rk = normRut(f.rut || '');
+      if(PROV_EXCLUIDOS.has(rk)){ skipped++; return; }
+      const key = rk || String(f.rut||'—');
+      if(!map.has(key)) map.set(key, {rut: String(f.rut||'—'), nombre: String(f.nombre||'').trim(), facturas:[]});
+      const entry = map.get(key);
+      const fv = f.fv ? f.fv.split('-').reverse().join('/') : '—';
+      const folio = [String(f.tipo||'').trim(), String(f.doc||'')].filter(Boolean).join(' ');
+      entry.facturas.push({folio: folio||'—', vcto: fv, saldo: Math.round(Number(f.saldo)||0)});
+    });
+
+    provData.length = 0;
+    map.forEach(v => provData.push(v));
+
+    const grand = provData.reduce((s,p)=>s+p.facturas.reduce((ss,f)=>ss+f.saldo,0),0);
+    const totalEl = document.getElementById('provTotalVal');
+    if(totalEl) totalEl.textContent = fmt(grand);
+    const kpiAmber = document.querySelector('.k-amber');
+    if(kpiAmber) kpiAmber.querySelector('.kpi-val').textContent = fmt(grand);
+    if(document.getElementById('provModal').classList.contains('open')) renderProvModal();
+
+    const skipMsg = skipped > 0 ? ` · ${skipped} excluidas` : '';
+    showToast(`✅ Proveedores desde Softland · ${(data.filas||[]).length - skipped} facturas${skipMsg}`);
+  } catch(err) {
+    showToast('⚠ Error proveedores: ' + err.message, false);
+  }
+}
+
 // ── PROVEEDORES A EXCLUIR SIEMPRE (filtro permanente) ──
 const PROV_EXCLUIDOS = new Set([
   '55555555',  // PROVEEDOR EXTRANJERO
@@ -1624,6 +1664,11 @@ function normRut(r){
   return String(r||'').replace(/[\.\-\s]/g,'').replace(/k$/i,'').toUpperCase()
     .replace(/[^0-9]/g,'');
 }
+
+document.getElementById('provActualizarBtn').addEventListener('click', fromSoftlandProveedores);
+
+// Carga automática al abrir la página
+fromSoftlandProveedores();
 
 // ── PROVEEDORES EXCEL UPLOAD ──
 document.getElementById('provUpload').addEventListener('change', function(e){

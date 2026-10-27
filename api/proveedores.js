@@ -21,9 +21,8 @@ module.exports = async (req, res) => {
       FROM softland.cwmovim m
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
-      WHERE m.CpbAno = '${anio}'
+      WHERE m.CpbAno >= '${anio - 1}'
         AND c.CpbEst = 'V'
-        AND c.CpbNormaTrib = 'S'
         AND m.PctCod = '20-03-01-01'
     ),
     doc AS (

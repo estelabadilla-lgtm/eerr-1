@@ -1155,115 +1155,99 @@ document.getElementById('saveBanksBtn').addEventListener('click', saveBanks);
 document.getElementById('editBanksBtn').addEventListener('click', openBanksModal);
 
 // ── SODIMAC INGRESOS ──
-const sodimacWeeks = [
-  {
-    id:'s39', label:'Semana 39', rango:'22–28 sep 2026', cobro:'28/09/2026',
-    neto:135385416, ve:135385416, cd:0,
-    facturas:[
-      {tipo:'VE',folio:'VE-40410',vcto:'23/09/2026',monto:137183},
-      {tipo:'VE',folio:'VE-40411',vcto:'23/09/2026',monto:536303},
-      {tipo:'VE',folio:'VE-40412',vcto:'23/09/2026',monto:13585545},
-      {tipo:'VE',folio:'VE-40413',vcto:'23/09/2026',monto:128567},
-      {tipo:'VE',folio:'VE-40414',vcto:'23/09/2026',monto:45851203},
-      {tipo:'VE',folio:'VE-40422',vcto:'23/09/2026',monto:32342874},
-      {tipo:'VE',folio:'VE-40490',vcto:'26/09/2026',monto:14915858},
-      {tipo:'VE',folio:'VE-40491',vcto:'26/09/2026',monto:27887883},
-    ]
-  },
-  {
-    id:'s40', label:'Semana 40', rango:'29 sep–5 oct 2026', cobro:'05/10/2026',
-    neto:85609950, ve:85707161, cd:97211,
-    facturas:[
-      {tipo:'VE',folio:'VE-40508',vcto:'30/09/2026',monto:9628619},
-      {tipo:'VE',folio:'VE-40509',vcto:'30/09/2026',monto:28423753},
-      {tipo:'VE',folio:'VE-40561',vcto:'03/10/2026',monto:14325690},
-      {tipo:'VE',folio:'VE-40562',vcto:'03/10/2026',monto:33329099},
-      {tipo:'FL',folio:'FL-149436405',vcto:'29/09/2026',monto:-97211,proveedor:'CROSS DOCKING'},
-    ]
-  },
-  {
-    id:'s41', label:'Semana 41', rango:'6–12 oct 2026', cobro:'12/10/2026',
-    neto:73851507, ve:73851507, cd:0,
-    facturas:[
-      {tipo:'VE',folio:'VE-40571',vcto:'07/10/2026',monto:24735906},
-      {tipo:'VE',folio:'VE-40577',vcto:'07/10/2026',monto:169622},
-      {tipo:'VE',folio:'VE-40580',vcto:'07/10/2026',monto:11110060},
-      {tipo:'VE',folio:'VE-40638',vcto:'10/10/2026',monto:9338304},
-      {tipo:'VE',folio:'VE-40639',vcto:'10/10/2026',monto:28497615},
-    ]
-  },
-  {
-    id:'s42', label:'Semana 42', rango:'13–19 oct 2026', cobro:'19/10/2026',
-    neto:178348355, ve:178348355, cd:0,
-    facturas:[
-      {tipo:'VE',folio:'VE-40662',vcto:'14/10/2026',monto:11169078},
-      {tipo:'VE',folio:'VE-40663',vcto:'14/10/2026',monto:26808367},
-      {tipo:'VE',folio:'VE-40721',vcto:'17/10/2026',monto:34642608},
-      {tipo:'VE',folio:'VE-40722',vcto:'17/10/2026',monto:105728302},
-    ]
-  },
-];
+let sodimacData = [];
 
-// S39 = vigente (cobro próximo 28/09); S40-S42 = próximos
-const sodimacVigentes = sodimacWeeks.filter(w=>['s39'].includes(w.id));
-const sodimacProximos = sodimacWeeks.filter(w=>['s40','s41','s42'].includes(w.id));
-const allSod = [...sodimacVigentes,...sodimacProximos];
+function isoToDisplay(s){ if(!s||s==='—') return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
+function parseIso(s){ if(!s) return null; const [y,m,d]=s.split('-'); return new Date(+y,+m-1,+d); }
 
-const sodDiv = document.getElementById('sodimacIngresos');
-allSod.forEach(w=>{
-  const row = document.createElement('div');
-  row.className='sod-row';
-  const isPronto = ['s38','s39'].includes(w.id);
-  row.innerHTML=`
-    <div class="sod-icon">🏪</div>
-    <div>
-      <div class="sod-name">${w.label} · Cobro ${w.cobro}</div>
-      <div class="sod-sub">${w.rango}${w.cd>0?' · FL cross-docking −'+fmt(w.cd):''}</div>
-      <div class="sod-hint">▶ Ver detalle facturas</div>
-    </div>
-    <div class="sod-date">${isPronto?'<span style="color:var(--green);font-weight:700">VIGENTE</span>':'<span style="color:var(--text-muted)">PRÓXIMO</span>'}</div>
-    <div class="sod-amount">${fmt(w.neto)}</div>
-  `;
-  row.addEventListener('click',()=>openSodimacModal(w));
-  sodDiv.appendChild(row);
-});
+function renderSodimacIngresos(){
+  const sodDiv = document.getElementById('sodimacIngresos');
+  sodDiv.innerHTML = '';
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  if(!sodimacData.length){
+    sodDiv.innerHTML='<div style="padding:16px;color:var(--text-muted);font-size:12px">Sin facturas pendientes de cobro</div>';
+    return;
+  }
+
+  sodimacData.forEach(w => {
+    const row = document.createElement('div');
+    row.className = 'sod-row';
+    const vencido = w._date < hoy;
+    row.innerHTML = `
+      <div class="sod-icon">🏪</div>
+      <div>
+        <div class="sod-name">Cobro ${w.fv}</div>
+        <div class="sod-sub">${w.facturas.length} factura${w.facturas.length!==1?'s':''}</div>
+        <div class="sod-hint">▶ Ver detalle facturas</div>
+      </div>
+      <div class="sod-date">${vencido?'<span style="color:var(--red);font-weight:700">VENCIDO</span>':'<span style="color:var(--text-muted)">PRÓXIMO</span>'}</div>
+      <div class="sod-amount">${fmt(w.neto)}</div>`;
+    row.addEventListener('click', () => openSodimacModal(w));
+    sodDiv.appendChild(row);
+  });
+}
+
+async function fromSoftlandSodimac(){
+  try {
+    showToast('⏳ Cargando Sodimac desde Softland…', true);
+    const r = await fetch('/api/sodimac');
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    if(data.error) throw new Error(data.error);
+
+    const map = new Map();
+    (data.filas || []).forEach(f => {
+      const fvIso = f.fv || '';
+      const fvDisplay = isoToDisplay(fvIso);
+      if(!map.has(fvIso)){
+        map.set(fvIso, {fv: fvDisplay, _date: parseIso(fvIso)||new Date(0), facturas:[], neto:0});
+      }
+      const entry = map.get(fvIso);
+      const folio = [String(f.tipo||'').trim(), String(f.doc||'')].filter(Boolean).join(' ');
+      const saldo = Math.round(Number(f.saldo)||0);
+      entry.facturas.push({tipo: f.ttd||'VE', folio, vcto: fvDisplay, monto: saldo});
+      entry.neto += saldo;
+    });
+
+    sodimacData = Array.from(map.values()).sort((a,b) => a._date - b._date);
+    renderSodimacIngresos();
+
+    const totalNeto = sodimacData.reduce((s,w) => s+w.neto, 0);
+    showToast(`✅ Sodimac desde Softland · ${(data.filas||[]).length} facturas`);
+  } catch(err) {
+    showToast('⚠ Error Sodimac: ' + err.message, false);
+  }
+}
+
+fromSoftlandSodimac();
 
 function openSodimacModal(w){
-  document.getElementById('sodimacModalSub').textContent = `${w.label} · ${w.rango} · Cobro el ${w.cobro}`;
-  document.getElementById('sodimacModalWeekLabel').textContent = `${w.label} · Cobro neto`;
+  document.getElementById('sodimacModalSub').textContent = `Cobro ${w.fv} · ${w.facturas.length} facturas`;
+  document.getElementById('sodimacModalWeekLabel').textContent = `Total cobro`;
   document.getElementById('sodimacModalWeekTotal').textContent = fmt(w.neto);
 
-  const veTotal = w.facturas.filter(f=>f.tipo==='VE').reduce((s,f)=>s+f.monto,0);
-  const veRows = w.facturas.filter(f=>f.tipo==='VE').map(f=>`
+  const rows = w.facturas.map(f=>`
     <tr>
-      <td><span class="ve-tag">VE</span></td>
+      <td><span class="ve-tag">${f.tipo}</span></td>
       <td style="font-family:'IBM Plex Mono',monospace">${f.folio}</td>
       <td>${f.vcto}</td>
       <td class="num" style="color:var(--green)">${fmt(f.monto)}</td>
     </tr>`).join('');
-  const cdRows = w.facturas.filter(f=>f.tipo==='FL').map(f=>`
-    <tr class="cd-row">
-      <td><span class="fl-tag">FL</span></td>
-      <td style="font-family:'IBM Plex Mono',monospace">${f.folio}</td>
-      <td>${f.vcto}</td>
-      <td class="num" style="color:var(--red)">${fmt(f.monto)}</td>
-    </tr>`).join('');
-  const subRow = `<tr class="sub-row"><td colspan="3">Subtotal VE</td><td class="num">${fmt(veTotal)}</td></tr>`;
-  const cdSumRow = w.cd>0 ? `<tr class="cd-row"><td colspan="3">Cross-Docking (FL a descontar)</td><td class="num" style="color:var(--red)">−${fmt(w.cd)}</td></tr>` : '';
-  const totalRow = `<tr class="total-row"><td colspan="3"><strong>TOTAL COBRO ${w.label.toUpperCase()}</strong></td><td class="num">${fmt(w.neto)}</td></tr>`;
+  const totalRow = `<tr class="total-row"><td colspan="3"><strong>TOTAL COBRO ${w.fv}</strong></td><td class="num">${fmt(w.neto)}</td></tr>`;
 
   document.getElementById('sodimacModalBody').innerHTML = `
     <div class="prov-group">
       <div class="sod-week-head">
-        <span class="sod-week-badge">${w.label}</span>
-        <span class="sod-week-title">${w.rango} · Cobro el ${w.cobro}</span>
+        <span class="sod-week-badge">Cobro</span>
+        <span class="sod-week-title">${w.fv}</span>
         <span class="sod-week-total">${fmt(w.neto)}</span>
       </div>
       <table class="sod-inv-table">
         <thead><tr>
           <th>Tipo</th><th>N° Folio</th><th>Vcto. Factura</th><th style="text-align:right">Monto</th>
         </tr></thead>
-        <tbody>${veRows}${subRow}${cdRows}${cdSumRow}${totalRow}</tbody>
+        <tbody>${rows}${totalRow}</tbody>
       </table>
     </div>`;
   document.getElementById('sodimacModal').classList.add('open');
@@ -1278,101 +1262,7 @@ document.getElementById('sodimacModal').addEventListener('click', e=>{
 });
 
 // ── PROVEEDORES MODAL ──
-let provData = [
-  {rut:'76566490', nombre:'TRANSPORTE DE CONTENEDORES CHILE S.A.(TLI)', facturas:[
-    {folio:'FL-2779', vcto:'29/07/2026', saldo:6965393},
-  ]},
-  {rut:'76603240', nombre:'CONTENEDORES PATAGONIA SPA', facturas:[
-    {folio:'FL-124451', vcto:'15/09/2026', saldo:4010300},
-  ]},
-  {rut:'96656410', nombre:'BICE VIDA COMPAÑÍA DE SEGUROS S.A.', facturas:[
-    {folio:'FL-922512', vcto:'14/09/2026', saldo:1093796},
-  ]},
-  {rut:'81185000', nombre:'CESMEC S.A.', facturas:[
-    {folio:'FL-419077', vcto:'11/10/2026', saldo:991804},
-  ]},
-  {rut:'76320186', nombre:'TECNO FAST S.A', facturas:[
-    {folio:'FL-430254', vcto:'15/10/2026', saldo:927223},
-  ]},
-  {rut:'76730417', nombre:'COMERCIAL SAENZ SPA', facturas:[
-    {folio:'FL-7359', vcto:'31/07/2026', saldo:827526},
-  ]},
-  {rut:'97080000', nombre:'Banco BICE', facturas:[
-    {folio:'FL-3779067', vcto:'09/06/2026', saldo:43740},
-    {folio:'FL-3787258', vcto:'12/06/2026', saldo:21634},
-    {folio:'FL-3816602', vcto:'01/07/2026', saldo:54871},
-    {folio:'FL-3840319', vcto:'14/07/2026', saldo:55210},
-    {folio:'FL-3873891', vcto:'06/08/2026', saldo:54478},
-    {folio:'FL-3908646', vcto:'25/08/2026', saldo:54395},
-    {folio:'FL-3931414', vcto:'10/09/2026', saldo:55095},
-    {folio:'FL-3931415', vcto:'10/09/2026', saldo:55095},
-    {folio:'FL-3949222', vcto:'15/09/2026', saldo:56974},
-    {folio:'FL-3949223', vcto:'15/09/2026', saldo:56974},
-  ]},
-  {rut:'96945440', nombre:'Soc.Concesionaria Autopista Central S.A.', facturas:[
-    {folio:'LE-20719645', vcto:'01/10/2026', saldo:400181},
-  ]},
-  {rut:'77731886', nombre:'El Patron del Pallets Spa', facturas:[
-    {folio:'FL-6385', vcto:'15/09/2026', saldo:380800},
-  ]},
-  {rut:'76496130', nombre:'Sociedad Costanera Norte S.A.', facturas:[
-    {folio:'FL-6379422', vcto:'05/10/2026', saldo:59716},
-    {folio:'LE-12520777', vcto:'05/10/2026', saldo:309307},
-  ]},
-  {rut:'76444460', nombre:'G-4 ARQUITECTOS ASOCIADOS LIMITADA', facturas:[
-    {folio:'LE-545', vcto:'23/07/2026', saldo:367603},
-  ]},
-  {rut:'96806980', nombre:'ENTEL PCS TELECOMUNICACIONES S.A.', facturas:[
-    {folio:'FL-54135103', vcto:'15/10/2026', saldo:313070},
-  ]},
-  {rut:'85896100', nombre:'SERVICIOS EQUIFAX CHILE LIMITADA.', facturas:[
-    {folio:'FL-4228129', vcto:'01/10/2026', saldo:106522},
-  ]},
-  {rut:'76083317', nombre:'PINA Y ROMERO LIMITADA', facturas:[
-    {folio:'FL-20543', vcto:'31/08/2026', saldo:105000},
-  ]},
-  {rut:'76151639', nombre:'Sociedad Comercial Yerival Ltda.', facturas:[
-    {folio:'FL-52479', vcto:'16/09/2026', saldo:81991},
-  ]},
-  {rut:'76981875', nombre:'CONTEMPORA COMPANIA DE SEGUROS GENERALES S.A', facturas:[
-    {folio:'LE-125201', vcto:'13/08/2026', saldo:74605},
-  ]},
-  {rut:'76768946', nombre:'VOISSNET CLOUD SERVICES S.A.', facturas:[
-    {folio:'FL-62818', vcto:'30/09/2026', saldo:71707},
-  ]},
-  {rut:'77630439', nombre:'Operadora de Sistemas Electrónicos SPA(RUTA 78)', facturas:[
-    {folio:'LE-3409117', vcto:'30/09/2026', saldo:61980},
-    {folio:'LE-3455342', vcto:'30/09/2026', saldo:4987},
-  ]},
-  {rut:'76376061', nombre:'SOCIEDAD CONCESIONARIA VESPUCIO ORIENTE S.A.', facturas:[
-    {folio:'LE-3524252', vcto:'09/10/2026', saldo:8434},
-    {folio:'LE-3554183', vcto:'09/10/2026', saldo:27885},
-  ]},
-  {rut:'97004000', nombre:'Banco de Chile', facturas:[
-    {folio:'FL-47629422', vcto:'05/06/2026', saldo:33559},
-  ]},
-  {rut:'96928180', nombre:'Empresa Nac. de Certificaciones Electronica S.A(E-CERTCHILE)', facturas:[
-    {folio:'FL-3587007', vcto:'04/09/2026', saldo:30928},
-  ]},
-  {rut:'76526262', nombre:'FENWAY TECNOLOGIAS SPA', facturas:[
-    {folio:'FL-25819', vcto:'03/09/2026', saldo:25600},
-  ]},
-  {rut:'76743593', nombre:'EOX SPA', facturas:[
-    {folio:'FL-19016', vcto:'22/08/2026', saldo:18590},
-  ]},
-  {rut:'76172387', nombre:'SOCIEDAD CONCESIONARIA VALLES DEL BIO BIO S.A', facturas:[
-    {folio:'LE-1286826', vcto:'30/09/2026', saldo:15600},
-  ]},
-  {rut:'77722758', nombre:'SOCIEDAD CONCESIONARIA RUTA 5 CHILLAN-COLLIPULLI S.A.', facturas:[
-    {folio:'LE-2102081', vcto:'04/10/2026', saldo:11000},
-  ]},
-  {rut:'76167431', nombre:'Mat. de Cons.Electric. y Transporte Bruno Peredo E.I.R.L.', facturas:[
-    {folio:'FL-3377', vcto:'27/08/2026', saldo:9000},
-  ]},
-  {rut:'76449868', nombre:'SOCIEDAD CONCESIONARIA NUEVO CAMINO NOGALES - PUCHUNCAVI S.A', facturas:[
-    {folio:'LE-326189', vcto:'13/10/2026', saldo:2450},
-  ]},
-];
+let provData = [];
 
 function renderProvModal(){
   const body = document.getElementById('modalBody');

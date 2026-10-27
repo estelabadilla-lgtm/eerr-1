@@ -23,9 +23,8 @@ module.exports = async (req, res) => {
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
       JOIN softland.cwtauxi a ON a.CodAux = m.CodAux
-      WHERE m.CpbAno = '${anio}'
+      WHERE m.CpbAno >= '${anio - 1}'
         AND c.CpbEst = 'V'
-        AND c.CpbNormaTrib = 'S'
         AND a.RutAux LIKE '96792430%'
     ),
     doc AS (
@@ -35,12 +34,11 @@ module.exports = async (req, res) => {
              MIN(MovFv) AS fv2,
              MIN(MovFe) AS fe
       FROM mov
-      WHERE rtip IN ('FA','NC','FP')
       GROUP BY PctCod, CodAux, rtip, rnum
-      HAVING ABS(SUM(MovDebe - MovHaber)) >= 1
+      HAVING SUM(MovDebe - MovHaber) >= 1
     )
     SELECT d.PctCod AS cuenta,
-           LTRIM(RTRIM(t.DesDoc)) AS tipo,
+           LTRIM(RTRIM(t.DesDoc)) AS tipo, d.rtip AS ttd,
            d.rnum AS doc,
            CONVERT(char(10), d.fe, 23) AS fe,
            CONVERT(char(10), COALESCE(d.fv, d.fv2), 23) AS fv,

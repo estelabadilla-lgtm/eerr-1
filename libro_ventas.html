@@ -896,7 +896,20 @@ function mostrarUltimaAct(ts) {
     }
   }catch(e){}
   // Mostrar última actualización guardada
-  try { mostrarUltimaAct(localStorage.getItem(LS+'_ts') || ''); } catch(e){}
+  try {
+    let ts = localStorage.getItem(LS+'_ts') || '';
+    if (!ts && ROWS.length) {
+      // Si no hay timestamp local, mostrar el mes más reciente con datos
+      const meses = [...new Set(ROWS.map(r => r.mes))].sort();
+      const ultimo = meses[meses.length - 1];
+      if (ultimo) {
+        const [y, m] = ultimo.split('-');
+        const label = new Date(+y, +m-1, 1).toLocaleDateString('es-CL', {month:'long', year:'numeric'});
+        ts = `datos hasta ${label} (servidor)`;
+      }
+    }
+    mostrarUltimaAct(ts);
+  } catch(e){}
   renderAll();
 })();
 

@@ -1159,6 +1159,7 @@ let sodimacData = [];
 
 function isoToDisplay(s){ if(!s||s==='—') return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
 function parseIso(s){ if(!s) return null; const [y,m,d]=s.split('-'); return new Date(+y,+m-1,+d); }
+function isoWeek(d){ const t=new Date(d); t.setHours(0,0,0,0); t.setDate(t.getDate()+4-(t.getDay()||7)); const y=new Date(t.getFullYear(),0,1); return Math.ceil(((t-y)/864e5+1)/7); }
 
 function renderSodimacIngresos(){
   const sodDiv = document.getElementById('sodimacIngresos');
@@ -1173,12 +1174,13 @@ function renderSodimacIngresos(){
   sodimacData.forEach(w => {
     const row = document.createElement('div');
     row.className = 'sod-row';
-    const vencido = w._date < hoy;
+    const vencido = w.cobro < hoy;
+    const flDesc = w.fl&&w.fl.length ? ` · FL −${fmt(Math.abs(w.fl.reduce((s,f)=>s+f.monto,0)))}` : '';
     row.innerHTML = `
       <div class="sod-icon">🏪</div>
       <div>
-        <div class="sod-name">Cobro ${w.fv}</div>
-        <div class="sod-sub">${w.facturas.length} factura${w.facturas.length!==1?'s':''}</div>
+        <div class="sod-name">${w.label} · Cobro ${w.fv}</div>
+        <div class="sod-sub">${w.ve.length} VE${flDesc}</div>
         <div class="sod-hint">▶ Ver detalle facturas</div>
       </div>
       <div class="sod-date">${vencido?'<span style="color:var(--red);font-weight:700">VENCIDO</span>':'<span style="color:var(--text-muted)">PRÓXIMO</span>'}</div>
@@ -1196,40 +1198,46 @@ async function fromSoftlandSodimac(){
     const data = await r.json();
     if(data.error) throw new Error(data.error);
 
-    // Separar VE (ingresos) y FL (descuentos)
+    // Separar VE (ingresos) y FL (descuentos/compras)
     const veList = (data.filas||[]).filter(f => f.cuenta === '10-04-01-01');
     const flList = (data.filas||[]).filter(f => f.cuenta === '20-03-01-01');
 
-    // Agrupar VE por fecha de vencimiento
-    const map = new Map();
+    // Agrupar VE por semana ISO
+    const map = new Map(); // key = semana ISO (número)
     veList.forEach(f => {
       const fvIso = f.fv || '';
-      const fvDisplay = isoToDisplay(fvIso);
-      if(!map.has(fvIso))
-        map.set(fvIso, {fv: fvDisplay, _date: parseIso(fvIso)||new Date(0), ve:[], fl:[], neto:0});
+      const dt = parseIso(fvIso) || new Date(0);
+      const wk = isoWeek(dt);
+      if(!map.has(wk))
+        map.set(wk, {semana: wk, label:`Semana ${wk}`, cobro: dt, _cobroIso: fvIso, ve:[], fl:[], neto:0});
+      const entry = map.get(wk);
+      // cobro = fecha más tardía dentro de la semana
+      if(dt > entry.cobro){ entry.cobro = dt; entry._cobroIso = fvIso; }
       const saldo = Math.round(Number(f.saldo)||0);
       const ttd = String(f.ttd||'VE').trim();
-      map.get(fvIso).ve.push({tipo: ttd, folio:`${ttd}-${f.doc}`, vcto: fvDisplay, monto: saldo});
-      map.get(fvIso).neto += saldo;
+      entry.ve.push({tipo: ttd, folio:`${ttd}-${f.doc}`, vcto: isoToDisplay(fvIso), monto: saldo});
+      entry.neto += saldo;
     });
 
-    // Asignar FL a la semana VE más cercana posterior (o la primera disponible)
-    const veDates = Array.from(map.keys()).map(k=>({iso:k, date: parseIso(k)||new Date(0)}))
-                         .sort((a,b)=>a.date-b.date);
+    // Convertir cobro a display
+    map.forEach(e => { e.fv = isoToDisplay(e._cobroIso); });
+
+    // Asignar FL a la semana más cercana igual o posterior
+    const wkList = Array.from(map.keys()).sort((a,b)=>a-b);
     flList.forEach(f => {
       const flDate = parseIso(f.fv||'') || new Date(0);
-      // Buscar la fecha VE más próxima igual o posterior al FL
-      let target = veDates.find(v => v.date >= flDate) || veDates[veDates.length-1];
-      if(!target && veDates.length) target = veDates[0];
-      if(!target) return;
-      const entry = map.get(target.iso);
-      const saldo = Math.round(Number(f.saldo)||0); // negativo para FL (MovDebe-MovHaber < 0)
+      const flWk = isoWeek(flDate);
+      // semana FL o la siguiente con VE
+      const targetWk = wkList.find(w => w >= flWk) || wkList[wkList.length-1];
+      if(targetWk == null) return;
+      const entry = map.get(targetWk);
+      const saldo = Math.round(Number(f.saldo)||0); // negativo (MovDebe-MovHaber < 0 para FL)
       const ttd = String(f.ttd||'FL').trim();
       entry.fl.push({tipo: ttd, folio:`${ttd}-${f.doc}`, vcto: isoToDisplay(f.fv||''), monto: saldo});
-      entry.neto += saldo; // resta (saldo ya es negativo)
+      entry.neto += saldo;
     });
 
-    sodimacData = Array.from(map.values()).sort((a,b) => a._date - b._date);
+    sodimacData = Array.from(map.values()).sort((a,b) => a.semana - b.semana);
     renderSodimacIngresos();
 
     showToast(`✅ Sodimac desde Softland · ${veList.length} VE · ${flList.length} FL`);
@@ -1241,8 +1249,8 @@ async function fromSoftlandSodimac(){
 fromSoftlandSodimac();
 
 function openSodimacModal(w){
-  document.getElementById('sodimacModalSub').textContent = `Cobro ${w.fv} · ${w.facturas.length} facturas`;
-  document.getElementById('sodimacModalWeekLabel').textContent = `Total cobro`;
+  document.getElementById('sodimacModalSub').textContent = `${w.label} · Cobro ${w.fv}`;
+  document.getElementById('sodimacModalWeekLabel').textContent = `Neto cobro ${w.label}`;
   document.getElementById('sodimacModalWeekTotal').textContent = fmt(w.neto);
 
   const veTotal = (w.ve||[]).reduce((s,f)=>s+f.monto,0);
@@ -1264,7 +1272,7 @@ function openSodimacModal(w){
     </tr>`).join('');
   const subFl = w.fl&&w.fl.length ? `<tr class="cd-row"><td colspan="3">Descuentos / Compras Sodimac</td><td class="num" style="color:var(--red)">${fmt(flTotal)}</td></tr>` : '';
   const rows = veRows + subVe + flRows + subFl;
-  const totalRow = `<tr class="total-row"><td colspan="3"><strong>NETO COBRO ${w.fv}</strong></td><td class="num">${fmt(w.neto)}</td></tr>`;
+  const totalRow = `<tr class="total-row"><td colspan="3"><strong>NETO ${w.label.toUpperCase()}</strong></td><td class="num">${fmt(w.neto)}</td></tr>`;
 
   document.getElementById('sodimacModalBody').innerHTML = `
     <div class="prov-group">

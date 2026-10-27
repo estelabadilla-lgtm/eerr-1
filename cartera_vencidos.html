@@ -283,9 +283,9 @@ const vname=s=>String(s??'').trim().replace(/\s+/g,' ');
 const utc=s=>{const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)};
 function build(data){
   DATA=data; TODAY=utc(data.corte);
-  // row: [rut,nombre,tipo,doc,fecha,saldo,cuenta,vendedor]
+  // row: [rut,nombre,estado,tipo,doc,fv,saldo,diasAtraso,cuenta,vendedor,fe]
   D=data.rows.map(r=>{const bl=data.bl[rk(r[0])];const est=bl==='S'?'Bloqueado':(bl==='N'?'Activo':'Sin dato');
-    return [r[0],r[1],est,r[2],r[3],r[4],r[5],Math.round((TODAY-utc(r[4]))/864e5),r[6],r[7]||SINV]});
+    return [r[0],r[1],est,r[2],r[3],r[4],r[5],Math.round((TODAY-utc(r[4]))/864e5),r[6],r[7]||SINV,r[8]||'']});
 }
 const pad=n=>String(n).padStart(2,'0');
 const fdateIso=iso=>{const [y,m,d]=iso.split('-');return d+'/'+m+'/'+y};
@@ -305,7 +305,7 @@ function parseClientes(wb){
   if(hi<0)throw new Error('No encontré la fila de encabezados ("Código Cuenta"). ¿Es el reporte "Detalle de Documentos por Auxiliar"?');
   const H=A[hi].map(h=>String(h??'').trim());
   const col=n=>{const i=H.indexOf(n);if(i<0)throw new Error('Falta la columna "'+n+'".');return i};
-  const c={cta:col('Código Cuenta'),rut:col('RUT Auxiliar'),nom:col('Nombre del Auxiliar'),tipo:col('Tipo Dcto.'),doc:col('Documento'),fv:col('Fecha de Vencimiento'),sal:col('Saldo a la Fecha'),ven:H.indexOf('Nombre del Vendedor')};
+  const c={cta:col('Código Cuenta'),rut:col('RUT Auxiliar'),nom:col('Nombre del Auxiliar'),tipo:col('Tipo Dcto.'),doc:col('Documento'),fv:col('Fecha de Vencimiento'),sal:col('Saldo a la Fecha'),ven:H.indexOf('Nombre del Vendedor'),fe:H.indexOf('Fecha Dcto.')};
   let corte=null;
   for(let i=0;i<hi;i++){const s=(A[i]||[]).map(x=>x??'').join(' ');const m=s.match(/Saldos al\s*:?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);if(m){corte=m[3]+'-'+pad(m[2])+'-'+pad(m[1]);break}}
   if(!corte)throw new Error('No encontré la fecha de corte ("Saldos al : dd/mm/aaaa") en el encabezado.');
@@ -319,7 +319,8 @@ function parseClientes(wb){
     const rut=String(r[c.rut]??'').trim();if(EXC.has(rk(rut))){st.excl++;continue}
     const fv=toIso(r[c.fv]);if(!fv){st.sinFecha++;continue}
     const doc=num(r[c.doc]);
-    rows.push([rut,String(r[c.nom]??'').trim(),String(r[c.tipo]??'').trim(),isNaN(doc)?String(r[c.doc]??''):doc,fv,Math.round(sal),cta,c.ven>=0?vname(r[c.ven]):'']);
+    const fe=c.fe>=0?toIso(r[c.fe])||'':'';
+    rows.push([rut,String(r[c.nom]??'').trim(),String(r[c.tipo]??'').trim(),isNaN(doc)?String(r[c.doc]??''):doc,fv,Math.round(sal),cta,c.ven>=0?vname(r[c.ven]):'',fe]);
   }
   // documentos sin vendedor (cheques, anticipos): se asigna el vendedor más frecuente del mismo RUT
   st.vendAsig=0;st.sinVend=0;
@@ -479,8 +480,8 @@ function renderTable(rows){
     if(!G.length)h+='<tr><td colspan="8" class="empty">No hay clientes con estos filtros.</td></tr>';
     G.forEach(g=>{const o=OPEN.has(g.rut);
       h+=`<tr class="grp${o?' open':''}" data-rut="${esc(g.rut)}" tabindex="0" aria-expanded="${o}"><td class="name"><div class="gname"><span class="car" aria-hidden="true">▸</span><div>${esc(g.n)}<span class="rut">${g.rut}</span></div></div></td><td>${pillE(g.e)}</td><td>${esc(g.ven)}</td><td class="num">${g.c}</td><td class="num">${g.v?`<span class="vcell">${fmt(g.v)}</span>`:'—'}</td><td class="num">${g.p?fmt(g.p):'—'}</td><td class="num">${daysCell(g.md)}</td><td class="num"><b>${fmt(g.t)}</b></td></tr>`;
-      if(o)h+=`<tr class="sub"><td colspan="8"><table class="inv"><thead><tr><th>Tipo dcto.</th><th class="num">N° documento</th><th>Vencimiento</th><th class="num">Días atraso</th><th class="num">Saldo</th></tr></thead><tbody>`+
-        g.docs.map(r=>`<tr><td>${esc(r[3])}</td><td class="num">${r[4]}</td><td>${fdate(r[5])}</td><td class="num">${daysCell(r[7])}</td><td class="num">${fmt(r[6])}</td></tr>`).join('')+`</tbody></table></td></tr>`;
+      if(o)h+=`<tr class="sub"><td colspan="8"><table class="inv"><thead><tr><th>Tipo dcto.</th><th class="num">N° documento</th><th>Emisión</th><th>Vencimiento</th><th class="num">Días atraso</th><th class="num">Saldo</th></tr></thead><tbody>`+
+        g.docs.map(r=>`<tr><td>${esc(r[3])}</td><td class="num">${r[4]}</td><td>${r[10]?fdate(r[10]):''}</td><td>${fdate(r[5])}</td><td class="num">${daysCell(r[7])}</td><td class="num">${fmt(r[6])}</td></tr>`).join('')+`</tbody></table></td></tr>`;
     });
     h+=`</tbody><tfoot><tr><td colspan="3">Total · ${G.length} clientes</td><td class="num">${rows.length}</td><td class="num">${fmt(sum(rows.filter(r=>r[7]>0)))}</td><td class="num">${fmt(sum(rows.filter(r=>r[7]<=0)))}</td><td></td><td class="num">${fmt(sum(rows))}</td></tr></tfoot>`;
     tbl.innerHTML=h;
@@ -490,10 +491,10 @@ function renderTable(rows){
   }else{
     const k=st.sk,d=st.sd;
     const sorted=[...rows].sort(k==='def'?defDoc:(a,b)=>{const x=a[k],y=b[k];return (typeof x==='number'?x-y:String(x).localeCompare(String(y),'es'))*d});
-    let h='<thead><tr>'+thB(0,'RUT','',k,d)+thB(1,'Cliente','',k,d)+thB(2,'Estado','',k,d)+thB(9,'Vendedor','',k,d)+thB(3,'Tipo dcto.','',k,d)+thB(4,'Documento','num',k,d)+thB(5,'Vencimiento','',k,d)+thB(7,'Días atraso','num',k,d)+thB(6,'Saldo','num',k,d)+'</tr></thead><tbody>';
-    h+=sorted.length?sorted.map(r=>`<tr><td>${r[0]}</td><td class="name">${esc(r[1])}</td><td>${pillE(r[2])}</td><td>${esc(r[9])}</td><td>${esc(r[3])}</td><td class="num">${r[4]}</td><td>${fdate(r[5])}</td><td class="num">${daysCell(r[7])}</td><td class="num">${fmt(r[6])}</td></tr>`).join('')
-      :'<tr><td colspan="9" class="empty">No hay documentos con estos filtros.</td></tr>';
-    h+=`</tbody><tfoot><tr><td colspan="8">Total</td><td class="num">${fmt(sum(rows))}</td></tr></tfoot>`;
+    let h='<thead><tr>'+thB(0,'RUT','',k,d)+thB(1,'Cliente','',k,d)+thB(2,'Estado','',k,d)+thB(9,'Vendedor','',k,d)+thB(3,'Tipo dcto.','',k,d)+thB(4,'Documento','num',k,d)+thB(10,'Emisión','',k,d)+thB(5,'Vencimiento','',k,d)+thB(7,'Días atraso','num',k,d)+thB(6,'Saldo','num',k,d)+'</tr></thead><tbody>';
+    h+=sorted.length?sorted.map(r=>`<tr><td>${r[0]}</td><td class="name">${esc(r[1])}</td><td>${pillE(r[2])}</td><td>${esc(r[9])}</td><td>${esc(r[3])}</td><td class="num">${r[4]}</td><td>${r[10]?fdate(r[10]):''}</td><td>${fdate(r[5])}</td><td class="num">${daysCell(r[7])}</td><td class="num">${fmt(r[6])}</td></tr>`).join('')
+      :'<tr><td colspan="10" class="empty">No hay documentos con estos filtros.</td></tr>';
+    h+=`</tbody><tfoot><tr><td colspan="9">Total</td><td class="num">${fmt(sum(rows))}</td></tr></tfoot>`;
     tbl.innerHTML=h;
     tCount.textContent=rows.length+' de '+D.length+' documentos';
   }
@@ -670,7 +671,7 @@ bApply.addEventListener('click',async()=>{
 bXls.addEventListener('click',async()=>{
   if(typeof XLSX==='undefined')return;
   const rows=base(false);
-  const det=rows.map(r=>({'Código Cuenta':r[8],'Descripción Cuenta':CUENTAS[r[8]]||'','RUT Auxiliar':r[0],'Nombre del Auxiliar':r[1],'Estado':r[2],'Vendedor':r[9],'Tipo Dcto.':r[3],'Documento':r[4],'Fecha de Vencimiento':fdate(r[5]),'Días atraso':r[7],'Saldo a la Fecha':r[6]}));
+  const det=rows.map(r=>({'Código Cuenta':r[8],'Descripción Cuenta':CUENTAS[r[8]]||'','RUT Auxiliar':r[0],'Nombre del Auxiliar':r[1],'Estado':r[2],'Vendedor':r[9],'Tipo Dcto.':r[3],'Documento':r[4],'Fecha Emisión':r[10]?fdate(r[10]):'','Fecha de Vencimiento':fdate(r[5]),'Días atraso':r[7],'Saldo a la Fecha':r[6]}));
   const m=new Map();rows.forEach(r=>{const k=r[0];const o=m.get(k)||{'RUT Auxiliar':r[0],'Nombre del Auxiliar':r[1],'Estado':r[2],'Vendedor':r[9],'Documentos':0,'Vencido':0,'Por vencer':0,'Saldo':0};o.Documentos++;o[r[7]>0?'Vencido':'Por vencer']+=r[6];o.Saldo+=r[6];m.set(k,o)});
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(det),'Detalle');
@@ -693,7 +694,7 @@ function fromSoftland(json){
     const sal=Number(f.saldo);if(!(sal>=2))continue;
     if(EXC.has(k))continue;
     if(!f.fv)continue;
-    rows.push([rut,String(f.nombre??'').trim(),String(f.tipo??'').trim(),Math.round(Number(f.doc)),f.fv,Math.round(sal),f.cuenta,vn]);
+    rows.push([rut,String(f.nombre??'').trim(),String(f.tipo??'').trim(),Math.round(Number(f.doc)),f.fv,Math.round(sal),f.cuenta,vn,f.fe||'']);
   }
   for(const r of rows){if(r[7])continue;const m=vc[rk(r[0])];r[7]=m?Object.entries(m).sort((a,b)=>b[1]-a[1])[0][0]:SINV}
   return {corte:json.corte,rows,bl,archivoClientes:'Softland',archivoBloqueados:'Softland (ficha del cliente)',actualizado:json.generado};

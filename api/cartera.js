@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
       SELECT m.PctCod, m.CodAux, m.TtdCod, m.NumDoc,
              COALESCE(NULLIF(m.MovTipDocRef, ''), m.TtdCod) AS rtip,
              COALESCE(NULLIF(m.MovNumDocRef, 0), m.NumDoc) AS rnum,
-             m.MovDebe, m.MovHaber, m.MovFv, m.VendCod
+             m.MovDebe, m.MovHaber, m.MovFv, m.VendCod, c.CpbFch AS fch
       FROM softland.cwmovim m
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
@@ -36,7 +36,8 @@ module.exports = async (req, res) => {
              SUM(CASE WHEN PctCod LIKE '2%' THEN MovHaber - MovDebe ELSE MovDebe - MovHaber END) AS saldo,
              MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN MovFv END) AS fv,
              MIN(MovFv) AS fv2,
-             MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN VendCod END) AS ven
+             MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN VendCod END) AS ven,
+             MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN fch END) AS fe
       FROM mov
       GROUP BY PctCod, CodAux, rtip, rnum
       HAVING ABS(SUM(MovDebe - MovHaber)) >= 1
@@ -44,7 +45,8 @@ module.exports = async (req, res) => {
     SELECT d.PctCod AS cuenta, a.RutAux AS rut, RTRIM(a.NomAux) AS nombre, a.Bloqueado AS bl,
            LTRIM(RTRIM(t.DesDoc)) AS tipo, d.rnum AS doc,
            CONVERT(char(10), COALESCE(d.fv, d.fv2), 23) AS fv, d.saldo,
-           RTRIM(v.VenDes) AS vendedor
+           RTRIM(v.VenDes) AS vendedor,
+           CONVERT(char(10), d.fe, 23) AS fe
     FROM doc d
     LEFT JOIN softland.cwtauxi a ON a.CodAux = d.CodAux
     LEFT JOIN softland.cwttdoc t ON t.CodDoc = d.rtip

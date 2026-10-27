@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
       SELECT m.PctCod, m.CodAux, m.TtdCod, m.NumDoc,
              COALESCE(NULLIF(m.MovTipDocRef, ''), m.TtdCod) AS rtip,
              COALESCE(NULLIF(m.MovNumDocRef, 0), m.NumDoc) AS rnum,
-             m.MovDebe, m.MovHaber, m.MovFv, m.VendCod, c.CpbFch AS fch
+             m.MovDebe, m.MovHaber, m.MovFv, m.VendCod, m.MovFch AS fch
       FROM softland.cwmovim m
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod

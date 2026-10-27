@@ -1196,26 +1196,43 @@ async function fromSoftlandSodimac(){
     const data = await r.json();
     if(data.error) throw new Error(data.error);
 
+    // Separar VE (ingresos) y FL (descuentos)
+    const veList = (data.filas||[]).filter(f => f.cuenta === '10-04-01-01');
+    const flList = (data.filas||[]).filter(f => f.cuenta === '20-03-01-01');
+
+    // Agrupar VE por fecha de vencimiento
     const map = new Map();
-    (data.filas || []).forEach(f => {
+    veList.forEach(f => {
       const fvIso = f.fv || '';
       const fvDisplay = isoToDisplay(fvIso);
-      if(!map.has(fvIso)){
-        map.set(fvIso, {fv: fvDisplay, _date: parseIso(fvIso)||new Date(0), facturas:[], neto:0});
-      }
-      const entry = map.get(fvIso);
-      const ttd = String(f.ttd||'VE').trim();
-      const folio = `${ttd}-${f.doc}`;
+      if(!map.has(fvIso))
+        map.set(fvIso, {fv: fvDisplay, _date: parseIso(fvIso)||new Date(0), ve:[], fl:[], neto:0});
       const saldo = Math.round(Number(f.saldo)||0);
-      entry.facturas.push({tipo: ttd, folio, vcto: fvDisplay, monto: saldo});
-      entry.neto += saldo;
+      const ttd = String(f.ttd||'VE').trim();
+      map.get(fvIso).ve.push({tipo: ttd, folio:`${ttd}-${f.doc}`, vcto: fvDisplay, monto: saldo});
+      map.get(fvIso).neto += saldo;
+    });
+
+    // Asignar FL a la semana VE más cercana posterior (o la primera disponible)
+    const veDates = Array.from(map.keys()).map(k=>({iso:k, date: parseIso(k)||new Date(0)}))
+                         .sort((a,b)=>a.date-b.date);
+    flList.forEach(f => {
+      const flDate = parseIso(f.fv||'') || new Date(0);
+      // Buscar la fecha VE más próxima igual o posterior al FL
+      let target = veDates.find(v => v.date >= flDate) || veDates[veDates.length-1];
+      if(!target && veDates.length) target = veDates[0];
+      if(!target) return;
+      const entry = map.get(target.iso);
+      const saldo = Math.round(Number(f.saldo)||0); // negativo para FL (MovDebe-MovHaber < 0)
+      const ttd = String(f.ttd||'FL').trim();
+      entry.fl.push({tipo: ttd, folio:`${ttd}-${f.doc}`, vcto: isoToDisplay(f.fv||''), monto: saldo});
+      entry.neto += saldo; // resta (saldo ya es negativo)
     });
 
     sodimacData = Array.from(map.values()).sort((a,b) => a._date - b._date);
     renderSodimacIngresos();
 
-    const totalNeto = sodimacData.reduce((s,w) => s+w.neto, 0);
-    showToast(`✅ Sodimac desde Softland · ${(data.filas||[]).length} facturas`);
+    showToast(`✅ Sodimac desde Softland · ${veList.length} VE · ${flList.length} FL`);
   } catch(err) {
     showToast('⚠ Error Sodimac: ' + err.message, false);
   }
@@ -1228,14 +1245,26 @@ function openSodimacModal(w){
   document.getElementById('sodimacModalWeekLabel').textContent = `Total cobro`;
   document.getElementById('sodimacModalWeekTotal').textContent = fmt(w.neto);
 
-  const rows = w.facturas.map(f=>`
+  const veTotal = (w.ve||[]).reduce((s,f)=>s+f.monto,0);
+  const flTotal = (w.fl||[]).reduce((s,f)=>s+f.monto,0);
+  const veRows = (w.ve||[]).map(f=>`
     <tr>
       <td><span class="ve-tag">${f.tipo}</span></td>
       <td style="font-family:'IBM Plex Mono',monospace">${f.folio}</td>
       <td>${f.vcto}</td>
       <td class="num" style="color:var(--green)">${fmt(f.monto)}</td>
     </tr>`).join('');
-  const totalRow = `<tr class="total-row"><td colspan="3"><strong>TOTAL COBRO ${w.fv}</strong></td><td class="num">${fmt(w.neto)}</td></tr>`;
+  const subVe = `<tr class="sub-row"><td colspan="3">Subtotal Ventas</td><td class="num" style="color:var(--green)">${fmt(veTotal)}</td></tr>`;
+  const flRows = (w.fl||[]).map(f=>`
+    <tr class="cd-row">
+      <td><span class="fl-tag">${f.tipo}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace">${f.folio}</td>
+      <td>${f.vcto}</td>
+      <td class="num" style="color:var(--red)">${fmt(f.monto)}</td>
+    </tr>`).join('');
+  const subFl = w.fl&&w.fl.length ? `<tr class="cd-row"><td colspan="3">Descuentos / Compras Sodimac</td><td class="num" style="color:var(--red)">${fmt(flTotal)}</td></tr>` : '';
+  const rows = veRows + subVe + flRows + subFl;
+  const totalRow = `<tr class="total-row"><td colspan="3"><strong>NETO COBRO ${w.fv}</strong></td><td class="num">${fmt(w.neto)}</td></tr>`;
 
   document.getElementById('sodimacModalBody').innerHTML = `
     <div class="prov-group">

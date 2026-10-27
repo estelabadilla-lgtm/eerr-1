@@ -25,20 +25,20 @@ module.exports = async (req, res) => {
       WHERE m.CpbAno >= '${anio - 1}'
         AND c.CpbEst = 'V'
         AND m.CodAux = '96792430'
-        AND m.PctCod = '10-04-01-01'
-        AND m.TtdCod = 'VE'
+        AND m.PctCod IN ('10-04-01-01', '20-03-01-01')
     ),
     doc AS (
-      SELECT CodAux, rtip, rnum,
+      SELECT PctCod, CodAux, rtip, rnum,
              SUM(MovDebe - MovHaber) AS saldo,
              MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN MovFv END) AS fv,
              MIN(MovFv) AS fv2,
              MIN(MovFe) AS fe
       FROM mov
-      GROUP BY CodAux, rtip, rnum
-      HAVING SUM(MovDebe - MovHaber) >= 1
+      GROUP BY PctCod, CodAux, rtip, rnum
+      HAVING ABS(SUM(MovDebe - MovHaber)) >= 1
     )
-    SELECT d.rtip AS ttd,
+    SELECT d.PctCod AS cuenta,
+           d.rtip AS ttd,
            d.rnum AS doc,
            CONVERT(char(10), d.fe, 23) AS fe,
            CONVERT(char(10), COALESCE(d.fv, d.fv2), 23) AS fv,

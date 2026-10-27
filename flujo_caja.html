@@ -1222,17 +1222,14 @@ async function fromSoftlandSodimac(){
     // Convertir cobro a display
     map.forEach(e => { e.fv = isoToDisplay(e._cobroIso); });
 
-    // Asignar FL solo si su vencimiento está dentro de los 14 días previos al cobro VE
+    // Asignar cada FL a la semana VE más cercana igual o posterior (sin límite de días)
     const wkList = Array.from(map.keys()).sort((a,b)=>a-b);
     flList.forEach(f => {
       const flDate = parseIso(f.fv||'') || new Date(0);
-      // Buscar semana VE donde cobro >= flDate y cobro - flDate <= 14 días
-      const targetWk = wkList.find(w => {
-        const cobro = map.get(w).cobro;
-        const dias = (cobro - flDate) / 864e5;
-        return dias >= 0 && dias <= 14;
-      });
-      if(targetWk == null) return; // FL muy antigua, no asignar
+      const flWk = isoWeek(flDate);
+      // Semana VE más cercana >= semana del FL; si no hay, usar la primera
+      const targetWk = wkList.find(w => w >= flWk) || wkList[0];
+      if(targetWk == null) return;
       const entry = map.get(targetWk);
       const saldo = Math.round(Number(f.saldo)||0);
       const ttd = String(f.ttd||'FL').trim();

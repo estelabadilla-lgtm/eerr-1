@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
              MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN MovFv END) AS fv,
              MIN(MovFv) AS fv2,
              MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN VendCod END) AS ven,
-             MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN fch END) AS fe
+             MIN(fch) AS fe
       FROM mov
       GROUP BY PctCod, CodAux, rtip, rnum
       HAVING ABS(SUM(MovDebe - MovHaber)) >= 1

@@ -14,10 +14,11 @@ module.exports = async (req, res) => {
 
   const sql = `
     WITH mov AS (
-      SELECT m.PctCod, m.CodAux, m.TtdCod, m.NumDoc,
+      SELECT m.CodAux, m.TtdCod, m.NumDoc,
              COALESCE(NULLIF(m.MovTipDocRef, ''), m.TtdCod) AS rtip,
              COALESCE(NULLIF(m.MovNumDocRef, 0), m.NumDoc) AS rnum,
-             m.MovDebe, m.MovHaber, m.MovFv, m.MovFe, m.VendCod
+             m.MovHaber - m.MovDebe AS saldo,
+             m.MovFv, m.MovFe
       FROM softland.cwmovim m
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
@@ -25,25 +26,33 @@ module.exports = async (req, res) => {
         AND c.CpbEst = 'V'
         AND m.PctCod = '20-03-01-01'
     ),
-    doc AS (
-      SELECT PctCod, CodAux, rtip, rnum,
-             SUM(MovHaber - MovDebe) AS saldo,
-             MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN MovFv END) AS fv,
-             MIN(MovFv) AS fv2,
-             MIN(MovFe) AS fe
+    prov_neto AS (
+      SELECT CodAux
       FROM mov
-      GROUP BY PctCod, CodAux, rtip, rnum
-      HAVING ABS(SUM(MovHaber - MovDebe)) >= 1
+      GROUP BY CodAux
+      HAVING SUM(saldo) >= 1
+    ),
+    doc AS (
+      SELECT m.CodAux, m.rtip, m.rnum,
+             SUM(m.saldo) AS saldo,
+             MAX(CASE WHEN m.TtdCod = m.rtip AND m.NumDoc = m.rnum THEN m.MovFv END) AS fv,
+             MIN(m.MovFv) AS fv2,
+             MIN(m.MovFe) AS fe
+      FROM mov m
+      JOIN prov_neto p ON p.CodAux = m.CodAux
+      GROUP BY m.CodAux, m.rtip, m.rnum
+      HAVING SUM(m.saldo) >= 1
     )
-    SELECT d.PctCod AS cuenta, a.RutAux AS rut, RTRIM(a.NomAux) AS nombre,
-           LTRIM(RTRIM(t.DesDoc)) AS tipo, d.rnum AS doc,
+    SELECT a.RutAux AS rut, RTRIM(a.NomAux) AS nombre,
+           LTRIM(RTRIM(t.DesDoc)) AS tipo,
+           d.rnum AS doc,
            CONVERT(char(10), d.fe, 23) AS fe,
            CONVERT(char(10), COALESCE(d.fv, d.fv2), 23) AS fv,
            d.saldo
     FROM doc d
     LEFT JOIN softland.cwtauxi a ON a.CodAux = d.CodAux
     LEFT JOIN softland.cwttdoc t ON t.CodDoc = d.rtip
-    WHERE d.saldo >= 1`;
+    ORDER BY a.RutAux, d.fv`;
 
   try {
     const r = await fetch(`${url}/consulta`, {

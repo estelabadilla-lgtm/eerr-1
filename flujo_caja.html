@@ -1204,9 +1204,10 @@ async function fromSoftlandSodimac(){
         map.set(fvIso, {fv: fvDisplay, _date: parseIso(fvIso)||new Date(0), facturas:[], neto:0});
       }
       const entry = map.get(fvIso);
-      const folio = [String(f.tipo||'').trim(), String(f.doc||'')].filter(Boolean).join(' ');
+      const ttd = String(f.ttd||'VE').trim();
+      const folio = `${ttd}-${f.doc}`;
       const saldo = Math.round(Number(f.saldo)||0);
-      entry.facturas.push({tipo: f.ttd||'VE', folio, vcto: fvDisplay, monto: saldo});
+      entry.facturas.push({tipo: ttd, folio, vcto: fvDisplay, monto: saldo});
       entry.neto += saldo;
     });
 

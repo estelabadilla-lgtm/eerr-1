@@ -22,29 +22,28 @@ module.exports = async (req, res) => {
       FROM softland.cwmovim m
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
-      JOIN softland.cwtauxi a ON a.CodAux = m.CodAux
       WHERE m.CpbAno >= '${anio - 1}'
         AND c.CpbEst = 'V'
-        AND a.RutAux LIKE '96792430%'
+        AND m.CodAux = '96792430'
+        AND m.PctCod = '10-04-01-01'
+        AND m.TtdCod = 'VE'
     ),
     doc AS (
-      SELECT PctCod, CodAux, rtip, rnum,
+      SELECT CodAux, rtip, rnum,
              SUM(MovDebe - MovHaber) AS saldo,
              MAX(CASE WHEN TtdCod = rtip AND NumDoc = rnum THEN MovFv END) AS fv,
              MIN(MovFv) AS fv2,
              MIN(MovFe) AS fe
       FROM mov
-      GROUP BY PctCod, CodAux, rtip, rnum
+      GROUP BY CodAux, rtip, rnum
       HAVING SUM(MovDebe - MovHaber) >= 1
     )
-    SELECT d.PctCod AS cuenta,
-           LTRIM(RTRIM(t.DesDoc)) AS tipo, d.rtip AS ttd,
+    SELECT d.rtip AS ttd,
            d.rnum AS doc,
            CONVERT(char(10), d.fe, 23) AS fe,
            CONVERT(char(10), COALESCE(d.fv, d.fv2), 23) AS fv,
            d.saldo
     FROM doc d
-    LEFT JOIN softland.cwttdoc t ON t.CodDoc = d.rtip
     ORDER BY d.fv`;
 
   try {

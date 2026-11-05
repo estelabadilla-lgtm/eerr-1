@@ -94,6 +94,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
 .pill.f{background:#e8f0fe;color:#1c5cab}.pill.fe{background:#e8f4e8;color:#1a6b2a}
 .pill.nc{background:var(--crit-bg);color:var(--crit-ink)}.pill.nd{background:#fff3e0;color:#8a4a00}
 .pill.ot{background:#f3e8ff;color:#6b1fa0}
+.pill.ref{font-weight:500;font-size:10px;background:var(--grid);color:var(--ink2);margin:1px 0}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.f{background:#1c3a6b;color:#86b6ef}
 :root:not([data-theme="light"]) .pill.fe{background:#1a3d1a;color:#5fd35f}
 :root:not([data-theme="light"]) .pill.nd{background:#3d2800;color:#f2c35a}}
@@ -271,6 +272,8 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
 const LS = 'libro_ventas_data';
 let ROWS = []; // array of parsed row objects
 let filtered = [];
+let REFS = {}; // folio factura -> {oc:[...], gd:[...]} desde Softland (/api/referencias_ventas)
+const refsDe = r => (r.tipo==='33'||r.tipo==='34') ? REFS[r.folio] : null;
 const st = { mes:'', tipo:'', buscar:'', fRech:new Set(), sortCol:'fecha', sortDir:1 };
 
 const TIPOS = {
@@ -511,7 +514,8 @@ function render(){
   filtered=ROWS.filter(r=>{
     if(st.mes&&r.mes!==st.mes) return false;
     if(st.tipo&&r.tipo!==st.tipo) return false;
-    if(st.buscar&&!r.razon.toLowerCase().includes(st.buscar)&&!r.rut.includes(st.buscar)) return false;
+    if(st.buscar&&!r.razon.toLowerCase().includes(st.buscar)&&!r.rut.includes(st.buscar)
+       &&!r.folio.includes(st.buscar)&&!(refsDe(r)?.oc||[]).some(o=>o.toLowerCase().includes(st.buscar))) return false;
     if(st.fRech.size){
       if(!r.rechazada) return false;
       const esFactura=r.tipo==='33'||r.tipo==='34';
@@ -588,10 +592,18 @@ function render(){
     if(r.tipoRef==='52'&&r.folioRef) refCell=`<span style="font-size:11px;color:var(--muted)">G/D #${r.folioRef}</span>`;
     else if(esNC&&r.folioRef) refCell=`<span style="font-size:11px;color:var(--crit-ink)">Anula Fac. #${r.folioRef}</span>`;
     else if(esND&&r.folioRef) refCell=`<span style="font-size:11px;color:var(--bar-nd)">Aumenta #${r.folioRef}</span>`;
+    // OC y guías desde Softland, junto al folio
+    const sf=refsDe(r);
+    let folioCell=`${r.folio}`;
+    if(sf){
+      const gd=sf.gd.filter(g=>!(r.tipoRef==='52'&&g===r.folioRef));
+      if(sf.oc.length) folioCell+=` <span class="pill ref">OC ${sf.oc.join(', ')}</span>`;
+      if(gd.length) folioCell+=` <span class="pill ref">GD ${gd.join(', ')}</span>`;
+    }
     return `<tr style="${esNC?'background:rgba(208,59,59,.04)':''}${esND?'background:rgba(230,130,10,.04)':''}">
       <td>${r.fechaRaw||r.fecha}</td>
       <td><span class="pill ${tipoCls(r.tipo)}">${tipoLabel(r.tipo)}</span></td>
-      <td>${r.folio}</td>
+      <td style="white-space:normal;min-width:90px">${folioCell}</td>
       <td>${r.rut}</td>
       <td class="name" style="white-space:normal;min-width:180px">${r.razon}</td>
       <td style="min-width:110px">${estadoCell}</td>
@@ -675,10 +687,12 @@ function saveFile(name,blob){const a=document.createElement('a');a.href=URL.crea
 
 document.getElementById('bXls').addEventListener('click',async()=>{
   if(!window.XLSX||!ROWS.length)return;
-  const data=[['Fecha','Tipo Doc','Tipo','Folio','RUT','Razón Social','Exento','Neto','IVA','Total']];
+  const data=[['Fecha','Tipo Doc','Tipo','Folio','OC','Guía','RUT','Razón Social','Exento','Neto','IVA','Total']];
   for(const r of ROWS){
     const s=r.tipo==='61'?-1:1;
-    data.push([r.fechaRaw,r.tipo,tipoLabel(r.tipo),r.folio,r.rut,r.razon,r.exento*s,r.neto*s,r.iva*s,r.total*s]);
+    const sf=refsDe(r);
+    data.push([r.fechaRaw,r.tipo,tipoLabel(r.tipo),r.folio,sf?sf.oc.join(', '):'',sf?sf.gd.join(', '):'',
+      r.rut,r.razon,r.exento*s,r.neto*s,r.iva*s,r.total*s]);
   }
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(data);
@@ -879,6 +893,11 @@ function mostrarUltimaAct(ts) {
   sp.textContent = ts;
   el.style.display = 'block';
 }
+
+// OC y guías por factura desde Softland; no bloquea la carga del libro
+fetch('/api/referencias_ventas').then(r=>r.ok?r.json():null).then(d=>{
+  if(d&&d.refs){REFS=d.refs;if(ROWS.length)renderAll();}
+}).catch(()=>{});
 
 // Boot: cargar data_ventas.json (base) + localStorage (actualizaciones de los 2 últimos meses)
 (async()=>{

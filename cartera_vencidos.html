@@ -198,7 +198,8 @@ details.rules ol{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:co
       <ol>
         <li>Solo cuentas 10-04-01-01 Clientes Nacionales, 10-05-01-02 Cheques por Cobrar y 20-05-01-02 Anticipo de Clientes.</li>
         <li>Se sacan los documentos con saldo menor a 2 (incluye negativos: depósitos, saldos a favor y abonos).</li>
-        <li>Se excluyen por RUT (todas sus sucursales): Imperial S.A (76.821.330-5), Mercado Libre Chile (77.398.220-1), Construmart (96.511.460-2), Chilemat (96.726.970-0), Sodimac (96.792.430-K) y Rexel Electra (96.899.860-9).</li>
+        <li>Se excluyen por RUT (todas sus sucursales): Mercado Libre Chile (77.398.220-1) y Rexel Electra (96.899.860-9).</li>
+        <li>Retail incluido: Imperial S.A (76.821.330-5), Construmart (96.511.460-2), Chilemat (96.726.970-0) y Sodimac (96.792.430-K). Se ocultan con el filtro Clientes → Sin retail.</li>
         <li>Estado: se cruza el RUT con la columna D del archivo de bloqueados; columna C = S → Bloqueado, N → Activo.</li>
         <li>Vendedor: columna "Nombre del Vendedor". Si un documento no trae vendedor (cheques, anticipos), se usa el vendedor más frecuente de ese RUT; si no hay, queda "Sin vendedor".</li>
         <li>Días de atraso = fecha de corte del reporte ("Saldos al") − fecha de vencimiento.</li>
@@ -217,6 +218,12 @@ details.rules ol{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:co
       <button type="button" data-v="" aria-pressed="true">Todos</button>
       <button type="button" data-v="v" aria-pressed="false">Vencidos</button>
       <button type="button" data-v="p" aria-pressed="false">Por vencer</button>
+    </div>
+    <span class="flabel">Clientes</span>
+    <div class="seg" id="fRet">
+      <button type="button" data-v="" aria-pressed="true">Todos</button>
+      <button type="button" data-v="sin" aria-pressed="false">Sin retail</button>
+      <button type="button" data-v="solo" aria-pressed="false">Solo retail</button>
     </div>
     <div class="vend-multi-wrap" id="fVendWrap">
       <button type="button" class="vend-multi-btn" id="fVendBtn">Todos los vendedores ▾</button>
@@ -274,9 +281,12 @@ details.rules ol{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:co
 
 <script>
 const CUENTAS={'10-04-01-01':'Clientes Nacionales','10-05-01-02':'Cheques por Cobrar','20-05-01-02':'Anticipo de Clientes'};
-const EXCLUIDOS=['76.821.330-5','77.398.220-1','96.511.460-2','96.726.970-0','96.792.430-K','96.899.860-9'];
+const EXCLUIDOS=['77.398.220-1','96.899.860-9'];
+// Retail: se incluyen en la cartera; el filtro "Clientes → Sin retail" los oculta
+const RETAIL=['76.821.330-5','96.511.460-2','96.726.970-0','96.792.430-K'];
 const rk=s=>String(s??'').trim().toUpperCase().replace(/\./g,'');
 const EXC=new Set(EXCLUIDOS.map(rk));
+const RET=new Set(RETAIL.map(rk));
 let DATA=null, D=[], TODAY=0;
 const SINV='Sin vendedor';
 const vname=s=>String(s??'').trim().replace(/\s+/g,' ');
@@ -343,7 +353,7 @@ const BUCKETS=[
   {k:'4',lab:'91–180',t:d=>d>=91&&d<=180},
   {k:'5',lab:'+180',t:d=>d>180}
 ];
-const st={estado:'',venc:'',tipo:'',vends:new Set(),q:'',bucket:'',sk:'def',sd:-1,modo:'c',gk:'def',gd:-1};
+const st={estado:'',venc:'',ret:'',tipo:'',vends:new Set(),q:'',bucket:'',sk:'def',sd:-1,modo:'c',gk:'def',gd:-1};
 const OPEN=new Set();
 const fmt=n=>'$'+Math.round(n).toLocaleString('es-CL');
 const short=n=>{const a=Math.abs(n);if(a>=1e6)return '$'+(n/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' M';if(a>=1e3)return '$'+Math.round(n/1e3).toLocaleString('es-CL')+' mil';return fmt(n)};
@@ -378,6 +388,7 @@ function base(skipBucket){
   const q=norm(st.q.trim());
   return D.filter(r=>(!st.estado||r[2]===st.estado)&&(!st.tipo||r[3]===st.tipo)&&(!st.vends.size||st.vends.has(r[9]))
     &&(!st.venc||(st.venc==='v'?r[7]>0:r[7]<=0))
+    &&(!st.ret||(st.ret==='sin')!==RET.has(rk(r[0])))
     &&(!q||norm(r[1]).includes(q)||norm(r[0]).includes(q))
     &&(skipBucket||!st.bucket||BUCKETS.find(b=>b.k===st.bucket).t(r[7])));
 }
@@ -534,11 +545,11 @@ function renderVend(){
 function render(){const rows=base(false);renderKpis(rows);renderAging();renderTop(rows);renderVend();renderTable(rows)}
 
 function seg(id,key){document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st[key]=b.dataset.v;syncSeg();render()})}
-function syncSeg(){[['fEstado','estado'],['fVenc','venc'],['fModo','modo']].forEach(([id,k])=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st[k])))}
-seg('fEstado','estado');seg('fVenc','venc');seg('fModo','modo');
+function syncSeg(){[['fEstado','estado'],['fVenc','venc'],['fRet','ret'],['fModo','modo']].forEach(([id,k])=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st[k])))}
+seg('fEstado','estado');seg('fVenc','venc');seg('fRet','ret');seg('fModo','modo');
 sel.addEventListener('change',()=>{st.tipo=sel.value;render()});
 fQ.addEventListener('input',()=>{st.q=fQ.value;render()});
-reset.addEventListener('click',()=>{Object.assign(st,{estado:'',venc:'',tipo:'',q:'',bucket:'',gk:'def',gd:-1,sk:'def',sd:-1});st.vends=new Set();fQ.value='';sel.value='';fVendDrop.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);updateVendBtn();syncSeg();render()});
+reset.addEventListener('click',()=>{Object.assign(st,{estado:'',venc:'',ret:'',tipo:'',q:'',bucket:'',gk:'def',gd:-1,sk:'def',sd:-1});st.vends=new Set();fQ.value='';sel.value='';fVendDrop.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);updateVendBtn();syncSeg();render()});
 
 function renderMeta(){
   asof.textContent='Saldos al '+fdateIso(DATA.corte);

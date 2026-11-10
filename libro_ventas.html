@@ -82,8 +82,8 @@ input[type=search]{flex:1 1 180px;min-width:0}
 .tbl-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
 .tbl-title{font-size:14px;font-weight:600;flex:1}
 .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius)}
-table{border-collapse:collapse;width:100%;font-size:13px;min-width:700px}
-th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap}
+table{border-collapse:collapse;width:100%;font-size:12px;table-layout:fixed}
+th,td{padding:5px 7px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--surface)}
 th button{all:unset;cursor:pointer;width:100%}
 th button::after{content:attr(data-dir);margin-left:4px;color:var(--accent)}
@@ -211,13 +211,26 @@ tfoot td{font-weight:700;border-top:2px solid var(--axis);border-bottom:0}
   </div>
   <div class="tablewrap">
     <table id="tbl">
+      <colgroup>
+        <col style="width:8%">  <!-- Fecha -->
+        <col style="width:9%">  <!-- Tipo -->
+        <col style="width:7%">  <!-- Folio -->
+        <col style="width:9%">  <!-- RUT -->
+        <col style="width:22%"> <!-- Razón Social -->
+        <col style="width:6%">  <!-- Estado -->
+        <col style="width:8%">  <!-- Doc. Ref. -->
+        <col style="width:8%">  <!-- Exento -->
+        <col style="width:9%">  <!-- Neto -->
+        <col style="width:7%">  <!-- IVA -->
+        <col style="width:9%">  <!-- Total -->
+      </colgroup>
       <thead>
         <tr>
           <th><button data-col="fecha" data-dir="">Fecha</button></th>
           <th>Tipo</th>
           <th><button data-col="folio" data-dir="">Folio</button></th>
           <th>RUT</th>
-          <th style="min-width:200px">Razón Social</th>
+          <th>Razón Social</th>
           <th>Estado</th>
           <th>Doc. Ref.</th>
           <th class="num"><button data-col="exento" data-dir="">Exento</button></th>

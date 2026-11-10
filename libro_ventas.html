@@ -924,7 +924,15 @@ fetch('/api/referencias_ventas').then(r=>r.ok?r.json():null).then(d=>{
     const upd=JSON.parse(localStorage.getItem(LS+'_upd')||'null');
     if(upd&&Array.isArray(upd)&&upd.length){
       const mesesUpd=new Set(upd.map(r=>r.mes));
-      ROWS=ROWS.filter(r=>!mesesUpd.has(r.mes)).concat(upd);
+      // Solo reemplazar meses donde localStorage tiene fecha más reciente que el servidor
+      const mesesAReemplazar=new Set();
+      for(const mes of mesesUpd){
+        const maxUpd=(upd.filter(r=>r.mes===mes).map(r=>r.fecha).filter(Boolean).sort().pop()||'');
+        const maxSrv=(ROWS.filter(r=>r.mes===mes).map(r=>r.fecha).filter(Boolean).sort().pop()||'');
+        if(maxUpd>maxSrv) mesesAReemplazar.add(mes);
+      }
+      if(mesesAReemplazar.size>0)
+        ROWS=ROWS.filter(r=>!mesesAReemplazar.has(r.mes)).concat(upd.filter(r=>mesesAReemplazar.has(r.mes)));
     }
   }catch(e){}
   // Mostrar la fecha del documento más reciente en los datos

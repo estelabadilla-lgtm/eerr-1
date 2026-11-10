@@ -82,9 +82,10 @@ svg .clab{fill:var(--ink);font-size:12px}
 .days.late{color:var(--crit-ink)}
 .days.soon{color:var(--muted);font-weight:400}
 .tablewrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap}
-td.name{white-space:normal;min-width:200px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;table-layout:fixed}
+th,td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td.name{white-space:normal;overflow:visible}
+td.tcell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;font-size:12px;color:var(--ink2)}
 th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--surface)}
 th button{all:unset;cursor:pointer}
 th button::after{content:attr(data-dir);margin-left:4px;color:var(--accent)}
@@ -101,7 +102,7 @@ tr.grp.open .car{transform:rotate(90deg)}
 .rut{display:block;font-size:12px;color:var(--muted)}
 tr.sub>td{padding:0 10px 12px 34px;background:var(--hover);border-bottom:1px solid var(--grid)}
 tr.sub:hover{background:transparent}
-table.inv{width:auto;min-width:min(640px,100%);background:var(--surface);border:1px solid var(--border);border-radius:8px;border-collapse:separate;border-spacing:0;overflow:hidden}
+table.inv{width:auto;min-width:min(640px,100%);background:var(--surface);border:1px solid var(--border);border-radius:8px;border-collapse:separate;border-spacing:0;overflow:hidden;table-layout:auto}
 table.inv th{position:static;background:var(--surface);font-size:10.5px;padding:6px 12px}
 table.inv td{padding:6px 12px;font-size:12.5px}
 table.inv tr:last-child td{border-bottom:0}
@@ -487,10 +488,11 @@ function renderTable(rows){
     const G=groups(rows);const k=st.gk,d=st.gd;
     G.sort(k==='def'?defGrp:(a,b)=>{const x=a[k],y=b[k];return (typeof x==='number'?x-y:String(x).localeCompare(String(y),'es'))*d});
     const allOpen=G.length&&G.every(g=>OPEN.has(g.rut));bExp.textContent=allOpen?'Contraer todo':'Expandir todo';
-    let h='<thead><tr>'+thB('n','Cliente','',k,d)+thB('e','Estado','',k,d)+thB('ven','Vendedor','',k,d)+thB('c','Documentos','num',k,d)+thB('v','Vencido','num',k,d)+thB('p','Por vencer','num',k,d)+thB('md','Máx. atraso','num',k,d)+thB('t','Saldo','num',k,d)+'</tr></thead><tbody>';
+    let h='<colgroup><col style="width:28%"><col style="width:9%"><col style="width:17%"><col style="width:7%"><col style="width:13%"><col style="width:11%"><col style="width:9%"><col style="width:11%"></colgroup>';
+    h+='<thead><tr>'+thB('n','Cliente','',k,d)+thB('e','Estado','',k,d)+thB('ven','Vendedor','',k,d)+thB('c','Docs','num',k,d)+thB('v','Vencido','num',k,d)+thB('p','Por vencer','num',k,d)+thB('md','Días atraso','num',k,d)+thB('t','Saldo','num',k,d)+'</tr></thead><tbody>';
     if(!G.length)h+='<tr><td colspan="8" class="empty">No hay clientes con estos filtros.</td></tr>';
     G.forEach(g=>{const o=OPEN.has(g.rut);
-      h+=`<tr class="grp${o?' open':''}" data-rut="${esc(g.rut)}" tabindex="0" aria-expanded="${o}"><td class="name"><div class="gname"><span class="car" aria-hidden="true">▸</span><div>${esc(g.n)}<span class="rut">${g.rut}</span></div></div></td><td>${pillE(g.e)}</td><td>${esc(g.ven)}</td><td class="num">${g.c}</td><td class="num">${g.v?`<span class="vcell">${fmt(g.v)}</span>`:'—'}</td><td class="num">${g.p?fmt(g.p):'—'}</td><td class="num">${daysCell(g.md)}</td><td class="num"><b>${fmt(g.t)}</b></td></tr>`;
+      h+=`<tr class="grp${o?' open':''}" data-rut="${esc(g.rut)}" tabindex="0" aria-expanded="${o}"><td class="name"><div class="gname"><span class="car" aria-hidden="true">▸</span><div>${esc(g.n)}<span class="rut">${g.rut}</span></div></div></td><td>${pillE(g.e)}</td><td class="tcell">${esc(g.ven)}</td><td class="num">${g.c}</td><td class="num">${g.v?`<span class="vcell">${fmt(g.v)}</span>`:'—'}</td><td class="num">${g.p?fmt(g.p):'—'}</td><td class="num">${daysCell(g.md)}</td><td class="num"><b>${fmt(g.t)}</b></td></tr>`;
       if(o)h+=`<tr class="sub"><td colspan="8"><table class="inv"><thead><tr><th>Tipo dcto.</th><th class="num">N° documento</th><th>Emisión</th><th>Vencimiento</th><th class="num">Días atraso</th><th class="num">Saldo</th></tr></thead><tbody>`+
         g.docs.map(r=>`<tr><td>${esc(r[3])}</td><td class="num">${r[4]}</td><td>${r[10]?fdate(r[10]):''}</td><td>${fdate(r[5])}</td><td class="num">${daysCell(r[7])}</td><td class="num">${fmt(r[6])}</td></tr>`).join('')+`</tbody></table></td></tr>`;
     });

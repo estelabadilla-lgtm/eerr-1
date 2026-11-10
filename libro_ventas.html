@@ -927,18 +927,14 @@ fetch('/api/referencias_ventas').then(r=>r.ok?r.json():null).then(d=>{
       ROWS=ROWS.filter(r=>!mesesUpd.has(r.mes)).concat(upd);
     }
   }catch(e){}
-  // Mostrar timestamp: preferir el más reciente entre servidor y localStorage
+  // Mostrar la fecha del documento más reciente en los datos
   try {
-    const lsTs = localStorage.getItem(LS+'_ts') || '';
-    // Derivar timestamp del servidor desde el documento más reciente en ROWS
-    let serverTs = '';
+    let ts = '';
     if (ROWS.length) {
       const fechas = ROWS.map(r => r.fecha).filter(Boolean).sort();
       const ultima = fechas[fechas.length - 1];
-      if (ultima) serverTs = new Date(ultima).toLocaleString('es-CL', {dateStyle:'short', timeStyle:'short'});
+      if (ultima) ts = new Date(ultima + 'T12:00:00').toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'});
     }
-    // Mostrar el más reciente
-    const ts = lsTs && (!serverTs || lsTs > serverTs) ? lsTs : serverTs;
     mostrarUltimaAct(ts);
   } catch(e){}
   renderAll();

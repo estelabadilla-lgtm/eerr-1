@@ -914,19 +914,18 @@ fetch('/api/referencias_ventas').then(r=>r.ok?r.json():null).then(d=>{
       ROWS=ROWS.filter(r=>!mesesUpd.has(r.mes)).concat(upd);
     }
   }catch(e){}
-  // Mostrar última actualización guardada
+  // Mostrar timestamp: preferir el más reciente entre servidor y localStorage
   try {
-    let ts = localStorage.getItem(LS+'_ts') || '';
-    if (!ts && ROWS.length) {
-      // Si no hay timestamp local, mostrar el mes más reciente con datos
-      const meses = [...new Set(ROWS.map(r => r.mes))].sort();
-      const ultimo = meses[meses.length - 1];
-      if (ultimo) {
-        const [y, m] = ultimo.split('-');
-        const label = new Date(+y, +m-1, 1).toLocaleDateString('es-CL', {month:'long', year:'numeric'});
-        ts = `datos hasta ${label} (servidor)`;
-      }
+    const lsTs = localStorage.getItem(LS+'_ts') || '';
+    // Derivar timestamp del servidor desde el documento más reciente en ROWS
+    let serverTs = '';
+    if (ROWS.length) {
+      const fechas = ROWS.map(r => r.fecha).filter(Boolean).sort();
+      const ultima = fechas[fechas.length - 1];
+      if (ultima) serverTs = new Date(ultima).toLocaleString('es-CL', {dateStyle:'short', timeStyle:'short'});
     }
+    // Mostrar el más reciente
+    const ts = lsTs && (!serverTs || lsTs > serverTs) ? lsTs : serverTs;
     mostrarUltimaAct(ts);
   } catch(e){}
   renderAll();

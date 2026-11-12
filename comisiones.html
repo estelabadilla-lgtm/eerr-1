@@ -100,7 +100,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
     <span class="flabel">Mes</span>
     <select id="fMes"><option value="">Todos los meses</option></select>
     <span class="flabel">Vendedor</span>
-    <select id="fVend"><option value="">Todos</option></select>
+    <select id="fVend" multiple size="3" style="min-width:160px;border-radius:8px;padding:4px 6px;font-size:13px"><option value="" disabled style="color:var(--muted);font-style:italic">Ctrl+clic para múltiples</option></select>
     <input type="search" id="fBuscar" placeholder="Buscar RUT, nombre, folio…">
     <button id="reset" onclick="resetFiltros()">Limpiar</button>
   </div>
@@ -163,18 +163,18 @@ function sort(col){
 
 function resetFiltros(){
   document.getElementById('fMes').value='';
-  document.getElementById('fVend').value='';
+  [...document.getElementById('fVend').options].forEach(o=>o.selected=false);
   document.getElementById('fBuscar').value='';
   renderTable();
 }
 
 function getFiltered(){
   const mes=document.getElementById('fMes').value;
-  const vend=document.getElementById('fVend').value;
+  const vendSel=[...document.getElementById('fVend').selectedOptions].map(o=>o.value).filter(Boolean);
   const bus=(document.getElementById('fBuscar').value||'').toLowerCase().trim();
   return ROWS.filter(r=>{
     if(mes && r.mes!==mes) return false;
-    if(vend && (r.vendedor||'')!==vend) return false;
+    if(vendSel.length && !vendSel.includes(r.vendedor||'')) return false;
     if(bus && !r.razon.toLowerCase().includes(bus) && !r.rut.includes(bus) && !r.folio.includes(bus)) return false;
     return true;
   });
@@ -238,6 +238,7 @@ function populateFiltros(){
 
   const vends=[...new Set(ROWS.map(r=>r.vendedor||'').filter(Boolean))].sort();
   const selVend=document.getElementById('fVend');
+  selVend.innerHTML='';
   vends.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;selVend.appendChild(o);});
 }
 

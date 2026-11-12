@@ -53,7 +53,8 @@ module.exports = async (req, res) => {
     SELECT f.NumDoc AS folio, f.vendedor, f.bloqueado, f.vencimiento,
            CASE WHEN ABS(COALESCE(s.saldo, 999999)) < 1 THEN
              CASE WHEN COALESCE(s.con_cheque,0)=1 THEN 'cheque' ELSE 'pagada' END
-           ELSE 'pendiente' END AS estado_pago
+           ELSE 'pendiente' END AS estado_pago,
+           COALESCE(s.saldo, 999999) AS saldo_pendiente
     FROM folios f
     LEFT JOIN saldos s ON s.folio_ref = f.NumDoc AND s.CodAux = f.CodAux`;
 

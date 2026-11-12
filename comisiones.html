@@ -190,12 +190,12 @@ function renderTable(){
     if(va<vb)return -sortDir; if(va>vb)return sortDir; return 0;
   });
 
-  // KPIs
+  // KPIs (NCs restan)
   const factNeto=filtered.filter(r=>r.tipo!=='61').reduce((s,r)=>s+(+r.neto||0),0);
   const ncNeto=filtered.filter(r=>r.tipo==='61').reduce((s,r)=>s+(+r.neto||0),0);
-  const totalNeto=factNeto+ncNeto;
+  const totalNeto=factNeto-ncNeto;
   document.getElementById('kFacturas').textContent=fmt(factNeto);
-  document.getElementById('kNC').textContent=fmt(ncNeto);
+  document.getElementById('kNC').textContent=fmt(-ncNeto);
   document.getElementById('kNeto').textContent=fmt(totalNeto);
   document.getElementById('kDocs').textContent=filtered.length.toLocaleString('es-CL');
   document.getElementById('kpis').hidden=false;
@@ -212,16 +212,17 @@ function renderTable(){
       <td>${r.rut||''}</td>
       <td class="razon">${r.razon||''}</td>
       <td>${r.vendedor||'—'}</td>
-      <td class="num${nc}">${fmt(r.neto)}</td>
-      <td class="num${nc}">${fmt(r.iva)}</td>
-      <td class="num${nc}">${fmt(r.total)}</td>
+      <td class="num${nc}">${fmt(neg?-(+r.neto||0):(+r.neto||0))}</td>
+      <td class="num${nc}">${fmt(neg?-(+r.iva||0):(+r.iva||0))}</td>
+      <td class="num${nc}">${fmt(neg?-(+r.total||0):(+r.total||0))}</td>
     </tr>`;
   }).join('');
 
   // Footer
-  const netoSum=filtered.reduce((s,r)=>s+(+r.neto||0),0);
-  const ivaSum=filtered.reduce((s,r)=>s+(+r.iva||0),0);
-  const totSum=filtered.reduce((s,r)=>s+(+r.total||0),0);
+  const sign=r=>r.tipo==='61'?-1:1;
+  const netoSum=filtered.reduce((s,r)=>s+sign(r)*(+r.neto||0),0);
+  const ivaSum=filtered.reduce((s,r)=>s+sign(r)*(+r.iva||0),0);
+  const totSum=filtered.reduce((s,r)=>s+sign(r)*(+r.total||0),0);
   document.getElementById('tfoot').innerHTML=`<tr>
     <td colspan="5">Total (${filtered.length.toLocaleString('es-CL')} documentos)</td>
     <td></td>

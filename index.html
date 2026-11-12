@@ -895,6 +895,7 @@
     <button data-tab="flujo_caja" onclick="showTab('flujo_caja')">Flujo de Caja</button>
     <button data-tab="cartera" onclick="showTab('cartera')">Cartera Vencidos</button>
     <button data-tab="libro_ventas" onclick="showTab('libro_ventas')">Libro de Ventas</button>
+    <button data-tab="comisiones" onclick="showTab('comisiones')">Comisiones</button>
     <button data-tab="nv_retail" onclick="showTab('nv_retail')">NV Retail</button>
   </nav>
 </div>
@@ -1237,6 +1238,11 @@
 <!-- ══════════════════ TAB: LIBRO DE VENTAS ══════════════════ -->
 <div id="tab-libro_ventas" class="tab">
   <iframe src="./libro_ventas.html" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
+</div>
+
+<!-- ══════════════════ TAB: COMISIONES ══════════════════ -->
+<div id="tab-comisiones" class="tab">
+  <iframe src="./comisiones.html" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
 </div>
 
 <!-- ══════════════════ TAB: NV RETAIL ══════════════════ -->
@@ -1635,7 +1641,7 @@ function showTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
-  document.querySelector('.toolbar').style.display = (name === 'flujo_caja' || name === 'cartera' || name === 'libro_ventas') ? 'none' : '';
+  document.querySelector('.toolbar').style.display = (name === 'flujo_caja' || name === 'cartera' || name === 'libro_ventas' || name === 'comisiones') ? 'none' : '';
   if (name === 'graficos') renderCharts();
   if (name === 'seguros' && !SEG_LOADED) segInit();
   if (name === 'nv_retail') {
@@ -4263,7 +4269,7 @@ async function segEliminarPoliza(id) {
 // es seguridad real contra alguien que inspeccione el código fuente.
 const ROLES = {
   gerencia:   { label: 'Gerencia',   password: 'Gerencia2026',   tabs: '*',                                                                      canEdit: true,  puedeActualizarMayor: true  },
-  asistentes: { label: 'Asistentes', password: 'Asistentes2026', tabs: ['meli','seguros','cartera','libro_ventas','nv_retail'],                   canEdit: true,  puedeActualizarMayor: false },
+  asistentes: { label: 'Asistentes', password: 'Asistentes2026', tabs: ['meli','seguros','cartera','libro_ventas','comisiones','nv_retail'],         canEdit: true,  puedeActualizarMayor: false },
   usuarios:   { label: 'Usuarios',   password: 'grantt2026',     tabs: ['seguros','cartera'],                                                     canEdit: false, puedeActualizarMayor: false },
 };
 

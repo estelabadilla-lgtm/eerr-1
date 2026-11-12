@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Comisiones</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f6f6f3; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --accent:#1c5cab; --bar:#2a78d6; --bar-soft:#9ec5f4;
+  --crit:#d03b3b; --crit-bg:#fbe9e9; --crit-ink:#a32020;
+  --good:#0ca30c; --good-bg:#e6f4e6; --good-ink:#006300;
+  --warn-bg:#fdf1d8; --warn-ink:#8a5a00;
+  --hover:rgba(42,120,214,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --accent:#86b6ef; --bar:#3987e5; --bar-soft:#1c5cab;
+    --crit:#e66767; --crit-bg:#3a1c1c; --crit-ink:#f19a9a;
+    --good:#0ca30c; --good-bg:#16301a; --good-ink:#5fd35f;
+    --warn-bg:#3a2e12; --warn-ink:#f2c35a;
+    --hover:rgba(57,135,229,.12);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --accent:#86b6ef; --bar:#3987e5; --bar-soft:#1c5cab;
+  --crit:#e66767; --crit-bg:#3a1c1c; --crit-ink:#f19a9a;
+  --good:#0ca30c; --good-bg:#16301a; --good-ink:#5fd35f;
+  --warn-bg:#3a2e12; --warn-ink:#f2c35a;
+  --hover:rgba(57,135,229,.12);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:20px 16px 40px}
+.wrap{max-width:1300px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink2);margin:2px 0 0;font-size:13px}
+.asof{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.flabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:-4px}
+input[type=search],select{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+input[type=search]{flex:1 1 160px;min-width:0}
+#reset{margin-left:auto;font:inherit;font-size:13px;background:none;border:0;color:var(--accent);cursor:pointer;padding:6px}
+button.export{font:inherit;font-size:13px;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:6px 14px;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kpi-val{font-size:22px;font-weight:700;margin-top:2px}
+.kpi-val.neg{color:var(--crit)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px;table-layout:fixed}
+colgroup col.c-fecha{width:9%}
+colgroup col.c-tipo{width:9%}
+colgroup col.c-folio{width:7%}
+colgroup col.c-rut{width:10%}
+colgroup col.c-razon{width:24%}
+colgroup col.c-vendedor{width:15%}
+colgroup col.c-neto{width:11%}
+colgroup col.c-iva{width:8%}
+colgroup col.c-total{width:7%}
+th,td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th{background:var(--surface);font-weight:600;font-size:12px;color:var(--ink2);position:sticky;top:0;z-index:1}
+th button{background:none;border:0;font:inherit;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;padding:0;width:100%;text-align:left}
+td.razon{white-space:normal;overflow:visible}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.neg{color:var(--crit-ink)}
+tr:hover td{background:var(--hover)}
+tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;background:var(--surface)}
+.msg{font-size:13px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);color:var(--warn-ink)}
+.msg.err{background:var(--crit-bg);color:var(--crit-ink)}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bar-soft);border-top-color:var(--bar);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Comisiones</h1>
+      <p class="sub">Facturas emitidas por vendedor · Fuente: SII + Softland</p>
+      <p class="asof" id="asof"></p>
+    </div>
+    <button class="export" onclick="exportar()">Exportar Excel</button>
+  </header>
+
+  <div id="msgBox" hidden></div>
+
+  <div class="filters">
+    <span class="flabel">Mes</span>
+    <select id="fMes"><option value="">Todos los meses</option></select>
+    <span class="flabel">Vendedor</span>
+    <select id="fVend"><option value="">Todos</option></select>
+    <input type="search" id="fBuscar" placeholder="Buscar RUT, nombre, folio…">
+    <button id="reset" onclick="resetFiltros()">Limpiar</button>
+  </div>
+
+  <div class="kpis" id="kpis" hidden>
+    <div class="kpi"><div class="kpi-label">Facturas neto</div><div class="kpi-val" id="kFacturas">-</div></div>
+    <div class="kpi"><div class="kpi-label">NC neto</div><div class="kpi-val neg" id="kNC">-</div></div>
+    <div class="kpi"><div class="kpi-label">Neto total</div><div class="kpi-val" id="kNeto">-</div></div>
+    <div class="kpi"><div class="kpi-label">Documentos</div><div class="kpi-val" id="kDocs">-</div></div>
+  </div>
+
+  <div class="card">
+    <div class="tbl-wrap">
+      <table id="tbl">
+        <colgroup>
+          <col class="c-fecha"><col class="c-tipo"><col class="c-folio">
+          <col class="c-rut"><col class="c-razon"><col class="c-vendedor">
+          <col class="c-neto"><col class="c-iva"><col class="c-total">
+        </colgroup>
+        <thead><tr>
+          <th><button onclick="sort('fecha')">Fecha</button></th>
+          <th><button onclick="sort('tipo')">Tipo</button></th>
+          <th><button onclick="sort('folio')">Folio</button></th>
+          <th><button onclick="sort('rut')">RUT</button></th>
+          <th><button onclick="sort('razon')">Razón Social</button></th>
+          <th><button onclick="sort('vendedor')">Vendedor</button></th>
+          <th style="text-align:right"><button onclick="sort('neto')">Neto</button></th>
+          <th style="text-align:right"><button onclick="sort('iva')">IVA</button></th>
+          <th style="text-align:right"><button onclick="sort('total')">Total</button></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+        <tfoot id="tfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS = 'libro_ventas_data';
+let ROWS = [];
+let VEND = {}; // folio -> vendedor
+let filtered = [];
+let sortCol = 'fecha', sortDir = 1;
+
+const fmt = n => n == null ? '-' : '$' + Math.round(n).toLocaleString('es-CL');
+const tipoLabel = t => t==='33'?'Factura Afecta':t==='34'?'Factura Exenta':t==='61'?'Nota Crédito':t==='56'?'Nota Débito':t;
+const mesLabel = m => { if(!m)return m; const [y,mo]=m.split('-'); return new Date(+y,+mo-1,1).toLocaleDateString('es-CL',{month:'long',year:'numeric'}); };
+
+function showMsg(txt, tipo=''){
+  const el=document.getElementById('msgBox');
+  el.className='msg'+(tipo?' '+tipo:'');
+  el.textContent=txt;
+  el.hidden=!txt;
+}
+
+function sort(col){
+  if(sortCol===col) sortDir*=-1; else{sortCol=col;sortDir=1;}
+  renderTable();
+}
+
+function resetFiltros(){
+  document.getElementById('fMes').value='';
+  document.getElementById('fVend').value='';
+  document.getElementById('fBuscar').value='';
+  renderTable();
+}
+
+function getFiltered(){
+  const mes=document.getElementById('fMes').value;
+  const vend=document.getElementById('fVend').value;
+  const bus=(document.getElementById('fBuscar').value||'').toLowerCase().trim();
+  return ROWS.filter(r=>{
+    if(mes && r.mes!==mes) return false;
+    if(vend && (r.vendedor||'')!==vend) return false;
+    if(bus && !r.razon.toLowerCase().includes(bus) && !r.rut.includes(bus) && !r.folio.includes(bus)) return false;
+    return true;
+  });
+}
+
+function renderTable(){
+  filtered=getFiltered();
+  // Sort
+  const col=sortCol;
+  filtered.sort((a,b)=>{
+    let va=a[col]??'', vb=b[col]??'';
+    if(col==='neto'||col==='iva'||col==='total'){va=+va||0;vb=+vb||0;}
+    if(va<vb)return -sortDir; if(va>vb)return sortDir; return 0;
+  });
+
+  // KPIs
+  const factNeto=filtered.filter(r=>r.tipo!=='61').reduce((s,r)=>s+(+r.neto||0),0);
+  const ncNeto=filtered.filter(r=>r.tipo==='61').reduce((s,r)=>s+(+r.neto||0),0);
+  const totalNeto=factNeto+ncNeto;
+  document.getElementById('kFacturas').textContent=fmt(factNeto);
+  document.getElementById('kNC').textContent=fmt(ncNeto);
+  document.getElementById('kNeto').textContent=fmt(totalNeto);
+  document.getElementById('kDocs').textContent=filtered.length.toLocaleString('es-CL');
+  document.getElementById('kpis').hidden=false;
+
+  // Rows
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML=filtered.map(r=>{
+    const neg=r.tipo==='61';
+    const nc=neg?' neg':'';
+    return `<tr>
+      <td>${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}</td>
+      <td class="${neg?'neg':''}">${tipoLabel(r.tipo)}</td>
+      <td>${r.folio}</td>
+      <td>${r.rut||''}</td>
+      <td class="razon">${r.razon||''}</td>
+      <td>${r.vendedor||'—'}</td>
+      <td class="num${nc}">${fmt(r.neto)}</td>
+      <td class="num${nc}">${fmt(r.iva)}</td>
+      <td class="num${nc}">${fmt(r.total)}</td>
+    </tr>`;
+  }).join('');
+
+  // Footer
+  const netoSum=filtered.reduce((s,r)=>s+(+r.neto||0),0);
+  const ivaSum=filtered.reduce((s,r)=>s+(+r.iva||0),0);
+  const totSum=filtered.reduce((s,r)=>s+(+r.total||0),0);
+  document.getElementById('tfoot').innerHTML=`<tr>
+    <td colspan="5">Total (${filtered.length.toLocaleString('es-CL')} documentos)</td>
+    <td></td>
+    <td class="num">${fmt(netoSum)}</td>
+    <td class="num">${fmt(ivaSum)}</td>
+    <td class="num">${fmt(totSum)}</td>
+  </tr>`;
+}
+
+function populateFiltros(){
+  const meses=[...new Set(ROWS.map(r=>r.mes))].sort();
+  const selMes=document.getElementById('fMes');
+  meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=mesLabel(m);selMes.appendChild(o);});
+
+  const vends=[...new Set(ROWS.map(r=>r.vendedor||'').filter(Boolean))].sort();
+  const selVend=document.getElementById('fVend');
+  vends.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;selVend.appendChild(o);});
+}
+
+function exportar(){
+  if(!filtered.length)return;
+  const wb=XLSX.utils.book_new();
+  const data=[['Fecha','Tipo','Folio','RUT','Razón Social','Vendedor','Neto','IVA','Total'],...filtered.map(r=>[
+    r.fecha?r.fecha.split('-').reverse().join('/'):''
+    ,tipoLabel(r.tipo),r.folio,r.rut,r.razon,r.vendedor||''
+    ,+r.neto||0,+r.iva||0,+r.total||0
+  ])];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb,ws,'Comisiones');
+  XLSX.writeFile(wb,'Comisiones.xlsx');
+}
+
+// Listeners
+document.getElementById('fMes').addEventListener('change',renderTable);
+document.getElementById('fVend').addEventListener('change',renderTable);
+document.getElementById('fBuscar').addEventListener('input',renderTable);
+
+(async()=>{
+  showMsg('⏳ Cargando datos…');
+
+  // 1) Cargar libro de ventas (igual que libro_ventas.html)
+  try{
+    const r=await fetch('data_ventas.json',{cache:'no-store'});
+    if(r.ok) ROWS=await r.json();
+  }catch(e){}
+
+  // Aplicar actualizaciones de localStorage (misma lógica que libro_ventas)
+  try{
+    const upd=JSON.parse(localStorage.getItem(LS+'_upd')||'null');
+    if(upd&&Array.isArray(upd)&&upd.length){
+      const mesesUpd=new Set(upd.map(r=>r.mes));
+      const mesesAReemplazar=new Set();
+      for(const mes of mesesUpd){
+        const maxUpd=(upd.filter(r=>r.mes===mes).map(r=>r.fecha).filter(Boolean).sort().pop()||'');
+        const maxSrv=(ROWS.filter(r=>r.mes===mes).map(r=>r.fecha).filter(Boolean).sort().pop()||'');
+        if(maxUpd>maxSrv) mesesAReemplazar.add(mes);
+      }
+      if(mesesAReemplazar.size>0)
+        ROWS=ROWS.filter(r=>!mesesAReemplazar.has(r.mes)).concat(upd.filter(r=>mesesAReemplazar.has(r.mes)));
+    }
+  }catch(e){}
+
+  // Filtrar solo desde dic 2025
+  ROWS=ROWS.filter(r=>r.mes>='2025-12');
+
+  // 2) Cargar vendedores desde API Softland
+  try{
+    const r=await fetch('/api/vendedores_facturas');
+    if(r.ok){
+      const data=await r.json();
+      if(data.filas) data.filas.forEach(f=>{ VEND[String(f.folio)]=f.vendedor; });
+    }
+  }catch(e){}
+
+  // Enriquecer ROWS con vendedor
+  ROWS=ROWS.map(r=>({...r, vendedor: VEND[r.folio]||''}));
+
+  // Timestamp
+  try{
+    const fechas=ROWS.map(r=>r.fecha).filter(Boolean).sort();
+    const ultima=fechas[fechas.length-1];
+    if(ultima){
+      const ts=new Date(ultima+'T12:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
+      document.getElementById('asof').textContent='Últ. documento: '+ts;
+    }
+  }catch(e){}
+
+  if(!ROWS.length){
+    showMsg('No hay datos cargados.','err');
+    return;
+  }
+
+  showMsg('');
+  populateFiltros();
+  renderTable();
+})();
+</script>
+</body>
+</html>

@@ -46,6 +46,7 @@ module.exports = async (req, res) => {
         ON fx.NumDoc = COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc)
         AND fx.CodAux = m.CodAux
       WHERE c.CpbEst = 'V'
+        AND m.CpbNum <> '00000000'
       GROUP BY COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc), m.CodAux
     )
     SELECT f.NumDoc AS folio, f.vendedor, f.bloqueado,

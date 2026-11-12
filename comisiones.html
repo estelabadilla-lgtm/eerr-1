@@ -254,13 +254,13 @@ function renderTable(){
     const neg=r.tipo==='61';
     const nc=neg?' neg':'';
     return `<tr>
-      <td>${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}${r.vencimiento?`<br><span style="font-size:0.72em;color:#94a3b8;white-space:nowrap">Vce ${r.vencimiento.split('-').reverse().join('/')}</span>`:''}</td>
+      <td>${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}${r.vencimiento?`<br><span style="font-size:0.72em;color:#94a3b8;white-space:nowrap">Vce ${r.vencimiento.slice(0,10).split('-').reverse().join('/')}</span>`:''}</td>
       <td class="${neg?'neg':''}">${tipoLabel(r.tipo)}</td>
       <td>${(()=>{
         const total=Math.abs(+r.total||0);
         const saldo=+r.saldo_pendiente||0;
         const parcial=r.estado_pago==='pendiente' && saldo>0.5 && total>0.5 && saldo<total*0.995;
-        if(r.estado_pago==='cartera') return `<span class="badge cart">Cartera</span>${r.vce_cheque?`<br><span style="font-size:0.72em;color:#94a3b8">Vce ${r.vce_cheque.split('-').reverse().join('/')}</span>`:''}`;
+        if(r.estado_pago==='cartera') return `<span class="badge cart">Cartera</span>${r.vce_cheque?`<br><span style="font-size:0.72em;color:#94a3b8">Vce ${r.vce_cheque.slice(0,10).split('-').reverse().join('/')}</span>`:''}`;
         if(r.estado_pago==='pagada') return '<span class="badge ok">Pagada</span>';
         if(r.estado_pago==='cheque') return '<span class="badge chq">Cheque</span>';
 if(parcial) return `<span class="badge parc">Parcial</span><br><span style="font-size:0.72em;color:#94a3b8">Saldo ${fmt(saldo)}</span>`;

@@ -4,17 +4,18 @@ module.exports = async (req, res) => {
   const key = process.env.DASH_API_KEY;
   if (!url || !key) { res.status(500).json({ error: 'Sin credenciales' }); return; }
 
+  const folio = req.query.folio || '37524';
   const sql = `
-    SELECT m.TtdCod, LTRIM(RTRIM(t.DesDoc)) AS descripcion, COUNT(*) AS cant
+    SELECT m.NumDoc, m.TtdCod, LTRIM(RTRIM(t.DesDoc)) AS DesDoc,
+           m.PctCod, m.MovDebe, m.MovHaber, m.MovNumDocRef,
+           m.CodAux, m.CpbAno, m.CpbNum
     FROM softland.cwmovim m
     JOIN softland.cwcpbte c ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
     LEFT JOIN softland.cwttdoc t ON t.CodDoc = m.TtdCod
-    WHERE m.CpbAno >= '2026'
-      AND c.CpbEst = 'V'
-      AND m.PctCod IN ('10-04-01-01','10-05-01-02')
-      AND m.MovHaber > 0
-    GROUP BY m.TtdCod, t.DesDoc
-    ORDER BY cant DESC`;
+    WHERE c.CpbEst = 'V'
+      AND (m.MovNumDocRef = ${parseInt(folio)}
+           OR (m.NumDoc = ${parseInt(folio)} AND m.PctCod IN ('10-04-01-01','10-05-01-02')))
+    ORDER BY m.CpbAno, m.CpbNum`;
 
   try {
     const r = await fetch(`${url}/consulta`, {

@@ -62,9 +62,10 @@ button.export{font:inherit;font-size:13px;background:var(--accent);color:#fff;bo
 table{border-collapse:collapse;width:100%;font-size:12.5px;table-layout:fixed}
 colgroup col.c-fecha{width:9%}
 colgroup col.c-tipo{width:9%}
+colgroup col.c-pago{width:8%}
 colgroup col.c-folio{width:7%}
 colgroup col.c-rut{width:10%}
-colgroup col.c-razon{width:24%}
+colgroup col.c-razon{width:20%}
 colgroup col.c-vendedor{width:13%}
 colgroup col.c-estado{width:7%}
 colgroup col.c-neto{width:9%}
@@ -137,13 +138,14 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
     <div class="tbl-wrap">
       <table id="tbl">
         <colgroup>
-          <col class="c-fecha"><col class="c-tipo"><col class="c-folio">
+          <col class="c-fecha"><col class="c-tipo"><col class="c-pago"><col class="c-folio">
           <col class="c-rut"><col class="c-razon"><col class="c-vendedor">
           <col class="c-estado"><col class="c-neto"><col class="c-iva"><col class="c-total"><col class="c-comision">
         </colgroup>
         <thead><tr>
           <th><button onclick="sort('fecha')">Fecha</button></th>
           <th><button onclick="sort('tipo')">Tipo</button></th>
+          <th><button onclick="sort('estado_pago')">Pago</button></th>
           <th><button onclick="sort('folio')">Folio</button></th>
           <th><button onclick="sort('rut')">RUT</button></th>
           <th><button onclick="sort('razon')">Razón Social</button></th>
@@ -250,10 +252,8 @@ function renderTable(){
     const nc=neg?' neg':'';
     return `<tr>
       <td>${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}</td>
-      <td class="${neg?'neg':''}">
-        ${tipoLabel(r.tipo)}
-        ${r.estado_pago==='pagada'?'<span class="badge ok" style="margin-left:4px;font-size:10px">Pagada</span>':r.estado_pago==='cheque'?'<span class="badge chq" style="margin-left:4px;font-size:10px">Cheque</span>':r.estado_pago==='pendiente'?'<span class="badge pend" style="margin-left:4px;font-size:10px">Pendiente</span>':''}
-      </td>
+      <td class="${neg?'neg':''}">${tipoLabel(r.tipo)}</td>
+      <td>${r.estado_pago==='pagada'?'<span class="badge ok">Pagada</span>':r.estado_pago==='cheque'?'<span class="badge chq">Cheque</span>':r.estado_pago==='pendiente'?'<span class="badge pend">Pendiente</span>':'—'}</td>
       <td>${r.folio}</td>
       <td>${r.rut||''}</td>
       <td class="razon">${r.razon||''}</td>
@@ -272,7 +272,7 @@ function renderTable(){
   const ivaSum=filtered.reduce((s,r)=>s+sign(r)*(+r.iva||0),0);
   const totSum=filtered.reduce((s,r)=>s+sign(r)*(+r.total||0),0);
   document.getElementById('tfoot').innerHTML=`<tr>
-    <td colspan="5">Total (${filtered.length.toLocaleString('es-CL')} documentos)</td>
+    <td colspan="6">Total (${filtered.length.toLocaleString('es-CL')} documentos)</td>
     <td colspan="2"></td>
     <td class="num">${fmt(netoSum)}</td>
     <td class="num">${fmt(ivaSum)}</td>

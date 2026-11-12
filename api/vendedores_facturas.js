@@ -29,7 +29,8 @@ module.exports = async (req, res) => {
       GROUP BY m.NumDoc, m.CodAux
     ),
     saldos AS (
-      -- Saldo de cada folio usando TODOS los movimientos (incluyendo pagos sin VendCod)
+      -- Saldo de cada folio: sin filtro PctCod para incluir pagos en cuentas banco/caja.
+      -- INNER JOIN a folios limita el scan solo a movimientos que referencian nuestras facturas.
       SELECT COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc) AS folio_ref,
              m.CodAux,
              SUM(m.MovDebe - m.MovHaber) AS saldo,
@@ -41,9 +42,10 @@ module.exports = async (req, res) => {
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
       LEFT JOIN softland.cwttdoc t ON t.CodDoc = m.TtdCod
-      WHERE (m.CpbAno = '2025' OR m.CpbAno >= '2026')
-        AND c.CpbEst = 'V'
-        AND m.PctCod IN ('10-04-01-01','10-05-01-02')
+      INNER JOIN folios fx
+        ON fx.NumDoc = COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc)
+        AND fx.CodAux = m.CodAux
+      WHERE c.CpbEst = 'V'
       GROUP BY COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc), m.CodAux
     )
     SELECT f.NumDoc AS folio, f.vendedor, f.bloqueado,

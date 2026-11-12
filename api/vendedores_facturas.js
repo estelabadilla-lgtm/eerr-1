@@ -14,7 +14,8 @@ module.exports = async (req, res) => {
       -- Facturas emitidas desde dic 2025 con vendedor asignado
       SELECT DISTINCT m.NumDoc, m.CodAux,
              MAX(RTRIM(COALESCE(v.VenDes,''))) AS vendedor,
-             MAX(COALESCE(a.Bloqueado,'N')) AS bloqueado
+             MAX(COALESCE(a.Bloqueado,'N')) AS bloqueado,
+             MAX(m.MovFv) AS vencimiento
       FROM softland.cwmovim m
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
@@ -49,7 +50,7 @@ module.exports = async (req, res) => {
         AND m.CpbNum <> '00000000'
       GROUP BY COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc), m.CodAux
     )
-    SELECT f.NumDoc AS folio, f.vendedor, f.bloqueado,
+    SELECT f.NumDoc AS folio, f.vendedor, f.bloqueado, f.vencimiento,
            CASE WHEN ABS(COALESCE(s.saldo, 999999)) < 1 THEN
              CASE WHEN COALESCE(s.con_cheque,0)=1 THEN 'cheque' ELSE 'pagada' END
            ELSE 'pendiente' END AS estado_pago

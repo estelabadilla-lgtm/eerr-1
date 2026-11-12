@@ -251,7 +251,7 @@ function renderTable(){
     const neg=r.tipo==='61';
     const nc=neg?' neg':'';
     return `<tr>
-      <td>${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}</td>
+      <td>${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}${r.vencimiento?`<br><span style="font-size:0.72em;color:#94a3b8;white-space:nowrap">Vce ${r.vencimiento.split('-').reverse().join('/')}</span>`:''}</td>
       <td class="${neg?'neg':''}">${tipoLabel(r.tipo)}</td>
       <td>${r.estado_pago==='pagada'?'<span class="badge ok">Pagada</span>':r.estado_pago==='cheque'?'<span class="badge chq">Cheque</span>':r.estado_pago==='pendiente'?'<span class="badge pend">Pendiente</span>':'—'}</td>
       <td>${r.folio}</td>
@@ -347,7 +347,7 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
     const r=await fetch('/api/vendedores_facturas');
     if(r.ok){
       const data=await r.json();
-      if(data.filas) data.filas.forEach(f=>{ VEND[String(f.folio)]={vendedor:f.vendedor, bloqueado:f.bloqueado, estado_pago:f.estado_pago}; });
+      if(data.filas) data.filas.forEach(f=>{ VEND[String(f.folio)]={vendedor:f.vendedor, bloqueado:f.bloqueado, estado_pago:f.estado_pago, vencimiento:f.vencimiento}; });
     }
   }catch(e){}
 
@@ -356,7 +356,7 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
     const vend=VEND[r.folio]?.vendedor||'';
     const tasa=tasaVendedor(vend);
     const comision=tasa ? Math.round((+r.neto||0)*tasa) : 0;
-    return {...r, vendedor:vend, bloqueado:(VEND[r.folio]?.bloqueado||'N'), estado_pago:(VEND[r.folio]?.estado_pago||''), comision};
+    return {...r, vendedor:vend, bloqueado:(VEND[r.folio]?.bloqueado||'N'), estado_pago:(VEND[r.folio]?.estado_pago||''), vencimiento:(VEND[r.folio]?.vencimiento||''), comision};
   });
 
   // Timestamp

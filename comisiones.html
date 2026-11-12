@@ -67,7 +67,8 @@ colgroup col.c-rut{width:10%}
 colgroup col.c-razon{width:24%}
 colgroup col.c-vendedor{width:13%}
 colgroup col.c-estado{width:7%}
-colgroup col.c-neto{width:10%}
+colgroup col.c-neto{width:9%}
+colgroup col.c-comision{width:9%}
 colgroup col.c-iva{width:8%}
 colgroup col.c-total{width:7%}
 th,td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -134,7 +135,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
         <colgroup>
           <col class="c-fecha"><col class="c-tipo"><col class="c-folio">
           <col class="c-rut"><col class="c-razon"><col class="c-vendedor">
-          <col class="c-estado"><col class="c-neto"><col class="c-iva"><col class="c-total">
+          <col class="c-estado"><col class="c-neto"><col class="c-comision"><col class="c-iva"><col class="c-total">
         </colgroup>
         <thead><tr>
           <th><button onclick="sort('fecha')">Fecha</button></th>
@@ -145,6 +146,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
           <th><button onclick="sort('vendedor')">Vendedor</button></th>
           <th><button onclick="sort('bloqueado')">Estado</button></th>
           <th style="text-align:right"><button onclick="sort('neto')">Neto</button></th>
+          <th style="text-align:right"><button onclick="sort('comision')">Comisión</button></th>
           <th style="text-align:right"><button onclick="sort('iva')">IVA</button></th>
           <th style="text-align:right"><button onclick="sort('total')">Total</button></th>
         </tr></thead>
@@ -156,6 +158,13 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 </div>
 
 <script>
+// Tasas de comisión por vendedor (% sobre neto). Aliases del mismo vendedor comparten tasa.
+const TASAS = {
+  'joel cordova':          0.025,
+  'chilemat joel cordova': 0.025,
+};
+function tasaVendedor(v){ return TASAS[(v||'').toLowerCase().trim()]||0; }
+
 const LS = 'libro_ventas_data';
 let ROWS = [];
 let VEND = {}; // folio -> vendedor
@@ -237,6 +246,7 @@ function renderTable(){
       <td>${r.vendedor||'—'}</td>
       <td>${r.bloqueado==='S'?'<span class="badge bl">Bloqueado</span>':'<span class="badge ok">Vigente</span>'}</td>
       <td class="num${nc}">${fmt(neg?-(+r.neto||0):(+r.neto||0))}</td>
+      <td class="num${nc}">${r.comision?fmt(neg?-r.comision:r.comision):'—'}</td>
       <td class="num${nc}">${fmt(neg?-(+r.iva||0):(+r.iva||0))}</td>
       <td class="num${nc}">${fmt(neg?-(+r.total||0):(+r.total||0))}</td>
     </tr>`;
@@ -251,6 +261,7 @@ function renderTable(){
     <td colspan="5">Total (${filtered.length.toLocaleString('es-CL')} documentos)</td>
     <td colspan="2"></td>
     <td class="num">${fmt(netoSum)}</td>
+    <td class="num">${fmt(filtered.reduce((s,r)=>s+sign(r)*(r.comision||0),0))}</td>
     <td class="num">${fmt(ivaSum)}</td>
     <td class="num">${fmt(totSum)}</td>
   </tr>`;
@@ -326,7 +337,12 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
   }catch(e){}
 
   // Enriquecer ROWS con vendedor
-  ROWS=ROWS.map(r=>({...r, vendedor:(VEND[r.folio]?.vendedor||''), bloqueado:(VEND[r.folio]?.bloqueado||'N')}));
+  ROWS=ROWS.map(r=>{
+    const vend=VEND[r.folio]?.vendedor||'';
+    const tasa=tasaVendedor(vend);
+    const comision=tasa ? Math.round((+r.neto||0)*tasa) : 0;
+    return {...r, vendedor:vend, bloqueado:(VEND[r.folio]?.bloqueado||'N'), comision};
+  });
 
   // Timestamp
   try{

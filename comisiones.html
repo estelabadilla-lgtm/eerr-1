@@ -86,6 +86,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 .badge.pend{background:var(--warn-bg);color:var(--warn-ink)}
 .badge.chq{background:#e8f0fe;color:#1a56db}
 .badge.parc{background:#fff3e0;color:#e65100}
+.badge.cart{background:#ede7f6;color:#5e35b1}
 /* dropdown vendedores */
 .vdrop{position:relative;display:inline-block}
 .vdrop-btn{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 28px 6px 10px;cursor:pointer;white-space:nowrap;min-width:160px;text-align:left;position:relative}
@@ -260,6 +261,7 @@ function renderTable(){
         const parcial=r.estado_pago==='pendiente' && saldo>0.5 && total>0.5 && saldo<total*0.995;
         if(r.estado_pago==='pagada') return '<span class="badge ok">Pagada</span>';
         if(r.estado_pago==='cheque') return '<span class="badge chq">Cheque</span>';
+        if(r.estado_pago==='cartera') return `<span class="badge cart">Cartera</span>${r.vce_cheque?`<br><span style="font-size:0.72em;color:#94a3b8">Vce ${r.vce_cheque.split('-').reverse().join('/')}</span>`:''}`;
         if(parcial) return `<span class="badge parc">Parcial</span><br><span style="font-size:0.72em;color:#94a3b8">Saldo ${fmt(saldo)}</span>`;
         if(r.estado_pago==='pendiente') return '<span class="badge pend">Pendiente</span>';
         return '—';
@@ -357,7 +359,7 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
     const r=await fetch('/api/vendedores_facturas');
     if(r.ok){
       const data=await r.json();
-      if(data.filas) data.filas.forEach(f=>{ VEND[String(f.folio)]={vendedor:f.vendedor, bloqueado:f.bloqueado, estado_pago:f.estado_pago, vencimiento:f.vencimiento, saldo_pendiente:f.saldo_pendiente}; });
+      if(data.filas) data.filas.forEach(f=>{ VEND[String(f.folio)]={vendedor:f.vendedor, bloqueado:f.bloqueado, estado_pago:f.estado_pago, vencimiento:f.vencimiento, saldo_pendiente:f.saldo_pendiente, vce_cheque:f.vce_cheque}; });
     }
   }catch(e){}
 
@@ -366,7 +368,7 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
     const vend=VEND[r.folio]?.vendedor||'';
     const tasa=tasaVendedor(vend);
     const comision=tasa ? Math.round((+r.neto||0)*tasa) : 0;
-    return {...r, vendedor:vend, bloqueado:(VEND[r.folio]?.bloqueado||'N'), estado_pago:(VEND[r.folio]?.estado_pago||''), vencimiento:(VEND[r.folio]?.vencimiento||''), saldo_pendiente:(VEND[r.folio]?.saldo_pendiente??999999), comision};
+    return {...r, vendedor:vend, bloqueado:(VEND[r.folio]?.bloqueado||'N'), estado_pago:(VEND[r.folio]?.estado_pago||''), vencimiento:(VEND[r.folio]?.vencimiento||''), saldo_pendiente:(VEND[r.folio]?.saldo_pendiente??999999), vce_cheque:(VEND[r.folio]?.vce_cheque||''), comision};
   });
 
   // Timestamp

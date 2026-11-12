@@ -10,11 +10,11 @@ module.exports = async (req, res) => {
   }
 
   const sql = `
-    WITH fact AS (
-      SELECT m.NumDoc, m.CodAux,
-             RTRIM(COALESCE(v.VenDes,'')) AS vendedor,
-             COALESCE(a.Bloqueado,'N') AS bloqueado,
-             SUM(m.MovDebe - m.MovHaber) AS saldo
+    WITH folios AS (
+      -- Facturas emitidas desde dic 2025 con vendedor asignado
+      SELECT DISTINCT m.NumDoc, m.CodAux,
+             MAX(RTRIM(COALESCE(v.VenDes,''))) AS vendedor,
+             MAX(COALESCE(a.Bloqueado,'N')) AS bloqueado
       FROM softland.cwmovim m
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
@@ -26,12 +26,17 @@ module.exports = async (req, res) => {
         AND m.PctCod IN ('10-04-01-01','10-05-01-02')
         AND m.MovFe >= '2025-12-01'
         AND m.VendCod IS NOT NULL AND m.VendCod <> ''
-      GROUP BY m.NumDoc, m.CodAux, v.VenDes, a.Bloqueado
+      GROUP BY m.NumDoc, m.CodAux
     ),
-    pagos AS (
+    saldos AS (
+      -- Saldo de cada folio usando TODOS los movimientos (incluyendo pagos sin VendCod)
       SELECT COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc) AS folio_ref,
-             MAX(CASE WHEN UPPER(LTRIM(RTRIM(t.DesDoc))) LIKE '%CHEQUE%'
-                        OR UPPER(m.TtdCod) IN ('CQ','CH','CHQ','VCH','DCH') THEN 1 ELSE 0 END) AS con_cheque
+             m.CodAux,
+             SUM(m.MovDebe - m.MovHaber) AS saldo,
+             MAX(CASE WHEN m.MovHaber > 0 AND (
+               UPPER(LTRIM(RTRIM(t.DesDoc))) LIKE '%CHEQUE%'
+               OR UPPER(m.TtdCod) IN ('CQ','CH','CHQ','VCH','DCH')
+             ) THEN 1 ELSE 0 END) AS con_cheque
       FROM softland.cwmovim m
       JOIN softland.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
@@ -39,15 +44,14 @@ module.exports = async (req, res) => {
       WHERE (m.CpbAno = '2025' OR m.CpbAno >= '2026')
         AND c.CpbEst = 'V'
         AND m.PctCod IN ('10-04-01-01','10-05-01-02')
-        AND m.MovHaber > 0
-      GROUP BY COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc)
+      GROUP BY COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc), m.CodAux
     )
     SELECT f.NumDoc AS folio, f.vendedor, f.bloqueado,
-           CASE WHEN ABS(f.saldo) < 1 THEN
-             CASE WHEN COALESCE(p.con_cheque,0)=1 THEN 'cheque' ELSE 'pagada' END
+           CASE WHEN ABS(COALESCE(s.saldo, 999999)) < 1 THEN
+             CASE WHEN COALESCE(s.con_cheque,0)=1 THEN 'cheque' ELSE 'pagada' END
            ELSE 'pendiente' END AS estado_pago
-    FROM fact f
-    LEFT JOIN pagos p ON p.folio_ref = f.NumDoc`;
+    FROM folios f
+    LEFT JOIN saldos s ON s.folio_ref = f.NumDoc AND s.CodAux = f.CodAux`;
 
   try {
     const r = await fetch(`${url}/consulta`, {

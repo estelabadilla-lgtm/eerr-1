@@ -184,6 +184,7 @@ const LS = 'libro_ventas_data';
 let ROWS = [];
 let VEND = {}; // folio -> vendedor
 let filtered = [];
+let VENDEDOR_LOCK = null; // null = sin restricción; array = filtrar solo esos vendedores (minúsculas)
 let sortCol = 'fecha', sortDir = 1;
 
 const fmt = n => n == null ? '-' : '$' + Math.round(n).toLocaleString('es-CL');
@@ -330,6 +331,43 @@ document.getElementById('fPago').addEventListener('change',renderTable);
 document.getElementById('fBuscar').addEventListener('input',renderTable);
 
 (async()=>{
+  // ── Auth guard: si viene de portal vendedores, verificar token ──────────────
+  const _vtoken = localStorage.getItem('vtoken');
+  if (_vtoken) {
+    try {
+      const _vr = await fetch('/api/verify?token=' + encodeURIComponent(_vtoken));
+      if (!_vr.ok) throw new Error();
+      const _vp = await _vr.json();
+      if (!(_vp.tabs||[]).includes('comisiones')) {
+        window.location.href = '/vendedores.html'; return;
+      }
+      if (_vp.vendedores) {
+        VENDEDOR_LOCK = _vp.vendedores; // array de nombres en minúsculas
+        // Ocultar selector de vendedor y mostrar nombre bloqueado
+        const vdrop = document.getElementById('vdropBtn')?.closest('span, div, label')?.parentElement;
+        const btn = document.getElementById('vdropBtn');
+        if (btn) {
+          btn.textContent = _vp.vendedores.map(v=>v.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ')).join(' / ');
+          btn.style.pointerEvents = 'none';
+          btn.style.opacity = '.6';
+        }
+        // Botón cerrar sesión
+        const hdr = document.querySelector('header');
+        if (hdr) {
+          const logBtn = document.createElement('button');
+          logBtn.textContent = 'Cerrar sesión';
+          logBtn.style.cssText = 'font:inherit;font-size:12px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);cursor:pointer';
+          logBtn.onclick = () => { localStorage.removeItem('vtoken'); window.location.href='/vendedores.html'; };
+          hdr.appendChild(logBtn);
+        }
+      }
+    } catch {
+      localStorage.removeItem('vtoken');
+      window.location.href = '/vendedores.html'; return;
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────────────
+
   showMsg('⏳ Cargando datos…');
 
   // 1) Cargar libro de ventas (igual que libro_ventas.html)
@@ -378,6 +416,11 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
     if(estado_pago==='pagada' && vce_cheque) estado_pago='cartera';
     return {...r, vendedor:vend, bloqueado:(VEND[r.folio]?.bloqueado||'N'), estado_pago, vencimiento:(VEND[r.folio]?.vencimiento||''), saldo_pendiente:(VEND[r.folio]?.saldo_pendiente??999999), vce_cheque, comision};
   });
+
+  // Filtrar por vendedor si hay lock (perfil vendedor)
+  if (VENDEDOR_LOCK) {
+    ROWS = ROWS.filter(r => VENDEDOR_LOCK.includes((r.vendedor||'').toLowerCase().trim()));
+  }
 
   // Timestamp
   try{

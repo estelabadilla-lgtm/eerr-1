@@ -261,8 +261,7 @@ function renderTable(){
         const parcial=r.estado_pago==='pendiente' && saldo>0.5 && total>0.5 && saldo<total*0.995;
         if(r.estado_pago==='pagada') return '<span class="badge ok">Pagada</span>';
         if(r.estado_pago==='cheque') return '<span class="badge chq">Cheque</span>';
-        if(r.estado_pago==='cartera') return `<span class="badge cart">Cartera</span>${r.vce_cheque?`<br><span style="font-size:0.72em;color:#94a3b8">Vce ${r.vce_cheque.split('-').reverse().join('/')}</span>`:''}`;
-        if(parcial) return `<span class="badge parc">Parcial</span><br><span style="font-size:0.72em;color:#94a3b8">Saldo ${fmt(saldo)}</span>`;
+if(parcial) return `<span class="badge parc">Parcial</span><br><span style="font-size:0.72em;color:#94a3b8">Saldo ${fmt(saldo)}</span>`;
         if(r.estado_pago==='pendiente') return '<span class="badge pend">Pendiente</span>';
         return '—';
       })()}</td>

@@ -10,11 +10,14 @@ module.exports = async (req, res) => {
   }
 
   const sql = `
-    SELECT DISTINCT m.NumDoc AS folio, RTRIM(COALESCE(v.VenDes, '')) AS vendedor
+    SELECT DISTINCT m.NumDoc AS folio,
+           RTRIM(COALESCE(v.VenDes, '')) AS vendedor,
+           COALESCE(a.Bloqueado, 'N') AS bloqueado
     FROM softland.cwmovim m
     JOIN softland.cwcpbte c
       ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
     LEFT JOIN softland.cwtvend v ON v.VenCod = m.VendCod
+    LEFT JOIN softland.cwtauxi a ON a.CodAux = m.CodAux
     WHERE (m.CpbAno = '2025' OR m.CpbAno >= '2026')
       AND c.CpbEst = 'V'
       AND c.CpbNormaTrib = 'S'

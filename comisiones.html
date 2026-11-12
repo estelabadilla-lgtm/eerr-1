@@ -81,6 +81,15 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:12px;white-space:nowrap}
 .badge.bl{background:var(--crit-bg);color:var(--crit-ink)}
 .badge.ok{background:var(--good-bg);color:var(--good-ink)}
+/* dropdown vendedores */
+.vdrop{position:relative;display:inline-block}
+.vdrop-btn{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 28px 6px 10px;cursor:pointer;white-space:nowrap;min-width:160px;text-align:left;position:relative}
+.vdrop-btn::after{content:'▾';position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted)}
+.vdrop-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:220px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100;padding:6px 0;max-height:260px;overflow-y:auto}
+.vdrop-panel.open{display:block}
+.vdrop-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:13px}
+.vdrop-item:hover{background:var(--hover)}
+.vdrop-item input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;flex-shrink:0}
 .msg{font-size:13px;padding:8px 12px;border-radius:8px;background:var(--warn-bg);color:var(--warn-ink)}
 .msg.err{background:var(--crit-bg);color:var(--crit-ink)}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bar-soft);border-top-color:var(--bar);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
@@ -104,7 +113,10 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
     <span class="flabel">Mes</span>
     <select id="fMes"><option value="">Todos los meses</option></select>
     <span class="flabel">Vendedor</span>
-    <select id="fVend" multiple size="3" style="min-width:160px;border-radius:8px;padding:4px 6px;font-size:13px"><option value="" disabled style="color:var(--muted);font-style:italic">Ctrl+clic para múltiples</option></select>
+    <div class="vdrop" id="vdropWrap">
+      <button class="vdrop-btn" id="vdropBtn" type="button">Todos los vendedores</button>
+      <div class="vdrop-panel" id="vdropPanel"></div>
+    </div>
     <input type="search" id="fBuscar" placeholder="Buscar RUT, nombre, folio…">
     <button id="reset" onclick="resetFiltros()">Limpiar</button>
   </div>
@@ -168,14 +180,20 @@ function sort(col){
 
 function resetFiltros(){
   document.getElementById('fMes').value='';
-  [...document.getElementById('fVend').options].forEach(o=>o.selected=false);
+  document.querySelectorAll('#vdropPanel input').forEach(cb=>cb.checked=false);
+  updateVdropLabel();
   document.getElementById('fBuscar').value='';
   renderTable();
 }
 
+function updateVdropLabel(){
+  const sel=[...document.querySelectorAll('#vdropPanel input:checked')].map(cb=>cb.value);
+  document.getElementById('vdropBtn').textContent=sel.length===0?'Todos los vendedores':sel.length===1?sel[0]:`${sel.length} vendedores`;
+}
+
 function getFiltered(){
   const mes=document.getElementById('fMes').value;
-  const vendSel=[...document.getElementById('fVend').selectedOptions].map(o=>o.value).filter(Boolean);
+  const vendSel=[...document.querySelectorAll('#vdropPanel input:checked')].map(cb=>cb.value);
   const bus=(document.getElementById('fBuscar').value||'').toLowerCase().trim();
   return ROWS.filter(r=>{
     if(mes && r.mes!==mes) return false;
@@ -244,9 +262,12 @@ function populateFiltros(){
   meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=mesLabel(m);selMes.appendChild(o);});
 
   const vends=[...new Set(ROWS.map(r=>r.vendedor||'').filter(Boolean))].sort();
-  const selVend=document.getElementById('fVend');
-  selVend.innerHTML='';
-  vends.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;selVend.appendChild(o);});
+  const panel=document.getElementById('vdropPanel');
+  panel.innerHTML=vends.map(v=>`<label class="vdrop-item"><input type="checkbox" value="${v.replace(/"/g,'&quot;')}"><span>${v}</span></label>`).join('');
+  panel.querySelectorAll('input').forEach(cb=>cb.addEventListener('change',()=>{updateVdropLabel();renderTable();}));
+  // toggle panel
+  document.getElementById('vdropBtn').addEventListener('click',e=>{e.stopPropagation();panel.classList.toggle('open');});
+  document.addEventListener('click',()=>panel.classList.remove('open'));
 }
 
 function exportar(){
@@ -264,7 +285,7 @@ function exportar(){
 
 // Listeners
 document.getElementById('fMes').addEventListener('change',renderTable);
-document.getElementById('fVend').addEventListener('change',renderTable);
+// vendedor: manejado por checkboxes en populateFiltros
 document.getElementById('fBuscar').addEventListener('input',renderTable);
 
 (async()=>{

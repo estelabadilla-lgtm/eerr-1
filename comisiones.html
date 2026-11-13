@@ -140,13 +140,24 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
     grid-column:2;grid-row:2;
     font-size:13px;font-weight:700;
     font-variant-numeric:tabular-nums;
-    white-space:nowrap;text-align:right;align-self:center;
+    white-space:nowrap;text-align:right;align-self:start;
+  }
+  .col-total::before{
+    content:"Total";display:block;
+    font-size:9px;font-weight:400;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px;
   }
   .col-com{
     grid-column:3;grid-row:2;
-    font-size:12px;font-variant-numeric:tabular-nums;
-    white-space:nowrap;text-align:right;align-self:center;
-    padding:1px 5px;border-radius:4px;
+    font-size:13px;font-variant-numeric:tabular-nums;
+    white-space:nowrap;text-align:right;align-self:start;
+    padding:0 5px;border-radius:4px;
+  }
+  .col-com::before{
+    content:"Com.";display:block;
+    font-size:9px;font-weight:400;
+    text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px;
+    color:var(--accent);
   }
 }
 </style>

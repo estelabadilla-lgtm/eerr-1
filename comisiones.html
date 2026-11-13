@@ -105,36 +105,45 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 
 /* ── Vista móvil: 2 líneas por fila ─────────────────────────────────── */
 @media(max-width:640px){
-  /* Ocultar tabla y thead normales */
-  table{table-layout:auto}
-  thead tr{display:none}
-  /* Cada fila = tarjeta de 2 líneas */
+  table,thead,tbody,tfoot,tr,td,th{display:block;width:100%}
+  thead,tfoot{display:none}
+  .col-folio,.col-rut,.col-vend,.col-est,.col-iva,.col-tipo{display:none!important}
   tbody tr{
-    display:grid;
-    grid-template-columns:auto auto 1fr auto;
-    grid-template-rows:auto auto;
-    column-gap:6px;row-gap:3px;
-    padding:8px 10px;
+    display:flex;flex-wrap:wrap;align-items:center;
+    padding:9px 12px;gap:0;
     border-bottom:1px solid var(--grid);
   }
-  /* Ocultar columnas secundarias */
-  .col-folio,.col-rut,.col-vend,.col-est,.col-iva{display:none!important}
-  /* LÍNEA 1: fecha+tipo | razón (flex) | badge */
-  tbody tr{grid-template-columns:auto 1fr auto;grid-template-rows:auto auto}
-  .col-fecha{grid-column:1;grid-row:1;font-size:11px;color:var(--muted);white-space:nowrap;align-self:center;padding-right:4px}
-  .col-tipo {grid-column:1;grid-row:1;font-size:11px;white-space:nowrap;align-self:center;display:inline}
-  .col-razon{grid-column:2;grid-row:1;font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:center}
-  .col-pago {grid-column:3;grid-row:1;text-align:right;white-space:nowrap;align-self:center;padding-left:6px}
-  /* LÍNEA 2: neto (muted) | total | comisión */
-  .col-neto {grid-column:1;grid-row:2;font-size:11px;color:var(--muted);text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .col-total{grid-column:2;grid-row:2;font-size:12.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
-  .col-com  {grid-column:3;grid-row:2;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;padding:1px 6px;border-radius:4px;white-space:nowrap}
-  /* Footer visible */
-  tfoot tr{display:grid;grid-template-columns:1fr auto auto auto;padding:8px 10px;gap:6px}
-  tfoot td:nth-child(n+1):nth-child(-n+5){display:none}
-  tfoot td:nth-child(6){grid-column:1} /* neto */
-  tfoot td:nth-child(8){grid-column:2} /* total */
-  tfoot td:nth-child(9){grid-column:3} /* comision */
+  /* ── Línea 1: nombre (izq) + badge (der) ── */
+  .col-razon{
+    flex:1 1 0;min-width:0;order:1;
+    font-size:13px;font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    padding:0 8px 0 0;
+  }
+  .col-pago{
+    flex:0 0 auto;order:2;
+    white-space:nowrap;text-align:right;
+    padding:0;
+  }
+  /* ── Línea 2: fecha (izq) + total · comisión (der) ── */
+  .col-fecha{
+    flex:1 1 0;min-width:0;order:3;
+    font-size:11px;color:var(--muted);
+    white-space:nowrap;padding:3px 0 0;
+  }
+  .col-neto{display:none!important}
+  .col-total{
+    flex:0 0 auto;order:4;
+    font-size:13px;font-weight:700;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;padding:3px 8px 0 0;text-align:right;
+  }
+  .col-com{
+    flex:0 0 auto;order:5;
+    font-size:12px;font-variant-numeric:tabular-nums;
+    white-space:nowrap;padding:3px 0 0;
+    border-radius:4px;text-align:right;
+  }
 }
 </style>
 </head>

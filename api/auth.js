@@ -2,11 +2,11 @@ const crypto = require('crypto');
 
 // vendedores: null = ver todos; array = filtrar solo esos nombres (minúsculas, coincide con TASAS)
 const USERS = {
-  joel:      { pass: 'Joel2026',      vendedores: ['joel cordova','chilemat joel cordova','marcelo herrera','chilemat marcelo'], tabs: ['comisiones'] },
-  sandra:    { pass: 'Sandra2026',    vendedores: ['sandra ortega','chilemat sandra'],                                          tabs: ['comisiones'] },
-  oscar:     { pass: 'Oscar2026',     vendedores: ['oscar bucarey'],                                                            tabs: ['comisiones'] },
-  diego:     { pass: 'Diego2026',     vendedores: ['diego rivero'],                                                             tabs: ['comisiones'] },
-  alejandra: { pass: 'Alejandra2026', vendedores: null,                                                                        tabs: ['vehiculos','vencidos','nv_retail','comisiones'] },
+  joel:      { pass: 'joel2026',      vendedores: ['joel cordova','chilemat joel cordova','marcelo herrera','chilemat marcelo'], tabs: ['comisiones'] },
+  sandra:    { pass: 'sandra2026',    vendedores: ['sandra ortega','chilemat sandra'],                                          tabs: ['comisiones'] },
+  oscar:     { pass: 'oscar2026',     vendedores: ['oscar bucarey'],                                                            tabs: ['comisiones'] },
+  diego:     { pass: 'diego2026',     vendedores: ['diego rivero'],                                                             tabs: ['comisiones'] },
+  alejandra: { pass: 'alejandra2026', vendedores: null,                                                                        tabs: ['vehiculos','vencidos','nv_retail','comisiones'] },
 };
 
 module.exports = async (req, res) => {

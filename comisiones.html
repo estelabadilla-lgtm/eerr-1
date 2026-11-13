@@ -105,44 +105,43 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 
 /* ── Vista móvil: 2 líneas por fila ─────────────────────────────────── */
 @media(max-width:640px){
-  table,thead,tbody,tfoot,tr,td,th{display:block;width:100%}
-  thead,tfoot{display:none}
-  .col-folio,.col-rut,.col-vend,.col-est,.col-iva,.col-tipo{display:none!important}
+  /* Ocultar encabezado y pie */
+  thead,tfoot{display:none!important}
+  /* Ocultar celdas no necesarias */
+  .col-folio,.col-rut,.col-vend,.col-est,.col-iva,.col-tipo,.col-neto{display:none!important}
+  /* Cada fila = flex wrap de 2 líneas */
   tbody tr{
-    display:flex;flex-wrap:wrap;align-items:center;
-    padding:9px 12px;gap:0;
-    border-bottom:1px solid var(--grid);
+    display:flex!important;flex-wrap:wrap;align-items:baseline;
+    padding:10px 12px;border-bottom:1px solid var(--grid);
   }
-  /* ── Línea 1: nombre (izq) + badge (der) ── */
+  /* Línea 1: nombre ocupa todo menos el badge */
   .col-razon{
     flex:1 1 0;min-width:0;order:1;
     font-size:13px;font-weight:600;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    padding:0 8px 0 0;
+    padding-right:8px;
   }
   .col-pago{
     flex:0 0 auto;order:2;
-    white-space:nowrap;text-align:right;
-    padding:0;
+    white-space:nowrap;
   }
-  /* ── Línea 2: fecha (izq) + total · comisión (der) ── */
+  /* Línea 2: fecha (izq) | total + comisión (der) */
   .col-fecha{
     flex:1 1 0;min-width:0;order:3;
     font-size:11px;color:var(--muted);
-    white-space:nowrap;padding:3px 0 0;
+    white-space:nowrap;padding-top:4px;
   }
-  .col-neto{display:none!important}
   .col-total{
     flex:0 0 auto;order:4;
     font-size:13px;font-weight:700;
     font-variant-numeric:tabular-nums;
-    white-space:nowrap;padding:3px 8px 0 0;text-align:right;
+    white-space:nowrap;padding:4px 8px 0 0;
   }
   .col-com{
     flex:0 0 auto;order:5;
     font-size:12px;font-variant-numeric:tabular-nums;
-    white-space:nowrap;padding:3px 0 0;
-    border-radius:4px;text-align:right;
+    white-space:nowrap;padding:4px 0 0;
+    border-radius:4px;
   }
 }
 </style>

@@ -105,6 +105,8 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 
 /* ── Vista móvil: 2 líneas por fila ─────────────────────────────────── */
 @media(max-width:640px){
+  /* Liberar tabla de su layout fijo */
+  table,tbody{display:block!important;width:100%}
   /* Ocultar encabezado y pie */
   thead,tfoot{display:none!important}
   /* Ocultar celdas no necesarias */

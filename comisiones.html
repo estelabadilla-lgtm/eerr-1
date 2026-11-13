@@ -105,45 +105,48 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 
 /* ── Vista móvil: 2 líneas por fila ─────────────────────────────────── */
 @media(max-width:640px){
-  /* Liberar tabla de su layout fijo */
   table,tbody{display:block!important;width:100%}
-  /* Ocultar encabezado y pie */
   thead,tfoot{display:none!important}
-  /* Ocultar celdas no necesarias */
   .col-folio,.col-rut,.col-vend,.col-est,.col-iva,.col-tipo,.col-neto{display:none!important}
-  /* Cada fila = flex wrap de 2 líneas */
+
+  /* Grid 3 col × 2 filas */
   tbody tr{
-    display:flex!important;flex-wrap:wrap;align-items:baseline;
-    padding:10px 12px;border-bottom:1px solid var(--grid);
+    display:grid!important;
+    grid-template-columns:1fr auto auto;
+    grid-template-rows:auto auto;
+    column-gap:8px;row-gap:3px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--grid);
   }
-  /* Línea 1: nombre ocupa todo menos el badge */
+  /* Línea 1 */
   .col-razon{
-    flex:1 1 0;min-width:0;order:1;
+    grid-column:1;grid-row:1;
+    min-width:0;
     font-size:13px;font-weight:600;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    padding-right:8px;
+    align-self:center;
   }
   .col-pago{
-    flex:0 0 auto;order:2;
-    white-space:nowrap;
+    grid-column:2/4;grid-row:1;
+    white-space:nowrap;text-align:right;align-self:center;
   }
-  /* Línea 2: fecha (izq) | total + comisión (der) */
+  /* Línea 2 */
   .col-fecha{
-    flex:1 1 0;min-width:0;order:3;
+    grid-column:1;grid-row:2;
     font-size:11px;color:var(--muted);
-    white-space:nowrap;padding-top:4px;
+    white-space:nowrap;align-self:center;
   }
   .col-total{
-    flex:0 0 auto;order:4;
+    grid-column:2;grid-row:2;
     font-size:13px;font-weight:700;
     font-variant-numeric:tabular-nums;
-    white-space:nowrap;padding:4px 8px 0 0;
+    white-space:nowrap;text-align:right;align-self:center;
   }
   .col-com{
-    flex:0 0 auto;order:5;
+    grid-column:3;grid-row:2;
     font-size:12px;font-variant-numeric:tabular-nums;
-    white-space:nowrap;padding:4px 0 0;
-    border-radius:4px;
+    white-space:nowrap;text-align:right;align-self:center;
+    padding:1px 5px;border-radius:4px;
   }
 }
 </style>

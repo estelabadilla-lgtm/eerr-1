@@ -102,6 +102,39 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 .msg.err{background:var(--crit-bg);color:var(--crit-ink)}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bar-soft);border-top-color:var(--bar);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Vista móvil: 2 líneas por fila ─────────────────────────────────── */
+@media(max-width:640px){
+  /* Ocultar tabla y thead normales */
+  table{table-layout:auto}
+  thead tr{display:none}
+  /* Cada fila = tarjeta de 2 líneas */
+  tbody tr{
+    display:grid;
+    grid-template-columns:auto auto 1fr auto;
+    grid-template-rows:auto auto;
+    column-gap:6px;row-gap:3px;
+    padding:8px 10px;
+    border-bottom:1px solid var(--grid);
+  }
+  /* Ocultar columnas secundarias */
+  .col-folio,.col-rut,.col-vend,.col-est,.col-iva{display:none!important}
+  /* LÍNEA 1: fecha | tipo | razón | badge */
+  .col-fecha{grid-column:1;grid-row:1;font-size:11px;color:var(--muted);white-space:nowrap;align-self:center}
+  .col-tipo {grid-column:2;grid-row:1;font-size:11px;white-space:nowrap;align-self:center}
+  .col-razon{grid-column:3;grid-row:1;font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:center}
+  .col-pago {grid-column:4;grid-row:1;text-align:right;white-space:nowrap;align-self:center}
+  /* LÍNEA 2: neto | — | total | comisión (alineados con línea 1) */
+  .col-neto {grid-column:1/3;grid-row:2;font-size:11.5px;color:var(--muted);text-align:left;font-variant-numeric:tabular-nums}
+  .col-total{grid-column:3;grid-row:2;font-size:12.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .col-com  {grid-column:4;grid-row:2;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;padding:2px 6px;border-radius:4px}
+  /* Footer visible */
+  tfoot tr{display:grid;grid-template-columns:1fr auto auto auto;padding:8px 10px;gap:6px}
+  tfoot td:nth-child(n+1):nth-child(-n+5){display:none}
+  tfoot td:nth-child(6){grid-column:1} /* neto */
+  tfoot td:nth-child(8){grid-column:2} /* total */
+  tfoot td:nth-child(9){grid-column:3} /* comision */
+}
 </style>
 </head>
 <body>
@@ -268,10 +301,7 @@ function renderTable(){
   tbody.innerHTML=filtered.map(r=>{
     const neg=r.tipo==='61';
     const nc=neg?' neg':'';
-    return `<tr>
-      <td>${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}${r.vencimiento?`<br><span style="font-size:0.72em;color:#94a3b8;white-space:nowrap">Vce ${r.vencimiento.slice(0,10).split('-').reverse().join('/')}</span>`:''}</td>
-      <td class="${neg?'neg':''}">${tipoLabel(r.tipo)}</td>
-      <td>${(()=>{
+    const badgePago=(()=>{
         const total=Math.abs(+r.total||0);
         const saldo=+r.saldo_pendiente||0;
         const esNC = r.tipo==='61' || r.tipo==='56';
@@ -283,16 +313,20 @@ function renderTable(){
         if(parcial) return `<span class="badge parc">Parcial</span><br><span style="font-size:0.72em;color:#94a3b8">Saldo ${fmt(saldo)}</span>`;
         if(r.estado_pago==='pendiente') return '<span class="badge pend">Pendiente</span>';
         return '—';
-      })()}</td>
-      <td>${r.folio}</td>
-      <td>${r.rut||''}</td>
-      <td class="razon">${r.razon||''}</td>
-      <td>${r.vendedor||'—'}</td>
-      <td>${r.bloqueado==='S'?'<span class="badge bl">Bloqueado</span>':'<span class="badge ok">Vigente</span>'}</td>
-      <td class="num${nc}">${fmt(neg?-(+r.neto||0):(+r.neto||0))}</td>
-      <td class="num${nc}">${fmt(neg?-(+r.iva||0):(+r.iva||0))}</td>
-      <td class="num${nc}">${fmt(neg?-(+r.total||0):(+r.total||0))}</td>
-      <td class="num${nc}" style="${r.comision?'background:var(--blue-dim,rgba(0,120,200,.08));color:var(--accent);font-weight:600':'color:var(--muted)'}">${r.comision?fmt(neg?-r.comision:r.comision):'—'}</td>
+      })();
+    return `<tr>
+      <td class="col-fecha">${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}${r.vencimiento?`<br><span style="font-size:0.72em;color:#94a3b8;white-space:nowrap">Vce ${r.vencimiento.slice(0,10).split('-').reverse().join('/')}</span>`:''}</td>
+      <td class="col-tipo ${neg?'neg':''}">${tipoLabel(r.tipo)}</td>
+      <td class="col-pago">${badgePago}</td>
+      <td class="col-folio">${r.folio}</td>
+      <td class="col-rut">${r.rut||''}</td>
+      <td class="col-razon razon">${r.razon||''}</td>
+      <td class="col-vend">${r.vendedor||'—'}</td>
+      <td class="col-est">${r.bloqueado==='S'?'<span class="badge bl">Bloqueado</span>':'<span class="badge ok">Vigente</span>'}</td>
+      <td class="col-neto num${nc}">${fmt(neg?-(+r.neto||0):(+r.neto||0))}</td>
+      <td class="col-iva num${nc}">${fmt(neg?-(+r.iva||0):(+r.iva||0))}</td>
+      <td class="col-total num${nc}">${fmt(neg?-(+r.total||0):(+r.total||0))}</td>
+      <td class="col-com num${nc}" style="${r.comision?'background:var(--blue-dim,rgba(0,120,200,.08));color:var(--accent);font-weight:600':'color:var(--muted)'}">${r.comision?fmt(neg?-r.comision:r.comision):'—'}</td>
     </tr>`;
   }).join('');
 

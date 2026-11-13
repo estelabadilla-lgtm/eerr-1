@@ -119,7 +119,10 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 
   <div class="filters">
     <span class="flabel">Mes</span>
-    <select id="fMes"><option value="">Todos los meses</option></select>
+    <div class="vdrop" id="mDropWrap">
+      <button class="vdrop-btn" id="mDropBtn" type="button">Todos los meses</button>
+      <div class="vdrop-panel" id="mDropPanel"></div>
+    </div>
     <span class="flabel">Vendedor</span>
     <div class="vdrop" id="vdropWrap">
       <button class="vdrop-btn" id="vdropBtn" type="button">Todos los vendedores</button>
@@ -205,12 +208,18 @@ function sort(col){
 }
 
 function resetFiltros(){
-  document.getElementById('fMes').value='';
   document.getElementById('fPago').value='';
+  document.querySelectorAll('#mDropPanel input').forEach(cb=>cb.checked=false);
+  updateMDropLabel();
   document.querySelectorAll('#vdropPanel input').forEach(cb=>cb.checked=false);
   updateVdropLabel();
   document.getElementById('fBuscar').value='';
   renderTable();
+}
+
+function updateMDropLabel(){
+  const sel=[...document.querySelectorAll('#mDropPanel input:checked')].map(cb=>cb.value);
+  document.getElementById('mDropBtn').textContent=sel.length===0?'Todos los meses':sel.length===1?mesLabel(sel[0]):`${sel.length} meses`;
 }
 
 function updateVdropLabel(){
@@ -219,12 +228,12 @@ function updateVdropLabel(){
 }
 
 function getFiltered(){
-  const mes=document.getElementById('fMes').value;
+  const mesSel=[...document.querySelectorAll('#mDropPanel input:checked')].map(cb=>cb.value);
   const vendSel=[...document.querySelectorAll('#vdropPanel input:checked')].map(cb=>cb.value);
   const pago=document.getElementById('fPago').value;
   const bus=(document.getElementById('fBuscar').value||'').toLowerCase().trim();
   return ROWS.filter(r=>{
-    if(mes && r.mes!==mes) return false;
+    if(mesSel.length && !mesSel.includes(r.mes)) return false;
     if(vendSel.length && !vendSel.includes(r.vendedor||'')) return false;
     const esNC = r.tipo==='61' || r.tipo==='56';
     if(pago && esNC && pago!=='rebaja') return false;
@@ -303,17 +312,21 @@ function renderTable(){
 }
 
 function populateFiltros(){
+  // Dropdown meses (multi-check)
   const meses=[...new Set(ROWS.map(r=>r.mes))].sort();
-  const selMes=document.getElementById('fMes');
-  meses.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=mesLabel(m);selMes.appendChild(o);});
+  const mPanel=document.getElementById('mDropPanel');
+  mPanel.innerHTML=meses.map(m=>`<label class="vdrop-item"><input type="checkbox" value="${m}"><span>${mesLabel(m)}</span></label>`).join('');
+  mPanel.querySelectorAll('input').forEach(cb=>cb.addEventListener('change',()=>{updateMDropLabel();renderTable();}));
+  document.getElementById('mDropBtn').addEventListener('click',e=>{e.stopPropagation();mPanel.classList.toggle('open');document.getElementById('vdropPanel').classList.remove('open');});
 
+  // Dropdown vendedores (multi-check)
   const vends=[...new Set(ROWS.map(r=>r.vendedor||'').filter(Boolean))].sort();
   const panel=document.getElementById('vdropPanel');
   panel.innerHTML=vends.map(v=>`<label class="vdrop-item"><input type="checkbox" value="${v.replace(/"/g,'&quot;')}"><span>${v}</span></label>`).join('');
   panel.querySelectorAll('input').forEach(cb=>cb.addEventListener('change',()=>{updateVdropLabel();renderTable();}));
-  // toggle panel
-  document.getElementById('vdropBtn').addEventListener('click',e=>{e.stopPropagation();panel.classList.toggle('open');});
-  document.addEventListener('click',()=>panel.classList.remove('open'));
+  document.getElementById('vdropBtn').addEventListener('click',e=>{e.stopPropagation();panel.classList.toggle('open');document.getElementById('mDropPanel').classList.remove('open');});
+
+  document.addEventListener('click',()=>{panel.classList.remove('open');mPanel.classList.remove('open');});
 }
 
 function exportar(){
@@ -330,8 +343,7 @@ function exportar(){
 }
 
 // Listeners
-document.getElementById('fMes').addEventListener('change',renderTable);
-// vendedor: manejado por checkboxes en populateFiltros
+// mes y vendedor: manejados por checkboxes en populateFiltros
 document.getElementById('fPago').addEventListener('change',renderTable);
 document.getElementById('fBuscar').addEventListener('input',renderTable);
 

@@ -213,6 +213,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
     <div class="kpi"><div class="kpi-label">NC neto</div><div class="kpi-val neg" id="kNC">-</div></div>
     <div class="kpi"><div class="kpi-label">Neto total</div><div class="kpi-val" id="kNeto">-</div></div>
     <div class="kpi"><div class="kpi-label">Documentos</div><div class="kpi-val" id="kDocs">-</div></div>
+    <div class="kpi" style="border-color:var(--accent);background:var(--blue-dim,rgba(0,120,200,.06))"><div class="kpi-label" style="color:var(--accent)">Comisión total</div><div class="kpi-val" id="kCom" style="color:var(--accent)">-</div></div>
   </div>
 
   <div class="card">
@@ -335,6 +336,8 @@ function renderTable(){
   document.getElementById('kNC').textContent=fmt(-ncNeto);
   document.getElementById('kNeto').textContent=fmt(totalNeto);
   document.getElementById('kDocs').textContent=filtered.length.toLocaleString('es-CL');
+  const totalCom=filtered.reduce((s,r)=>s+(r.tipo==='61'||r.tipo==='56'?-1:1)*(r.comision||0),0);
+  document.getElementById('kCom').textContent=fmt(totalCom);
   document.getElementById('kpis').hidden=false;
 
   // Rows

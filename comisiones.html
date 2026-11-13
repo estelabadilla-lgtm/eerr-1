@@ -107,14 +107,14 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
 @media(max-width:640px){
   table,tbody{display:block!important;width:100%}
   thead,tfoot{display:none!important}
-  .col-folio,.col-rut,.col-vend,.col-est,.col-iva,.col-tipo{display:none!important}
+  .col-rut,.col-vend,.col-est,.col-iva,.col-tipo{display:none!important}
 
-  /* Grid: fecha | neto | total | com */
+  /* Grid: razon/folio | neto | total | com + fecha fila 3 */
   tbody tr{
     display:grid!important;
     grid-template-columns:1fr auto auto auto;
-    grid-template-rows:auto auto;
-    column-gap:8px;row-gap:3px;
+    grid-template-rows:auto auto auto;
+    column-gap:8px;row-gap:2px;
     padding:10px 12px;
     border-bottom:1px solid var(--grid);
   }
@@ -130,11 +130,17 @@ tfoot td{font-weight:700;border-top:2px solid var(--grid);border-bottom:none;bac
     grid-column:2/5;grid-row:1;
     white-space:nowrap;text-align:right;align-self:center;
   }
-  /* Línea 2 */
-  .col-fecha{
+  /* Línea 2: folio + montos */
+  .col-folio{
     grid-column:1;grid-row:2;
     font-size:11px;color:var(--muted);
     white-space:nowrap;align-self:center;
+  }
+  /* Línea 3: fecha */
+  .col-fecha{
+    grid-column:1;grid-row:3;
+    font-size:10px;color:var(--muted);
+    white-space:nowrap;align-self:center;opacity:.75;
   }
   .col-neto{
     grid-column:2;grid-row:2;
@@ -353,7 +359,7 @@ function renderTable(){
       <td class="col-fecha">${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}${r.vencimiento?`<br><span style="font-size:0.72em;color:#94a3b8;white-space:nowrap">Vce ${r.vencimiento.slice(0,10).split('-').reverse().join('/')}</span>`:''}</td>
       <td class="col-tipo ${neg?'neg':''}">${tipoLabel(r.tipo)}</td>
       <td class="col-pago">${badgePago}</td>
-      <td class="col-folio">${r.folio}</td>
+      <td class="col-folio">${tipoLabel(r.tipo)} ${r.folio}</td>
       <td class="col-rut">${r.rut||''}</td>
       <td class="col-razon razon">${r.razon||''}</td>
       <td class="col-vend">${r.vendedor||'—'}</td>

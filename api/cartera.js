@@ -67,7 +67,7 @@ module.exports = async (req, res) => {
       res.status(502).json({ error: 'Respuesta truncada: demasiadas filas' });
       return;
     }
-    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=3600');
     res.status(200).json({ corte: hoy, filas: data.filas, generado: new Date().toISOString() });
   } catch (err) {
     res.status(502).json({ error: 'No se pudo conectar con la API' });

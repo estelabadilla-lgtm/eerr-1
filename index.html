@@ -1450,8 +1450,11 @@ async function cargarMayorDesdeSoftland() {
     if (!data.rows.length) return false;
     DATA = data;
     const nMov = data.rows.reduce((s, x) => s + x.n, 0);
+    const ahora = new Date();
+    const fmtFecha = ahora.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric', timeZone:'America/Santiago' });
+    const fmtHora  = ahora.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', timeZone:'America/Santiago' });
     document.getElementById('status').textContent =
-      `✅ Softland ${json.anio} — ${nMov.toLocaleString('es-CL')} movimientos · datos al cierre de ayer`;
+      `✅ Softland ${json.anio} — ${nMov.toLocaleString('es-CL')} movimientos · actualizado ${fmtFecha} ${fmtHora}`;
     const elUlt = document.getElementById('ultima-carga');
     if (elUlt) elUlt.style.display = 'none';
     actualizarBotonesMeses();
@@ -1491,7 +1494,13 @@ async function autoLoadMayor() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', autoLoadMayor);
+document.addEventListener('DOMContentLoaded', () => {
+  autoLoadMayor();
+  // Auto-refresh desde Softland cada 15 minutos
+  setInterval(() => {
+    cargarMayorDesdeSoftland();
+  }, 15 * 60 * 1000);
+});
 
 // ═══════════════════════════════════════════════════════
 //  PARSER

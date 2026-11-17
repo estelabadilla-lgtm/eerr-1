@@ -1,4 +1,4 @@
-// Diagnóstico temporal: qué TtdCod usan los movimientos de pago (crédito) en cwmovim
+﻿// Diagnóstico temporal: qué TtdCod usan los movimientos de pago (crédito) en cwmovim
 module.exports = async (req, res) => {
   const url = process.env.DASH_API_URL;
   const key = process.env.DASH_API_KEY;
@@ -9,9 +9,9 @@ module.exports = async (req, res) => {
     SELECT m.NumDoc, m.TtdCod, LTRIM(RTRIM(t.DesDoc)) AS DesDoc,
            m.PctCod, m.MovDebe, m.MovHaber, m.MovNumDocRef,
            m.CodAux, m.CpbAno, m.CpbNum
-    FROM softland.cwmovim m
-    JOIN softland.cwcpbte c ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
-    LEFT JOIN softland.cwttdoc t ON t.CodDoc = m.TtdCod
+    FROM GRANTT_DASH.src.cwmovim m
+    JOIN GRANTT_DASH.src.cwcpbte c ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
+    LEFT JOIN GRANTT_DASH.src.cwttdoc t ON t.CodDoc = m.TtdCod
     WHERE c.CpbEst = 'V'
       AND (m.MovNumDocRef = ${parseInt(folio)}
            OR (m.NumDoc = ${parseInt(folio)} AND m.PctCod IN ('10-04-01-01','10-05-01-02')))

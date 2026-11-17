@@ -1,4 +1,4 @@
-// Vercel serverless function: OC y guías asociadas a cada factura de venta (Softland),
+﻿// Vercel serverless function: OC y guías asociadas a cada factura de venta (Softland),
 // para mostrarlas junto al folio en "Libro de Ventas".
 //
 // GET /api/referencias_ventas
@@ -19,14 +19,14 @@ module.exports = async (req, res) => {
 
   const sqlFac = `
     SELECT g.Folio AS folio, LTRIM(RTRIM(n.NumOC)) AS oc, g.AuxGuiaNum AS gd
-    FROM softland.iw_gsaen g
-    LEFT JOIN softland.nw_nventa n ON n.NVNumero = g.nvnumero AND g.nvnumero <> 0
+    FROM GRANTT_DASH.src.iw_gsaen g
+    LEFT JOIN GRANTT_DASH.src.nw_nventa n ON n.NVNumero = g.nvnumero AND g.nvnumero <> 0
     WHERE g.Tipo = 'F' AND g.SubTipoDocto = 'T' AND g.Fecha >= '${desde}'`;
 
   const sqlRef = `
     SELECT g.Folio AS folio, r.CodRefSII AS cod, LTRIM(RTRIM(r.FolioRef)) AS ref
-    FROM softland.IW_GSaEn_RefDTE r
-    JOIN softland.iw_gsaen g ON g.Tipo = r.Tipo AND g.NroInt = r.NroInt
+    FROM GRANTT_DASH.src.IW_GSaEn_RefDTE r
+    JOIN GRANTT_DASH.src.iw_gsaen g ON g.Tipo = r.Tipo AND g.NroInt = r.NroInt
     WHERE g.Tipo = 'F' AND g.SubTipoDocto = 'T' AND g.Fecha >= '${desde}'
       AND r.CodRefSII IN ('801', '52')`;
 

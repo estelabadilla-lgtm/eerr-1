@@ -1,4 +1,4 @@
-// Devuelve las facturas VE que fueron pagadas con cheque que aun esta en 10-05-01-02
+﻿// Devuelve las facturas VE que fueron pagadas con cheque que aun esta en 10-05-01-02
 // Enlace: mismo comprobante (CpbAno+CpbNum) tiene CR en 10-04-01-01 (pago VE) y DR en 10-05-01-02 (cheque recibido)
 
 module.exports = async (req, res) => {
@@ -12,8 +12,8 @@ module.exports = async (req, res) => {
       SELECT COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc) AS ch_ref,
              m.CodAux,
              SUM(m.MovDebe - m.MovHaber) AS saldo_ch
-      FROM softland.cwmovim m
-      JOIN softland.cwcpbte c ON c.CpbAno=m.CpbAno AND c.CpbNum=m.CpbNum AND c.AreaCod=m.AreaCod
+      FROM GRANTT_DASH.src.cwmovim m
+      JOIN GRANTT_DASH.src.cwcpbte c ON c.CpbAno=m.CpbAno AND c.CpbNum=m.CpbNum AND c.AreaCod=m.AreaCod
       WHERE m.PctCod='10-05-01-02' AND c.CpbEst='V' AND m.CpbNum <> '00000000'
       GROUP BY COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc), m.CodAux
       HAVING SUM(m.MovDebe - m.MovHaber) > 0.5
@@ -23,8 +23,8 @@ module.exports = async (req, res) => {
       SELECT m.NumDoc AS ch_num, m.CodAux,
              m.CpbAno, m.CpbNum, m.AreaCod,
              m.MovFv AS vce_ch
-      FROM softland.cwmovim m
-      JOIN softland.cwcpbte c ON c.CpbAno=m.CpbAno AND c.CpbNum=m.CpbNum AND c.AreaCod=m.AreaCod
+      FROM GRANTT_DASH.src.cwmovim m
+      JOIN GRANTT_DASH.src.cwcpbte c ON c.CpbAno=m.CpbAno AND c.CpbNum=m.CpbNum AND c.AreaCod=m.AreaCod
       JOIN ch_saldo cs ON cs.ch_ref = m.NumDoc AND cs.CodAux = m.CodAux
       WHERE m.PctCod='10-05-01-02'
         AND m.MovDebe > 0
@@ -34,7 +34,7 @@ module.exports = async (req, res) => {
     -- VE invoice cleared in the same comprobante that received the cheque
     SELECT ve.MovNumDocRef AS folio, ve.CodAux, cr.vce_ch
     FROM ch_receipt cr
-    JOIN softland.cwmovim ve
+    JOIN GRANTT_DASH.src.cwmovim ve
       ON ve.CpbAno = cr.CpbAno AND ve.CpbNum = cr.CpbNum AND ve.AreaCod = cr.AreaCod
       AND ve.CodAux = cr.CodAux
       AND ve.PctCod = '10-04-01-01'

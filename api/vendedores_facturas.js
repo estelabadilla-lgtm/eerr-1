@@ -1,4 +1,4 @@
-// Vercel serverless function: devuelve folio -> vendedor para facturas emitidas desde dic 2025.
+﻿// Vercel serverless function: devuelve folio -> vendedor para facturas emitidas desde dic 2025.
 // Usado por la pestaña Comisiones del dashboard Grantt.
 
 module.exports = async (req, res) => {
@@ -16,11 +16,11 @@ module.exports = async (req, res) => {
              MAX(RTRIM(COALESCE(v.VenDes,''))) AS vendedor,
              MAX(COALESCE(a.Bloqueado,'N')) AS bloqueado,
              MAX(m.MovFv) AS vencimiento
-      FROM softland.cwmovim m
-      JOIN softland.cwcpbte c
+      FROM GRANTT_DASH.src.cwmovim m
+      JOIN GRANTT_DASH.src.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
-      LEFT JOIN softland.cwtvend v ON v.VenCod = m.VendCod
-      LEFT JOIN softland.cwtauxi a ON a.CodAux = m.CodAux
+      LEFT JOIN GRANTT_DASH.src.cwtvend v ON v.VenCod = m.VendCod
+      LEFT JOIN GRANTT_DASH.src.cwtauxi a ON a.CodAux = m.CodAux
       WHERE (m.CpbAno = '2025' OR m.CpbAno >= '2026')
         AND c.CpbEst = 'V'
         AND c.CpbNormaTrib = 'S'
@@ -39,10 +39,10 @@ module.exports = async (req, res) => {
                UPPER(LTRIM(RTRIM(t.DesDoc))) LIKE '%CHEQUE%'
                OR UPPER(m.TtdCod) IN ('CQ','CH','CHQ','VCH','DCH')
              ) THEN 1 ELSE 0 END) AS con_cheque
-      FROM softland.cwmovim m
-      JOIN softland.cwcpbte c
+      FROM GRANTT_DASH.src.cwmovim m
+      JOIN GRANTT_DASH.src.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
-      LEFT JOIN softland.cwttdoc t ON t.CodDoc = m.TtdCod
+      LEFT JOIN GRANTT_DASH.src.cwttdoc t ON t.CodDoc = m.TtdCod
       INNER JOIN folios fx
         ON fx.NumDoc = COALESCE(NULLIF(m.MovNumDocRef,0), m.NumDoc)
         AND fx.CodAux = m.CodAux

@@ -1,4 +1,4 @@
-// Diagnóstico: totales oct 2026 agrupados por CpbNormaTrib
+﻿// Diagnóstico: totales oct 2026 agrupados por CpbNormaTrib
 // GET /api/eerr-diff
 module.exports = async (req, res) => {
   const url = process.env.DASH_API_URL;
@@ -11,8 +11,8 @@ module.exports = async (req, res) => {
            COUNT(DISTINCT c.CpbNum) AS n_comprobantes,
            SUM(m.MovDebe)        AS debe_total,
            SUM(m.MovHaber)       AS haber_total
-    FROM softland.cwcpbte c
-    JOIN softland.cwmovim m
+    FROM GRANTT_DASH.src.cwcpbte c
+    JOIN GRANTT_DASH.src.cwmovim m
       ON m.CpbAno = c.CpbAno AND m.CpbNum = c.CpbNum AND m.AreaCod = c.AreaCod
     WHERE c.CpbAno = '2026'
       AND c.CpbEst = 'V'

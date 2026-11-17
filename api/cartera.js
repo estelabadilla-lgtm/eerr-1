@@ -1,4 +1,4 @@
-// Vercel serverless function: cartera de clientes desde Softland para "Cartera Vencidos".
+﻿// Vercel serverless function: cartera de clientes desde Softland para "Cartera Vencidos".
 // Corre en el servidor; la API key nunca llega al navegador.
 //
 // GET /api/cartera
@@ -23,8 +23,8 @@ module.exports = async (req, res) => {
              COALESCE(NULLIF(m.MovTipDocRef, ''), m.TtdCod) AS rtip,
              COALESCE(NULLIF(m.MovNumDocRef, 0), m.NumDoc) AS rnum,
              m.MovDebe, m.MovHaber, m.MovFv, m.VendCod, m.MovFe AS fch
-      FROM softland.cwmovim m
-      JOIN softland.cwcpbte c
+      FROM GRANTT_DASH.src.cwmovim m
+      JOIN GRANTT_DASH.src.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
       WHERE m.CpbAno = '${anio}'
         AND c.CpbEst = 'V'
@@ -48,9 +48,9 @@ module.exports = async (req, res) => {
            RTRIM(v.VenDes) AS vendedor,
            CONVERT(char(10), d.fe, 23) AS fe
     FROM doc d
-    LEFT JOIN softland.cwtauxi a ON a.CodAux = d.CodAux
-    LEFT JOIN softland.cwttdoc t ON t.CodDoc = d.rtip
-    LEFT JOIN softland.cwtvend v ON v.VenCod = d.ven`;
+    LEFT JOIN GRANTT_DASH.src.cwtauxi a ON a.CodAux = d.CodAux
+    LEFT JOIN GRANTT_DASH.src.cwttdoc t ON t.CodDoc = d.rtip
+    LEFT JOIN GRANTT_DASH.src.cwtvend v ON v.VenCod = d.ven`;
 
   try {
     const r = await fetch(`${url}/consulta`, {

@@ -1,4 +1,4 @@
-// Vercel serverless function: entrega el Libro Mayor agregado desde Softland
+﻿// Vercel serverless function: entrega el Libro Mayor agregado desde Softland
 // para el EERR del dashboard. Corre en el servidor; la API key nunca llega al navegador.
 //
 // GET /api/eerr?anio=2026
@@ -31,10 +31,10 @@ module.exports = async (req, res) => {
            SUM(m.MovDebe) AS debe,
            SUM(m.MovHaber) AS haber,
            COUNT(*) AS n
-    FROM softland.cwmovim m
-    JOIN softland.cwcpbte c
+    FROM GRANTT_DASH.src.cwmovim m
+    JOIN GRANTT_DASH.src.cwcpbte c
       ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
-    LEFT JOIN softland.cwpctas p ON p.PCCODI = m.PctCod
+    LEFT JOIN GRANTT_DASH.src.cwpctas p ON p.PCCODI = m.PctCod
     WHERE m.CpbAno = '${anio}'
       AND c.CpbEst = 'V'
       AND c.CpbNormaTrib = 'S'

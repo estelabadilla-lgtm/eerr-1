@@ -1,4 +1,4 @@
-// Vercel serverless function: facturas Sodimac desde Softland para Flujo de Caja.
+﻿// Vercel serverless function: facturas Sodimac desde Softland para Flujo de Caja.
 // Auxiliar RUT 96792430 (Sodimac S.A), todas las cuentas.
 // Tipos de documento: FA (factura venta), NC (nota de crédito), FP (factura proveedor).
 
@@ -19,8 +19,8 @@ module.exports = async (req, res) => {
              COALESCE(NULLIF(m.MovTipDocRef, ''), m.TtdCod) AS rtip,
              COALESCE(NULLIF(m.MovNumDocRef, 0), m.NumDoc) AS rnum,
              m.MovDebe, m.MovHaber, m.MovFv, m.MovFe
-      FROM softland.cwmovim m
-      JOIN softland.cwcpbte c
+      FROM GRANTT_DASH.src.cwmovim m
+      JOIN GRANTT_DASH.src.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
       WHERE m.CpbAno = '${anio}'
         AND c.CpbEst = 'V'

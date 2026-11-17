@@ -1,4 +1,4 @@
-// Vercel serverless function: proveedores nacionales desde Softland para Flujo de Caja.
+﻿// Vercel serverless function: proveedores nacionales desde Softland para Flujo de Caja.
 // Cuenta 20-03-01-01 — documentos con saldo pendiente (lo que se debe a proveedores).
 
 module.exports = async (req, res) => {
@@ -19,8 +19,8 @@ module.exports = async (req, res) => {
              COALESCE(NULLIF(m.MovNumDocRef, 0), m.NumDoc) AS rnum,
              m.MovHaber - m.MovDebe AS saldo,
              m.MovFv, m.MovFe
-      FROM softland.cwmovim m
-      JOIN softland.cwcpbte c
+      FROM GRANTT_DASH.src.cwmovim m
+      JOIN GRANTT_DASH.src.cwcpbte c
         ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
       WHERE m.CpbAno >= '${anio - 1}'
         AND c.CpbEst = 'V'
@@ -50,8 +50,8 @@ module.exports = async (req, res) => {
            CONVERT(char(10), COALESCE(d.fv, d.fv2), 23) AS fv,
            d.saldo
     FROM doc d
-    LEFT JOIN softland.cwtauxi a ON a.CodAux = d.CodAux
-    LEFT JOIN softland.cwttdoc t ON t.CodDoc = d.rtip
+    LEFT JOIN GRANTT_DASH.src.cwtauxi a ON a.CodAux = d.CodAux
+    LEFT JOIN GRANTT_DASH.src.cwttdoc t ON t.CodDoc = d.rtip
     ORDER BY a.RutAux, d.fv`;
 
   try {

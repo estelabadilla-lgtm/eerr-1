@@ -5,19 +5,20 @@ module.exports = async (req, res) => {
   const key = process.env.DASH_API_KEY;
   if (!url || !key) { res.status(500).json({ error: 'Faltan variables de entorno' }); return; }
 
-  // Igual que eerr.js: m.CpbMes como string, sin CAST
+  // Idéntico a eerr.js pero sin filtro NormaTrib y agrupado por norma_trib + mes
   const sql = `
     SELECT c.CpbNormaTrib        AS norma_trib,
-           COUNT(DISTINCT c.CpbNum) AS n_comprobantes,
-           SUM(m.MovDebe)        AS debe_total,
-           SUM(m.MovHaber)       AS haber_total
-    FROM GRANTT_DASH.src.cwcpbte c
-    JOIN GRANTT_DASH.src.cwmovim m
-      ON m.CpbAno = c.CpbAno AND m.CpbNum = c.CpbNum AND m.AreaCod = c.AreaCod
-    WHERE c.CpbAno = '2026'
+           CAST(m.CpbMes AS int) AS mes,
+           COUNT(*)              AS n,
+           SUM(m.MovDebe)        AS debe,
+           SUM(m.MovHaber)       AS haber
+    FROM GRANTT_DASH.src.cwmovim m
+    JOIN GRANTT_DASH.src.cwcpbte c
+      ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
+    WHERE m.CpbAno = '2026'
       AND c.CpbEst = 'V'
-      AND m.CpbMes = '10'
-    GROUP BY c.CpbNormaTrib`;
+      AND m.CpbMes BETWEEN '00' AND '12'
+    GROUP BY c.CpbNormaTrib, m.CpbMes`;
 
   try {
     const r = await fetch(`${url}/consulta`, {

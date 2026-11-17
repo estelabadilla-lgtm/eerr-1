@@ -908,9 +908,20 @@ function mostrarUltimaAct(ts) {
 }
 
 // OC y guías por factura desde Softland; no bloquea la carga del libro
-fetch('/api/referencias_ventas').then(r=>r.ok?r.json():null).then(d=>{
-  if(d&&d.refs){REFS=d.refs;if(ROWS.length)renderAll();}
-}).catch(()=>{});
+function cargarReferencias(){
+  fetch('/api/referencias_ventas').then(r=>r.ok?r.json():null).then(d=>{
+    if(d&&d.refs){
+      REFS=d.refs;
+      const ahora=new Date();
+      const fmtFecha=ahora.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Santiago'});
+      const fmtHora=ahora.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',timeZone:'America/Santiago'});
+      mostrarUltimaAct(`OC/Guías Softland · ${fmtFecha} ${fmtHora}`);
+      if(ROWS.length)renderAll();
+    }
+  }).catch(()=>{});
+}
+cargarReferencias();
+setInterval(cargarReferencias, 15*60*1000);
 
 // Boot: cargar data_ventas.json (base) + localStorage (actualizaciones de los 2 últimos meses)
 (async()=>{

@@ -4,11 +4,10 @@ module.exports = async (req, res) => {
   if (!url || !key) { res.status(500).json({ error: 'Config' }); return; }
 
   const sql = `
-    SELECT TABLE_NAME
-    FROM GRANTT_DASH.INFORMATION_SCHEMA.TABLES
-    WHERE TABLE_TYPE = 'BASE TABLE'
-      AND (TABLE_NAME LIKE '%prod%' OR TABLE_NAME LIKE '%tprod%' OR TABLE_NAME LIKE '%articul%' OR TABLE_NAME LIKE '%item%')
-    ORDER BY TABLE_NAME`;
+    SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE
+    FROM GRANTT_DASH.INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME IN ('iw_tprod','iw_costop')
+    ORDER BY TABLE_NAME, ORDINAL_POSITION`;
 
   try {
     const r = await fetch(`${url}/consulta`, {

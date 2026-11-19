@@ -459,7 +459,7 @@ function actualizarCampo(idx, campo, val) {
 function margenInfo(item) {
   const { costo, precio } = item;
   if (!precio || precio <= 0) return { pct: null, cls: 'margin-warn', txt: 'Ingresa precio' };
-  if (precio < costo)         return { pct: null, cls: 'margin-err',  txt: `⛔ Bajo costo ($${Math.round(costo).toLocaleString('es-CL')})` };
+  if (precio < costo)         return { pct: null, cls: 'margin-err',  txt: '⛔ Precio bajo costo' };
   const pct = (precio - costo) / precio;
   if (pct < MARGEN_MIN) return { pct, cls: 'margin-warn', txt: `⚠ Margen ${Math.round(pct*100)}% (mín 30%)` };
   return { pct, cls: 'margin-ok',  txt: `✓ Margen ${Math.round(pct*100)}%` };

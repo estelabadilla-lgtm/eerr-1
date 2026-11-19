@@ -134,33 +134,14 @@ header .sub{font-size:.75rem;color:var(--text3)}
 
   <!-- 2. Datos NV -->
   <div class="card" id="secNV" hidden>
-    <div class="section-title">2 · Tipo y datos del documento</div>
-    <!-- Checklist tipo -->
-    <div style="display:flex;gap:20px;margin-bottom:14px">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.95rem;font-weight:600">
-        <input type="radio" name="tipoDoc" value="nv" checked
-               onchange="setTipo('nv')"
-               style="width:18px;height:18px;accent-color:var(--blue2)">
-        Nota de Venta
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.95rem;font-weight:600">
-        <input type="radio" name="tipoDoc" value="cot"
-               onchange="setTipo('cot')"
-               style="width:18px;height:18px;accent-color:var(--blue2)">
-        Cotización
-      </label>
-    </div>
-    <div class="form-grid cols3">
+    <div class="section-title">2 · Datos de la cotización</div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr">
       <div class="field">
-        <label id="labelNumDoc">N° NV</label>
-        <input id="nvNum" type="number" min="1" placeholder="Ej: 12345">
-      </div>
-      <div class="field">
-        <label>Fecha NV</label>
+        <label>Fecha</label>
         <input id="nvFecha" type="date">
       </div>
       <div class="field">
-        <label>Fecha Entrega</label>
+        <label>Válida hasta</label>
         <input id="nvEntrega" type="date">
       </div>
     </div>
@@ -209,7 +190,7 @@ header .sub{font-size:.75rem;color:var(--text3)}
     <div class="total-val" id="totalNeto">$0</div>
   </div>
   <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-    <button class="btn-primary" id="btnGenerar" disabled>Generar Excel NV</button>
+    <button class="btn-primary" id="btnGenerar" disabled>Generar Cotización</button>
     <button class="btn-primary" id="btnConvertirNV" hidden
       style="font-size:.82rem;padding:8px 14px;background:#14532d;border:1px solid #4ade8060">
       📄 Convertir a NV
@@ -227,7 +208,7 @@ let NOMBRE_VENDEDOR = '';
 let COD_VENDEDOR_CHILEMAT = '';
 let NOMBRE_VENDEDOR_CHILEMAT = '';
 let USAR_CHILEMAT = false;
-let TIPO_DOC = 'nv'; // 'nv' | 'cot'
+let TIPO_DOC = 'cot';
 const NV_MAX = 30;
 
 function setTipo(t) {
@@ -545,27 +526,23 @@ function renderCarrito() {
   const hayErrores = carrito.some(r => !r.precio || r.precio < r.costo);
   const btn = document.getElementById('btnGenerar');
   btn.disabled = !cliente || hayErrores;
-  if (!btn.disabled) btn.textContent = TIPO_DOC === 'cot' ? 'Generar Cotización' : 'Generar Excel NV';
+  if (!btn.disabled) btn.textContent = 'Generar Cotización';
 }
 
 // ── Generar Excel / Cotización ────────────────────────────
-document.getElementById('btnGenerar').addEventListener('click', () => {
-  if (TIPO_DOC === 'cot') generarCotizacion(); else generarExcel();
-});
+document.getElementById('btnGenerar').addEventListener('click', generarCotizacion);
 document.getElementById('btnConvertirNV').addEventListener('click', () => {
-  setTipo('nv');
-  document.getElementById('nvNum').value = '';
-  document.getElementById('nvNum').focus();
-  mostrarMsg('Ingresa el N° de NV y genera el Excel', 'ok');
+  const num = prompt('Ingresa el N° de Nota de Venta:');
+  if (!num || isNaN(parseInt(num))) return;
+  TIPO_DOC = 'nv';
+  generarExcelNV(parseInt(num));
 });
 
-async function generarExcel() {
-  const nvNum     = parseInt(document.getElementById('nvNum').value) || 0;
+async function generarExcelNV(nvNum) {
   const nvFecha   = document.getElementById('nvFecha').value;
   const nvEntrega = document.getElementById('nvEntrega').value;
   const nvRef     = document.getElementById('nvRef').value.trim();
 
-  if (!nvNum) { mostrarMsg('Ingresa el número de NV', 'err'); return; }
   if (!nvFecha || !nvEntrega) { mostrarMsg('Ingresa las fechas', 'err'); return; }
   if (!cliente) { mostrarMsg('Selecciona un cliente', 'err'); return; }
   if (!carrito.length) { mostrarMsg('El carrito está vacío', 'err'); return; }
@@ -630,19 +607,17 @@ async function generarExcel() {
     mostrarMsg('❌ Error: ' + err.message, 'err');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Generar Excel NV';
+    btn.textContent = 'Generar Cotización';
   }
 }
 
 function generarCotizacion() {
-  const cotNum    = parseInt(document.getElementById('nvNum').value) || 0;
   const cotFecha  = document.getElementById('nvFecha').value;
   const cotValida = document.getElementById('nvEntrega').value;
   const cotRef    = document.getElementById('nvRef').value.trim();
   const emailTo   = document.getElementById('emailTo').value.trim();
   const emailCc   = document.getElementById('emailCc').value.trim();
 
-  if (!cotNum) { mostrarMsg('Ingresa el número de cotización', 'err'); return; }
   if (!cotFecha) { mostrarMsg('Ingresa la fecha', 'err'); return; }
   if (!cliente) { mostrarMsg('Selecciona un cliente', 'err'); return; }
   if (!carrito.length) { mostrarMsg('El carrito está vacío', 'err'); return; }
@@ -719,7 +694,6 @@ function generarCotizacion() {
     </div>
     <div class="doc-info">
       <h2>COTIZACIÓN</h2>
-      <div class="num">N° ${cotNum}</div>
       <div class="fecha">Fecha: ${fmtFecha(cotFecha)}</div>
       ${cotValida?`<div class="fecha">Válida hasta: ${fmtFecha(cotValida)}</div>`:''}
     </div>

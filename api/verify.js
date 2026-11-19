@@ -20,5 +20,5 @@ module.exports = (req, res) => {
   if (data.exp < Date.now()) { res.status(401).json({ error: 'Token expirado' }); return; }
 
   res.setHeader('Cache-Control', 'no-store');
-  res.status(200).json({ user: data.user, vendedores: data.vendedores, tabs: data.tabs });
+  res.status(200).json({ user: data.user, vendedores: data.vendedores, codVendedor: data.codVendedor, tabs: data.tabs });
 };

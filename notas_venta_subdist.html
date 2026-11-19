@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NV Subdistribución · Grantt</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#263347;--border:#334155;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --blue:#38bdf8;--blue2:#0ea5e9;
+  --green:#4ade80;--green-bg:#14532d30;
+  --warn:#fb923c;--warn-bg:#43200830;
+  --red:#f87171;--red-bg:#45090930;
+  --radius:12px;--gap:12px;
+}
+body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;
+     min-height:100vh;padding:0 0 60px}
+header{background:var(--surface);border-bottom:1px solid var(--border);
+       padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+       position:sticky;top:0;z-index:100}
+header h1{font-size:1.1rem;font-weight:700;color:var(--blue)}
+header .sub{font-size:.75rem;color:var(--text3)}
+.wrap{max-width:700px;margin:0 auto;padding:16px 16px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:var(--gap)}
+.section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+               color:var(--text3);margin-bottom:10px}
+/* Search */
+.search-wrap{position:relative}
+.search-input{width:100%;padding:14px 16px;background:var(--surface2);border:1.5px solid var(--border);
+              border-radius:10px;color:var(--text);font:inherit;font-size:1rem;outline:none;
+              transition:.15s}
+.search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #38bdf820}
+.search-input::placeholder{color:var(--text3)}
+.sugg-list{position:absolute;top:100%;left:0;right:0;background:var(--surface);
+           border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
+           max-height:260px;overflow-y:auto;z-index:200;display:none}
+.sugg-list.open{display:block}
+.sugg-item{padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:.1s}
+.sugg-item:last-child{border-bottom:none}
+.sugg-item:hover,.sugg-item:active{background:var(--surface2)}
+.sugg-item .nombre{font-weight:600;font-size:.95rem}
+.sugg-item .rut{font-size:.8rem;color:var(--text2)}
+.sugg-item .dir{font-size:.75rem;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Client info */
+.cliente-card{background:var(--surface2);border-radius:10px;padding:14px 16px;
+              display:flex;flex-direction:column;gap:4px;position:relative}
+.cliente-card .nombre{font-weight:700;font-size:1rem}
+.cliente-card .rut{font-size:.85rem;color:var(--text2)}
+.cliente-card .dir{font-size:.8rem;color:var(--text3)}
+.cliente-change{position:absolute;top:12px;right:12px;background:none;border:1px solid var(--border);
+                border-radius:6px;padding:4px 10px;color:var(--text3);font:inherit;font-size:.75rem;cursor:pointer}
+.cliente-change:hover{color:var(--text);border-color:var(--text3)}
+/* Alert bloqueado */
+.alert{padding:10px 14px;border-radius:8px;font-size:.85rem;font-weight:600;margin-top:8px}
+.alert.warn{background:var(--warn-bg);color:var(--warn);border:1px solid #fb923c40}
+.alert.err{background:var(--red-bg);color:var(--red);border:1px solid #f8717140}
+/* Form fields */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:480px){.form-grid.cols3{grid-template-columns:1fr 1fr}}
+.field label{display:block;font-size:.72rem;font-weight:700;color:var(--text3);
+             text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.field input{width:100%;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);
+             border-radius:8px;color:var(--text);font:inherit;font-size:.95rem;outline:none;transition:.15s}
+.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #38bdf820}
+/* Cart */
+.carrito-empty{text-align:center;padding:32px 16px;color:var(--text3);font-size:.9rem}
+.prod-row{background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;
+          display:flex;flex-direction:column;gap:6px}
+.prod-row .prod-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.prod-row .sku{font-size:.72rem;font-weight:700;color:var(--text3);text-transform:uppercase}
+.prod-row .desc{font-size:.9rem;font-weight:600;flex:1}
+.prod-row .btn-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px 6px;
+                   font-size:1.1rem;line-height:1;border-radius:4px;flex-shrink:0}
+.prod-row .btn-del:hover{color:var(--red);background:var(--red-bg)}
+.prod-row .prod-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prod-row .prod-fields .field label{font-size:.65rem}
+.prod-row .prod-fields .field input{padding:8px 10px;font-size:.9rem}
+.prod-row .margin-info{display:flex;align-items:center;gap:8px;font-size:.78rem;padding:4px 0}
+.margin-badge{padding:2px 8px;border-radius:6px;font-weight:700;font-size:.75rem}
+.margin-ok{background:var(--green-bg);color:var(--green)}
+.margin-warn{background:var(--warn-bg);color:var(--warn)}
+.margin-err{background:var(--red-bg);color:var(--red)}
+.stock-info{color:var(--text3)}
+/* Total + botón */
+.total-bar{background:var(--surface);border-top:1px solid var(--border);
+           position:fixed;bottom:0;left:0;right:0;padding:12px 16px;
+           display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:100}
+.total-bar .total-label{font-size:.75rem;color:var(--text3)}
+.total-bar .total-val{font-size:1.3rem;font-weight:700;color:var(--text)}
+.btn-primary{background:var(--blue2);border:none;border-radius:10px;color:#fff;
+             font:inherit;font-size:1rem;font-weight:700;padding:12px 20px;
+             cursor:pointer;transition:.15s;white-space:nowrap}
+.btn-primary:hover{background:var(--blue)}
+.btn-primary:disabled{background:var(--surface2);color:var(--text3);cursor:not-allowed}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #fff4;border-top-color:#fff;
+         border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.msg{font-size:.8rem;padding:8px 12px;border-radius:8px;margin-top:8px}
+.msg.ok{background:var(--green-bg);color:var(--green)}
+.msg.err{background:var(--red-bg);color:var(--red)}
+.vendor-badge{font-size:.72rem;background:var(--surface2);border:1px solid var(--border);
+              border-radius:6px;padding:3px 8px;color:var(--text2)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="sub">GRANTT</div>
+    <h1>NV Subdistribución</h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="vendor-badge" id="vendorBadge"></span>
+    <button id="btnLogout" style="display:none;font:inherit;font-size:.75rem;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--text3);cursor:pointer">Salir</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 1. Cliente -->
+  <div class="card" id="secCliente">
+    <div class="section-title">1 · Cliente</div>
+    <div class="search-wrap" id="clienteSearchWrap">
+      <input id="clienteQ" class="search-input" placeholder="Buscar por nombre o RUT..." autocomplete="off">
+      <div id="clienteSugg" class="sugg-list"></div>
+    </div>
+    <div id="clienteInfo" hidden></div>
+  </div>
+
+  <!-- 2. Datos NV -->
+  <div class="card" id="secNV" hidden>
+    <div class="section-title">2 · Datos de la nota de venta</div>
+    <div class="form-grid cols3">
+      <div class="field">
+        <label>N° NV</label>
+        <input id="nvNum" type="number" min="1" placeholder="Ej: 12345">
+      </div>
+      <div class="field">
+        <label>Fecha NV</label>
+        <input id="nvFecha" type="date">
+      </div>
+      <div class="field">
+        <label>Fecha Entrega</label>
+        <input id="nvEntrega" type="date">
+      </div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>Referencia / N° OC (opcional)</label>
+      <input id="nvRef" type="text" placeholder="Número de OC del cliente">
+    </div>
+  </div>
+
+  <!-- 3. Productos -->
+  <div class="card" id="secProductos" hidden>
+    <div class="section-title">3 · Agregar productos al carrito</div>
+    <div class="search-wrap">
+      <input id="prodQ" class="search-input" placeholder="Buscar por código o descripción..." autocomplete="off">
+      <div id="prodSugg" class="sugg-list"></div>
+    </div>
+    <div id="loadingCat" style="font-size:.8rem;color:var(--text3);margin-top:8px;display:none">
+      <span class="spinner"></span> Cargando catálogo...
+    </div>
+  </div>
+
+  <!-- Carrito -->
+  <div class="card" id="secCarrito" hidden>
+    <div class="section-title">Carrito</div>
+    <div id="carritoItems"></div>
+    <div id="msgGen"></div>
+  </div>
+
+</div>
+
+<!-- Total fijo abajo -->
+<div class="total-bar" id="totalBar" hidden>
+  <div>
+    <div class="total-label">Total neto</div>
+    <div class="total-val" id="totalNeto">$0</div>
+  </div>
+  <button class="btn-primary" id="btnGenerar" disabled>Generar Excel NV</button>
+</div>
+
+<script>
+// ── Estado global ─────────────────────────────────────────
+let CATALOGO = [];        // [{sku,desc,umed,costo,stock,grupo}]
+let carrito  = [];        // [{sku,desc,umed,costo,stock,qty,precio}]
+let cliente  = null;      // {CodAux,NomAux,RutAux,Bloqueado,DirAux}
+let COD_VENDEDOR = '';
+let NOMBRE_VENDEDOR = '';
+const NV_MAX = 30;
+const MARGEN_MIN = 0.30;
+
+const fmt = n => '$' + Math.round(n).toLocaleString('es-CL');
+
+// ── Auth guard ────────────────────────────────────────────
+(async () => {
+  // Recibir rol desde el dashboard padre (postMessage)
+  window.addEventListener('message', e => {
+    if (e.data?.type === 'rol') sessionStorage.setItem('grantt_role', e.data.value);
+  });
+  const ss = sessionStorage.getItem('grantt_role');
+  const vtoken = localStorage.getItem('vtoken');
+  let esVendedor = false;
+
+  if (ss) {
+    // gerencia desde dashboard — sin restricción
+    COD_VENDEDOR    = ss === 'admin' ? '' : '';
+    NOMBRE_VENDEDOR = '';
+  } else if (vtoken) {
+    try {
+      const r = await fetch('/api/verify?token=' + encodeURIComponent(vtoken));
+      if (!r.ok) throw new Error();
+      const p = await r.json();
+      if (!(p.tabs || []).includes('subdist')) { window.location.href='/portal_vendedor.html'; return; }
+      COD_VENDEDOR    = p.codVendedor || '';
+      NOMBRE_VENDEDOR = (p.vendedores||[])[0] || p.user || '';
+      esVendedor = true;
+      document.getElementById('btnLogout').style.display = '';
+      document.getElementById('btnLogout').onclick = () => {
+        localStorage.removeItem('vtoken'); window.location.href='/vendedores.html';
+      };
+    } catch { window.location.href='/vendedores.html'; return; }
+  } else {
+    try {
+      const ls = JSON.parse(localStorage.getItem('grantt_role')||'null');
+      if (!ls||ls.exp<=Date.now()) { window.location.href='/'; return; }
+    } catch { window.location.href='/'; return; }
+  }
+
+  // Mostrar badge vendedor
+  if (COD_VENDEDOR) {
+    document.getElementById('vendorBadge').textContent = `Vendedor ${COD_VENDEDOR}`;
+  }
+
+  // Setear fecha hoy
+  const hoy = new Date().toISOString().slice(0,10);
+  document.getElementById('nvFecha').value   = hoy;
+  document.getElementById('nvEntrega').value = hoy;
+
+  // Cargar catálogo
+  await cargarCatalogo();
+
+  // Iniciar UI
+  initUI();
+})();
+
+// ── Cargar catálogo ───────────────────────────────────────
+async function cargarCatalogo() {
+  document.getElementById('loadingCat').style.display = '';
+  try {
+    const r = await fetch('/api/catalogo_productos');
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    CATALOGO = (d.productos || []).map(p => ({
+      ...p,
+      skuNorm: p.sku.toLowerCase().trim(),
+      descNorm: p.desc.toLowerCase().trim(),
+    }));
+  } catch {
+    document.getElementById('loadingCat').textContent = '⚠ No se pudo cargar el catálogo.';
+    return;
+  }
+  document.getElementById('loadingCat').style.display = 'none';
+}
+
+// ── Buscar cliente ────────────────────────────────────────
+let clienteTimer;
+function initUI() {
+  const clienteQ    = document.getElementById('clienteQ');
+  const clienteSugg = document.getElementById('clienteSugg');
+
+  clienteQ.addEventListener('input', () => {
+    clearTimeout(clienteTimer);
+    const q = clienteQ.value.trim();
+    if (q.length < 2) { clienteSugg.classList.remove('open'); return; }
+    clienteTimer = setTimeout(() => buscarCliente(q), 300);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#secCliente')) clienteSugg.classList.remove('open');
+  });
+}
+
+async function buscarCliente(q) {
+  const sugg = document.getElementById('clienteSugg');
+  try {
+    const r = await fetch('/api/buscar_clientes?q=' + encodeURIComponent(q));
+    const d = await r.json();
+    const clientes = d.clientes || [];
+    if (!clientes.length) {
+      sugg.innerHTML = '<div class="sugg-item" style="color:var(--text3)">Sin resultados</div>';
+    } else {
+      sugg.innerHTML = clientes.map((c,i) => `
+        <div class="sugg-item" data-idx="${i}">
+          <div class="nombre">${esc(c.NomAux)}</div>
+          <div class="rut">${esc(c.RutAux)} ${c.Bloqueado==='S'?'<span style="color:var(--red)">● Bloqueado</span>':''}</div>
+          ${c.DirAux?`<div class="dir">${esc(c.DirAux)}</div>`:''}
+        </div>`).join('');
+      clientes.forEach((c,i) => {
+        sugg.querySelectorAll('.sugg-item')[i]?.addEventListener('click', () => seleccionarCliente(c));
+      });
+    }
+    sugg.classList.add('open');
+  } catch { sugg.classList.remove('open'); }
+}
+
+function seleccionarCliente(c) {
+  cliente = c;
+  document.getElementById('clienteSugg').classList.remove('open');
+  document.getElementById('clienteQ').value = '';
+
+  const info = document.getElementById('clienteInfo');
+  info.innerHTML = `
+    <div class="cliente-card">
+      <div class="nombre">${esc(c.NomAux)}</div>
+      <div class="rut">${esc(c.RutAux)}</div>
+      ${c.DirAux?`<div class="dir">${esc(c.DirAux)}</div>`:''}
+      <button class="cliente-change" onclick="cambiarCliente()">Cambiar</button>
+    </div>
+    ${c.Bloqueado==='S'?`<div class="alert warn">⚠ Cliente bloqueado — puede emitir la NV, pero bodega no podrá facturar ni despachar los productos hasta que se regularice.</div>`:''}`;
+  info.hidden = false;
+  document.getElementById('secNV').hidden = false;
+  document.getElementById('secProductos').hidden = false;
+  if (carrito.length) {
+    document.getElementById('secCarrito').hidden = false;
+    document.getElementById('totalBar').hidden = false;
+  }
+}
+
+function cambiarCliente() {
+  cliente = null;
+  document.getElementById('clienteInfo').hidden = true;
+  document.getElementById('clienteInfo').innerHTML = '';
+  document.getElementById('clienteQ').value = '';
+  document.getElementById('clienteQ').focus();
+  document.getElementById('secNV').hidden = true;
+  document.getElementById('secProductos').hidden = true;
+  document.getElementById('secCarrito').hidden = true;
+  document.getElementById('totalBar').hidden = true;
+}
+
+// ── Buscar producto ───────────────────────────────────────
+let prodTimer;
+document.addEventListener('DOMContentLoaded', () => {});
+
+function setupProdSearch() {
+  const prodQ    = document.getElementById('prodQ');
+  const prodSugg = document.getElementById('prodSugg');
+
+  prodQ.addEventListener('input', () => {
+    clearTimeout(prodTimer);
+    const q = prodQ.value.trim().toLowerCase();
+    if (q.length < 2) { prodSugg.classList.remove('open'); return; }
+    prodTimer = setTimeout(() => mostrarSuggProd(q, prodSugg), 150);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#secProductos')) prodSugg.classList.remove('open');
+  });
+}
+
+function mostrarSuggProd(q, sugg) {
+  if (!CATALOGO.length) return;
+  const hits = CATALOGO.filter(p =>
+    p.skuNorm.includes(q) || p.descNorm.includes(q)
+  ).slice(0, 20);
+
+  if (!hits.length) {
+    sugg.innerHTML = '<div class="sugg-item" style="color:var(--text3)">Sin resultados</div>';
+    sugg.classList.add('open');
+    return;
+  }
+
+  sugg.innerHTML = hits.map((p, i) => `
+    <div class="sugg-item" data-idx="${i}">
+      <div class="nombre" style="display:flex;justify-content:space-between">
+        <span>${esc(p.desc)}</span>
+        <span style="font-size:.75rem;color:${p.stock>0?'var(--green)':'var(--red)'}">Stk: ${p.stock}</span>
+      </div>
+      <div class="rut">${esc(p.sku)} · ${p.umed}</div>
+    </div>`).join('');
+
+  hits.forEach((p, i) => {
+    sugg.querySelectorAll('.sugg-item')[i]?.addEventListener('click', () => {
+      agregarAlCarrito(p);
+      sugg.classList.remove('open');
+      document.getElementById('prodQ').value = '';
+    });
+  });
+  sugg.classList.add('open');
+}
+
+setupProdSearch();
+
+// ── Carrito ───────────────────────────────────────────────
+function agregarAlCarrito(p) {
+  // Si ya está en el carrito, solo incrementar qty
+  const exist = carrito.find(r => r.sku === p.sku);
+  if (exist) {
+    exist.qty++;
+    renderCarrito();
+    return;
+  }
+  carrito.push({ sku: p.sku, desc: p.desc, umed: p.umed, costo: p.costo, stock: p.stock, qty: 1, precio: 0 });
+  renderCarrito();
+  document.getElementById('secCarrito').hidden = false;
+  document.getElementById('totalBar').hidden = false;
+}
+
+function eliminarDelCarrito(idx) {
+  carrito.splice(idx, 1);
+  if (!carrito.length) {
+    document.getElementById('secCarrito').hidden = true;
+    document.getElementById('totalBar').hidden = true;
+  }
+  renderCarrito();
+}
+
+function actualizarCampo(idx, campo, val) {
+  carrito[idx][campo] = parseFloat(val) || 0;
+  renderCarrito();
+}
+
+function margenInfo(item) {
+  const { costo, precio } = item;
+  if (!precio || precio <= 0) return { pct: null, cls: 'margin-warn', txt: 'Ingresa precio' };
+  if (precio < costo)         return { pct: null, cls: 'margin-err',  txt: `⛔ Bajo costo ($${Math.round(costo).toLocaleString('es-CL')})` };
+  const pct = (precio - costo) / precio;
+  if (pct < MARGEN_MIN) return { pct, cls: 'margin-warn', txt: `⚠ Margen ${Math.round(pct*100)}% (mín 30%)` };
+  return { pct, cls: 'margin-ok',  txt: `✓ Margen ${Math.round(pct*100)}%` };
+}
+
+function renderCarrito() {
+  const cont = document.getElementById('carritoItems');
+  if (!carrito.length) {
+    cont.innerHTML = '<div class="carrito-empty">El carrito está vacío</div>';
+    document.getElementById('btnGenerar').disabled = true;
+    document.getElementById('totalNeto').textContent = '$0';
+    return;
+  }
+
+  cont.innerHTML = carrito.map((item, idx) => {
+    const mg = margenInfo(item);
+    return `<div class="prod-row">
+      <div class="prod-top">
+        <div>
+          <div class="sku">${esc(item.sku)}</div>
+          <div class="desc">${esc(item.desc)}</div>
+        </div>
+        <button class="btn-del" onclick="eliminarDelCarrito(${idx})" title="Eliminar">✕</button>
+      </div>
+      <div class="prod-fields">
+        <div class="field">
+          <label>Cantidad (${item.umed})</label>
+          <input type="number" min="1" value="${item.qty}"
+            oninput="actualizarCampo(${idx},'qty',this.value)">
+        </div>
+        <div class="field">
+          <label>Precio neto unitario</label>
+          <input type="number" min="0" value="${item.precio||''}" placeholder="0"
+            oninput="actualizarCampo(${idx},'precio',this.value)">
+        </div>
+      </div>
+      <div class="margin-info">
+        <span class="margin-badge ${mg.cls}">${mg.txt}</span>
+        <span class="stock-info">Stock: ${item.stock}</span>
+        ${item.precio>0?`<span style="color:var(--text2);margin-left:auto">${fmt(item.qty*(item.precio||0))}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const total = carrito.reduce((s,r) => s + r.qty*(r.precio||0), 0);
+  document.getElementById('totalNeto').textContent = fmt(total);
+
+  const hayErrores = carrito.some(r => !r.precio || r.precio < r.costo);
+  document.getElementById('btnGenerar').disabled = !cliente || hayErrores;
+}
+
+// ── Generar Excel ─────────────────────────────────────────
+document.getElementById('btnGenerar').addEventListener('click', generarExcel);
+
+async function generarExcel() {
+  const nvNum     = parseInt(document.getElementById('nvNum').value) || 0;
+  const nvFecha   = document.getElementById('nvFecha').value;
+  const nvEntrega = document.getElementById('nvEntrega').value;
+  const nvRef     = document.getElementById('nvRef').value.trim();
+
+  if (!nvNum) { mostrarMsg('Ingresa el número de NV', 'err'); return; }
+  if (!nvFecha || !nvEntrega) { mostrarMsg('Ingresa las fechas', 'err'); return; }
+  if (!cliente) { mostrarMsg('Selecciona un cliente', 'err'); return; }
+  if (!carrito.length) { mostrarMsg('El carrito está vacío', 'err'); return; }
+
+  const btn = document.getElementById('btnGenerar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Generando…';
+
+  try {
+    const fmtDate = s => {
+      const [y,m,d] = s.split('-');
+      return new Date(+y, +m-1, +d);
+    };
+    const dateVal     = fmtDate(nvFecha);
+    const dateEntrega = fmtDate(nvEntrega);
+
+    // RUT cliente sin puntos ni dígito verificador
+    const rutNum = parseInt((cliente.RutAux||'').replace(/\./g,'').split('-')[0]);
+
+    const wb = new ExcelJS.Workbook();
+    wb.calcProperties = { fullCalcOnLoad: true };
+    const ws = wb.addWorksheet('NV');
+
+    // Dividir en NVs de NV_MAX productos
+    let nvActual = nvNum;
+    carrito.forEach((p, i) => {
+      if (i > 0 && i % NV_MAX === 0) nvActual++;
+      const row = ws.getRow(i + 1);
+      row.getCell(1).value  = nvActual;
+      const c2 = row.getCell(2); c2.value = dateVal;     c2.numFmt = 'DD-MM-YYYY';
+      const c3 = row.getCell(3); c3.value = dateEntrega; c3.numFmt = 'DD-MM-YYYY';
+      if (nvRef) row.getCell(5).value = nvRef;
+      row.getCell(6).value  = rutNum;
+      row.getCell(7).value  = COD_VENDEDOR || '';
+      row.getCell(8).value  = '01';
+      row.getCell(9).value  = '01';
+      if (NOMBRE_VENDEDOR) row.getCell(13).value = NOMBRE_VENDEDOR;
+      const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
+      const c36 = row.getCell(36); c36.value = p.sku;   c36.numFmt = '@';
+      row.getCell(38).value = p.qty;
+      row.getCell(39).value = p.precio;
+    });
+
+    [1,2,6,7,35,36,38,39].forEach(c => {
+      ws.getColumn(c).width = c <= 7 ? 11 : c === 36 ? 22 : 10;
+    });
+    for (let c = 8; c <= 34; c++) ws.getColumn(c).width = 2.5;
+    ws.getColumn(37).width = 2.5;
+
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    const nvFin = nvActual;
+    a.download = `NV${nvNum}${nvFin>nvNum?'-'+nvFin:''}SubDist.xlsx`;
+    a.click();
+
+    mostrarMsg(`✅ Descargado: ${carrito.length} productos, NV ${nvNum}${nvFin>nvNum?' a '+nvFin:''}.`, 'ok');
+  } catch (err) {
+    mostrarMsg('❌ Error: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generar Excel NV';
+  }
+}
+
+function mostrarMsg(txt, cls) {
+  const el = document.getElementById('msgGen');
+  el.className = 'msg ' + cls;
+  el.textContent = txt;
+  if (cls === 'ok') setTimeout(() => { el.textContent=''; el.className='msg'; }, 5000);
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

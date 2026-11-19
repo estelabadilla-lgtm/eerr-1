@@ -908,6 +908,7 @@
     <button data-tab="libro_ventas" onclick="showTab('libro_ventas')">Libro de Ventas</button>
     <button data-tab="comisiones" onclick="showTab('comisiones')">Comisiones</button>
     <button data-tab="nv_retail" onclick="showTab('nv_retail')">NV Retail</button>
+    <button data-tab="subdist" onclick="showTab('subdist')">NV Subdistribución</button>
   </nav>
 </div>
 
@@ -1259,6 +1260,10 @@
 <!-- ══════════════════ TAB: NV RETAIL ══════════════════ -->
 <div id="tab-nv_retail" class="tab">
   <iframe src="./notas_venta_retail.html" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
+</div>
+
+<div id="tab-subdist" class="tab">
+  <iframe src="./notas_venta_subdist.html" id="iframe-subdist" style="width:100%;height:calc(100vh - 130px);border:none;border-radius:8px;display:block"></iframe>
 </div>
 
 <script>
@@ -1657,11 +1662,15 @@ function showTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
-  document.querySelector('.toolbar').style.display = (name === 'flujo_caja' || name === 'cartera' || name === 'libro_ventas' || name === 'comisiones') ? 'none' : '';
+  document.querySelector('.toolbar').style.display = (['flujo_caja','cartera','libro_ventas','comisiones','subdist'].includes(name)) ? 'none' : '';
   if (name === 'graficos') renderCharts();
   if (name === 'seguros' && !SEG_LOADED) segInit();
   if (name === 'nv_retail') {
     const iframe = document.querySelector('#tab-nv_retail iframe');
+    if (iframe) iframe.contentWindow.postMessage({ type: 'rol', value: CURRENT_ROLE }, '*');
+  }
+  if (name === 'subdist') {
+    const iframe = document.getElementById('iframe-subdist');
     if (iframe) iframe.contentWindow.postMessage({ type: 'rol', value: CURRENT_ROLE }, '*');
   }
 }

@@ -2,11 +2,11 @@ const crypto = require('crypto');
 
 // vendedores: null = ver todos; array = filtrar solo esos nombres (minúsculas, coincide con TASAS)
 const USERS = {
-  joel:      { pass: 'joel2026',      vendedores: ['joel cordova','chilemat joel cordova'], tabs: ['comisiones','vencidos','vehiculos'] },
-  sandra:    { pass: 'sandra2026',    vendedores: ['sandra ortega','chilemat sandra'],                                          tabs: ['comisiones'] },
-  oscar:     { pass: 'oscar2026',     vendedores: ['oscar bucarey'],                                                            tabs: ['comisiones'] },
-  diego:     { pass: 'diego2026',     vendedores: ['diego rivero'],                                                             tabs: ['comisiones'] },
-  alejandra: { pass: 'alejandra2026', vendedores: null,                                                                        tabs: ['vehiculos','vencidos','nv_retail','comisiones'] },
+  joel:      { pass: 'joel2026',      vendedores: ['joel cordova','chilemat joel cordova'], codVendedor: '03', tabs: ['comisiones','vencidos','vehiculos','subdist'] },
+  sandra:    { pass: 'sandra2026',    vendedores: ['sandra ortega','chilemat sandra'],      codVendedor: '06', tabs: ['comisiones','subdist'] },
+  oscar:     { pass: 'oscar2026',     vendedores: ['oscar bucarey'],                        codVendedor: '02', tabs: ['comisiones','subdist'] },
+  diego:     { pass: 'diego2026',     vendedores: ['diego rivero'],                         codVendedor: '05', tabs: ['comisiones','subdist'] },
+  alejandra: { pass: 'alejandra2026', vendedores: null,                                     codVendedor: '01', tabs: ['vehiculos','vencidos','nv_retail','comisiones','subdist'] },
 };
 
 module.exports = async (req, res) => {
@@ -27,6 +27,7 @@ module.exports = async (req, res) => {
   const payload = Buffer.from(JSON.stringify({
     user: user.toLowerCase(),
     vendedores: profile.vendedores,
+    codVendedor: profile.codVendedor,
     tabs: profile.tabs,
     exp: Date.now() + 90 * 24 * 60 * 60 * 1000,
   })).toString('base64');

@@ -13,7 +13,6 @@ module.exports = async (req, res) => {
       COALESCE(LTRIM(RTRIM(CodGrupo)),'') AS grupo
     FROM GRANTT_DASH.src.iw_tprod
     WHERE Inactivo = 0
-      AND esParaVenta = 1
     ORDER BY DesProd`;
 
   try {

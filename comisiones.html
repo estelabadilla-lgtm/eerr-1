@@ -256,6 +256,13 @@ const TASAS = {
   'marcelo herrera':       0.025,
   'chilemat marcelo':      0.025,
 };
+// Alias: unifica nombres Chilemat con el vendedor principal para mostrar como uno solo
+const ALIAS = {
+  'chilemat joel cordova': 'Joel Cordova',
+  'chilemat marcelo':      'Marcelo Herrera',
+  'chilemat sandra':       'Sandra Ortega',
+};
+function normalizeVend(v){ const k=(v||'').toLowerCase().trim(); return ALIAS[k]||v||''; }
 function tasaVendedor(v){ return TASAS[(v||'').toLowerCase().trim()]||0; }
 
 const LS = 'libro_ventas_data';
@@ -508,7 +515,7 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
     let estado_pago=VEND[r.folio]?.estado_pago||'';
     const vce_cheque=CARTERA[r.folio]||'';
     if(estado_pago==='pagada' && vce_cheque) estado_pago='cartera';
-    return {...r, vendedor:vend, bloqueado:(VEND[r.folio]?.bloqueado||'N'), estado_pago, vencimiento:(VEND[r.folio]?.vencimiento||''), saldo_pendiente:(VEND[r.folio]?.saldo_pendiente??999999), vce_cheque, comision};
+    return {...r, vendedor:normalizeVend(vend), bloqueado:(VEND[r.folio]?.bloqueado||'N'), estado_pago, vencimiento:(VEND[r.folio]?.vencimiento||''), saldo_pendiente:(VEND[r.folio]?.saldo_pendiente??999999), vce_cheque, comision};
   });
 
   // Filtrar por vendedor si hay lock (perfil vendedor)

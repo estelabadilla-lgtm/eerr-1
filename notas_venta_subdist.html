@@ -192,6 +192,9 @@ let carrito  = [];        // [{sku,desc,umed,costo,stock,qty,precio}]
 let cliente  = null;      // {CodAux,NomAux,RutAux,Bloqueado,DirAux}
 let COD_VENDEDOR = '';
 let NOMBRE_VENDEDOR = '';
+let COD_VENDEDOR_CHILEMAT = '';
+let NOMBRE_VENDEDOR_CHILEMAT = '';
+let USAR_CHILEMAT = false;
 const NV_MAX = 30;
 const MARGEN_MIN = 0.30;
 
@@ -218,7 +221,9 @@ const fmt = n => '$' + Math.round(n).toLocaleString('es-CL');
       const p = await r.json();
       if (!(p.tabs || []).includes('subdist')) { window.location.href='/portal_vendedor.html'; return; }
       COD_VENDEDOR    = p.codVendedor || '';
-      NOMBRE_VENDEDOR = (p.vendedores||[])[0] || p.user || '';
+      NOMBRE_VENDEDOR = (p.vendedores||[]).find(v=>!v.toLowerCase().includes('chilemat')) || p.user || '';
+      COD_VENDEDOR_CHILEMAT  = p.codVendedorChilemat || '';
+      NOMBRE_VENDEDOR_CHILEMAT = (p.vendedores||[]).find(v=>v.toLowerCase().includes('chilemat')) || '';
       esVendedor = true;
       document.getElementById('btnLogout').style.display = '';
       document.getElementById('btnLogout').onclick = () => {
@@ -232,9 +237,23 @@ const fmt = n => '$' + Math.round(n).toLocaleString('es-CL');
     } catch { window.location.href='/'; return; }
   }
 
-  // Mostrar badge vendedor
-  if (COD_VENDEDOR) {
-    document.getElementById('vendorBadge').textContent = `Vendedor ${COD_VENDEDOR}`;
+  // Mostrar badge / selector vendedor
+  const badge = document.getElementById('vendorBadge');
+  if (COD_VENDEDOR_CHILEMAT) {
+    // Tiene opción Grantt y Chilemat — mostrar toggle
+    badge.innerHTML = `
+      <span style="font-size:.75rem;opacity:.7;display:block;margin-bottom:4px">Emitir como:</span>
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-right:12px">
+        <input type="radio" name="modoVendedor" value="grantt" checked> Grantt
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="radio" name="modoVendedor" value="chilemat"> Chilemat
+      </label>`;
+    badge.querySelectorAll('input[name=modoVendedor]').forEach(r => r.addEventListener('change', e => {
+      USAR_CHILEMAT = e.target.value === 'chilemat';
+    }));
+  } else if (COD_VENDEDOR) {
+    badge.textContent = `Vendedor ${COD_VENDEDOR}`;
   }
 
   // Setear fecha hoy
@@ -523,11 +542,13 @@ async function generarExcel() {
       const c2 = row.getCell(2); c2.value = dateVal;     c2.numFmt = 'DD-MM-YYYY';
       const c3 = row.getCell(3); c3.value = dateEntrega; c3.numFmt = 'DD-MM-YYYY';
       if (nvRef) row.getCell(5).value = nvRef;
+      const codVend  = USAR_CHILEMAT ? (COD_VENDEDOR_CHILEMAT || COD_VENDEDOR) : COD_VENDEDOR;
+      const nomVend  = USAR_CHILEMAT ? (NOMBRE_VENDEDOR_CHILEMAT || NOMBRE_VENDEDOR) : NOMBRE_VENDEDOR;
       row.getCell(6).value  = rutNum;
-      row.getCell(7).value  = COD_VENDEDOR || '';
+      row.getCell(7).value  = codVend || '';
       row.getCell(8).value  = '01';
       row.getCell(9).value  = '01';
-      if (NOMBRE_VENDEDOR) row.getCell(13).value = NOMBRE_VENDEDOR;
+      if (nomVend) row.getCell(13).value = nomVend;
       const c35 = row.getCell(35); c35.value = dateVal; c35.numFmt = 'DD-MM-YYYY';
       const c36 = row.getCell(36); c36.value = p.sku;   c36.numFmt = '@';
       row.getCell(38).value = p.qty;

@@ -2,11 +2,11 @@ const crypto = require('crypto');
 
 // vendedores: null = ver todos; array = filtrar solo esos nombres (minúsculas, coincide con TASAS)
 const USERS = {
-  joel:      { pass: 'joel2026',      vendedores: ['joel cordova','chilemat joel cordova'], codVendedor: '03', tabs: ['comisiones','vencidos','vehiculos','subdist'] },
-  sandra:    { pass: 'sandra2026',    vendedores: ['sandra ortega','chilemat sandra'],      codVendedor: '06', tabs: ['comisiones','subdist'] },
+  joel:      { pass: 'joel2026',      vendedores: ['joel cordova','chilemat joel cordova'], codVendedor: '03', codVendedorChilemat: '54', tabs: ['comisiones','vencidos','vehiculos','subdist'] },
+  sandra:    { pass: 'sandra2026',    vendedores: ['sandra ortega','chilemat sandra'],      codVendedor: '06', codVendedorChilemat: '57', tabs: ['comisiones','subdist'] },
   oscar:     { pass: 'oscar2026',     vendedores: ['oscar bucarey'],                        codVendedor: '02', tabs: ['comisiones','subdist'] },
   diego:     { pass: 'diego2026',     vendedores: ['diego rivero'],                         codVendedor: '05', tabs: ['comisiones','subdist'] },
-  alejandra: { pass: 'alejandra2026', vendedores: null,                                     codVendedor: '01', tabs: ['vehiculos','vencidos','nv_retail','comisiones','subdist'] },
+  alejandra: { pass: 'alejandra2026', vendedores: null,                                     codVendedor: '01', codVendedorChilemat: '52', tabs: ['vehiculos','vencidos','nv_retail','comisiones','subdist'] },
 };
 
 module.exports = async (req, res) => {
@@ -28,6 +28,7 @@ module.exports = async (req, res) => {
     user: user.toLowerCase(),
     vendedores: profile.vendedores,
     codVendedor: profile.codVendedor,
+    codVendedorChilemat: profile.codVendedorChilemat || null,
     tabs: profile.tabs,
     exp: Date.now() + 90 * 24 * 60 * 60 * 1000,
   })).toString('base64');

@@ -382,9 +382,12 @@
   .login-role-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-dim); color: var(--azul-dark); font-weight: 700; font-size: 13px; padding: 6px 16px; border-radius: 20px; margin-bottom: 20px; }
   .login-pass-row { display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 6px; }
   .login-pass-row label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
-  .login-pass-row input { border: 1.5px solid var(--border2); border-radius: 8px; padding: 11px 14px; font-size: 14px; font-family: inherit; }
+  .login-pass-row .pass-wrap { position: relative; }
+  .login-pass-row input { width: 100%; border: 1.5px solid var(--border2); border-radius: 8px; padding: 11px 42px 11px 14px; font-size: 14px; font-family: inherit; }
   .login-pass-row input:focus { outline: none; border-color: var(--blue); }
   .login-pass-row.shake { animation: loginShake .5s; }
+  .pass-eye { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text3); padding: 4px; display: flex; align-items: center; }
+  .pass-eye:hover { color: var(--blue); }
   .login-error { color: var(--rojo); font-size: 12px; font-weight: 600; min-height: 16px; margin-top: 4px; }
   .login-btn { width: 100%; margin-top: 14px; background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; }
   .login-btn:hover { background: var(--azul-dark); }
@@ -835,7 +838,12 @@
       <form onsubmit="return loginIntentar(event)">
         <div class="login-pass-row" id="login-pass-row">
           <label>Contraseña</label>
-          <input type="password" id="login-pass-input" autocomplete="current-password" placeholder="Ingresa tu contraseña">
+          <div class="pass-wrap">
+            <input type="password" id="login-pass-input" autocomplete="current-password" placeholder="Ingresa tu contraseña">
+            <button type="button" class="pass-eye" onclick="toggleLoginPass()" tabindex="-1" aria-label="Mostrar contraseña">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
         <div class="login-error" id="login-error"></div>
         <button type="submit" class="login-btn">Ingresar</button>
@@ -4283,6 +4291,14 @@ const ROLES = {
 let CURRENT_ROLE = null;
 let LOGIN_ROL_SELECCIONADO = null;
 
+function toggleLoginPass() {
+  const inp = document.getElementById('login-pass-input');
+  const btn = inp.nextElementSibling;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  if (btn) btn.style.color = show ? 'var(--blue)' : 'var(--text3)';
+}
+
 function loginElegirRol(rol) {
   LOGIN_ROL_SELECCIONADO = rol;
   document.getElementById('login-role-chip').textContent = ROLES[rol].label;
@@ -4315,6 +4331,7 @@ function loginIntentar(event) {
   }
 
   sessionStorage.setItem('grantt_role', rol);
+  localStorage.setItem('grantt_role', JSON.stringify({rol, exp: Date.now() + 8*60*60*1000}));
   document.getElementById('login-step2').style.display = 'none';
   document.getElementById('login-success').classList.add('show');
   setTimeout(() => {
@@ -4326,6 +4343,7 @@ function loginIntentar(event) {
 
 function logout() {
   sessionStorage.removeItem('grantt_role');
+  localStorage.removeItem('grantt_role');
   location.reload();
 }
 

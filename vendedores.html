@@ -20,6 +20,12 @@
         border-radius:8px;color:#f1f5f9;font-size:.95rem;outline:none;transition:.2s}
   input:focus{border-color:#38bdf8;box-shadow:0 0 0 3px #38bdf820}
   .field{margin-bottom:20px}
+  .pass-wrap{position:relative}
+  .pass-wrap input{padding-right:42px}
+  .pass-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+            background:none;border:none;cursor:pointer;color:#64748b;padding:4px;
+            width:auto;margin:0;display:flex;align-items:center}
+  .pass-eye:hover{color:#94a3b8;background:none}
   button{width:100%;padding:13px;background:#0ea5e9;border:none;border-radius:8px;
          color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:.2s;margin-top:4px}
   button:hover{background:#38bdf8}
@@ -47,13 +53,24 @@
     </div>
     <div class="field">
       <label for="p">Contraseña</label>
-      <input id="p" type="password" autocomplete="current-password" required>
+      <div class="pass-wrap">
+        <input id="p" type="password" autocomplete="current-password" required>
+        <button type="button" class="pass-eye" onclick="togglePass('p',this)" tabindex="-1" aria-label="Mostrar contraseña">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
     </div>
     <button id="btn" type="submit">Ingresar</button>
     <div class="error" id="err"></div>
   </form>
 </div>
 <script>
+function togglePass(id, btn) {
+  const inp = document.getElementById(id);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.style.color = show ? '#38bdf8' : '#64748b';
+}
 document.getElementById('frm').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = document.getElementById('btn');

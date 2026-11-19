@@ -435,7 +435,15 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
 (async()=>{
   // ── Auth guard: si viene de portal vendedores, verificar token ──────────────
   // Si se accede desde el dashboard principal (gerencia/admin), ignorar vtoken
-  const _granttRole = sessionStorage.getItem('grantt_role');
+  // Checar sessionStorage primero; si no hay, checar localStorage con expiración
+  let _granttRole = sessionStorage.getItem('grantt_role');
+  if (!_granttRole) {
+    try {
+      const _ls = JSON.parse(localStorage.getItem('grantt_role') || 'null');
+      if (_ls && _ls.exp > Date.now()) _granttRole = _ls.rol;
+      else if (_ls) localStorage.removeItem('grantt_role');
+    } catch { localStorage.removeItem('grantt_role'); }
+  }
   const _vtoken = _granttRole ? null : localStorage.getItem('vtoken');
   if (_vtoken) {
     try {

@@ -4,18 +4,26 @@ module.exports = async (req, res) => {
   if (!url || !key) { res.status(500).json({ error: 'Faltan env vars' }); return; }
 
   const queries = {
-    top_iw_costop: `SELECT TOP 10 * FROM GRANTT_DASH.src.iw_costop`,
-    top_iw_tprod:  `SELECT TOP 10 * FROM GRANTT_DASH.src.iw_tprod`,
-    top_iw_tsubgr: `SELECT TOP 5  * FROM GRANTT_DASH.src.iw_tsubgr`,
-    top_iw_tgrupo: `SELECT TOP 5  * FROM GRANTT_DASH.src.iw_tgrupo`,
     join_prod_costo: `
-      SELECT TOP 20
-        p.CodProd, p.DesProd, p.UniMed,
-        c.CodBod, c.CostoUlt, c.CostoProm, c.CostoEst,
-        c.StkAct
+      SELECT TOP 30
+        p.CodProd,
+        LTRIM(RTRIM(p.DesProd)) AS DesProd,
+        p.CodUMed,
+        p.ValorUltCom AS costo_tprod,
+        p.PrecioVta,
+        p.CodGrupo,
+        c.CostoUnitario AS costo_costop,
+        c.Stock,
+        c.Fecha AS fecha_costo
       FROM GRANTT_DASH.src.iw_tprod p
-      LEFT JOIN GRANTT_DASH.src.iw_costop c ON c.CodProd = p.CodProd
-      WHERE p.Estado = 'A'
+      LEFT JOIN (
+        SELECT CodProd, CostoUnitario, Stock, Fecha,
+               ROW_NUMBER() OVER (PARTITION BY CodProd ORDER BY Fecha DESC) AS rn
+        FROM GRANTT_DASH.src.iw_costop
+      ) c ON c.CodProd = p.CodProd AND c.rn = 1
+      WHERE p.Inactivo = 0
+        AND p.esParaVenta <> 0
+        AND p.CodGrupo NOT IN ('OBSOL','BLOQ')
       ORDER BY p.CodProd`,
   };
 

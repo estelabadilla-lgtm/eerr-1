@@ -4,17 +4,11 @@ module.exports = async (req, res) => {
   if (!url || !key) { res.status(500).json({ error: 'Config' }); return; }
 
   const sql = `
-    SELECT TOP 500
-      LTRIM(RTRIM(CodProd)) AS sku,
-      LTRIM(RTRIM(DesProd)) AS desc,
-      COALESCE(LTRIM(RTRIM(CodUMed)),'UNI') AS umed,
-      0 AS costo,
-      0 AS stock,
-      COALESCE(LTRIM(RTRIM(CodGrupo)),'') AS grupo
-    FROM GRANTT_DASH.src.iw_tprod
-    WHERE Inactivo = 0
-      AND COALESCE(LTRIM(RTRIM(DesProd)),'') NOT IN ('','no usar')
-    ORDER BY DesProd`;
+    SELECT TABLE_NAME
+    FROM GRANTT_DASH.INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_TYPE = 'BASE TABLE'
+      AND (TABLE_NAME LIKE '%prod%' OR TABLE_NAME LIKE '%tprod%' OR TABLE_NAME LIKE '%articul%' OR TABLE_NAME LIKE '%item%')
+    ORDER BY TABLE_NAME`;
 
   try {
     const r = await fetch(`${url}/consulta`, {

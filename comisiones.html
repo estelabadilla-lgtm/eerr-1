@@ -320,7 +320,7 @@ function getFiltered(){
     const esNC = r.tipo==='61' || r.tipo==='56';
     if(pago && esNC && pago!=='rebaja') return false;
     if(pago && !esNC && r.estado_pago!==pago) return false;
-    if(bus && !r.razon.toLowerCase().includes(bus) && !r.rut.includes(bus) && !r.folio.includes(bus)) return false;
+    if(bus && !r.razon.toLowerCase().includes(bus) && !String(r.rut||'').includes(bus) && !String(r.folio||'').includes(bus)) return false;
     return true;
   });
 }

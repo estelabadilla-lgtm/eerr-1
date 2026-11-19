@@ -3,9 +3,14 @@ module.exports = async (req, res) => {
   const key = process.env.DASH_API_KEY;
   if (!url || !key) { res.status(500).json({ error: 'env' }); return; }
 
-  const tbl = (req.query.t || 'nw_nventa');
-  const safe = ['nw_nventa','iw_gmovi','VentasDetalle','nw_detnv','iw_gsaen','IW_GSaEn_RefDTE'].includes(tbl) ? tbl : 'nw_nventa';
-  const sql = `SELECT TOP 2 * FROM GRANTT_DASH.src.${safe}`;
+  // Check Joel's new folios in iw_gsaen
+  const sql = `
+    SELECT g.Folio, g.Fecha, g.CodVendedor, RTRIM(v.VenDes) AS vendedor, g.CodAux, g.TtdCod, g.NetoAfecto, g.Total
+    FROM GRANTT_DASH.src.iw_gsaen g
+    LEFT JOIN GRANTT_DASH.src.cwtvend v ON v.VenCod = g.CodVendedor
+    WHERE g.Folio BETWEEN 41400 AND 41440
+      AND g.Fecha >= '2026-11-01'
+    ORDER BY g.Folio`;
   try {
     const r = await fetch(`${url}/consulta`, {
       method: 'POST',

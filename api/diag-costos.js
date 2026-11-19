@@ -4,11 +4,7 @@ module.exports = async (req, res) => {
   if (!url || !key) { res.status(500).json({ error: 'Faltan env vars' }); return; }
 
   const queries = {
-    top_cwtauxi_raw: `SELECT TOP 5 * FROM GRANTT_DASH.src.cwtauxi`,
-    top_clientes_sin_filtro: `
-      SELECT TOP 10 CodAux, DesAux, RutAux, Bloqueado, TipAux
-      FROM GRANTT_DASH.src.cwtauxi
-      ORDER BY DesAux`,
+    vendedores: `SELECT VenCod, VenDes FROM GRANTT_DASH.src.cwtvend ORDER BY VenCod`,
     join_prod_costo: `
       SELECT TOP 30
         p.CodProd,

@@ -4,7 +4,8 @@ module.exports = async (req, res) => {
   if (!url || !key) { res.status(500).json({ error: 'Faltan env vars' }); return; }
 
   const queries = {
-    vendedores: `SELECT VenCod, VenDes FROM GRANTT_DASH.src.cwtvend ORDER BY VenCod`,
+    vend_cwtvend:  `SELECT VenCod, VenDes FROM GRANTT_DASH.src.cwtvend ORDER BY VenCod`,
+    vend_iw_tvend: `SELECT TOP 20 * FROM GRANTT_DASH.src.iw_tvend`,
     join_prod_costo: `
       SELECT TOP 30
         p.CodProd,

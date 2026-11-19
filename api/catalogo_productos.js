@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
   const sql = `
     SELECT TOP 2000
       LTRIM(RTRIM(CodProd)) AS sku,
-      LTRIM(RTRIM(DesProd)) AS desc,
+      LTRIM(RTRIM(DesProd)) AS nombre,
       COALESCE(LTRIM(RTRIM(CodUMed)),'UNI') AS umed,
       COALESCE(ValorUltCom, 0) AS costo,
       0 AS stock,

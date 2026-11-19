@@ -287,8 +287,9 @@ async function cargarCatalogo() {
     const d = await r.json();
     CATALOGO = (d.productos || []).map(p => ({
       ...p,
-      skuNorm: p.sku.toLowerCase().trim(),
-      descNorm: p.desc.toLowerCase().trim(),
+      desc: p.nombre || p.desc || '',
+      skuNorm: (p.sku||'').toLowerCase().trim(),
+      descNorm: (p.nombre||p.desc||'').toLowerCase().trim(),
     }));
   } catch {
     document.getElementById('loadingCat').textContent = '⚠ No se pudo cargar el catálogo.';

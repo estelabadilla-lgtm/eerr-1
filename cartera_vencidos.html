@@ -281,6 +281,45 @@ details.rules ol{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:co
 <div class="tip" id="tip" hidden></div>
 
 <script>
+// ── Auth guard ──────────────────────────────────────────────────────────────
+(async () => {
+  const _ss = sessionStorage.getItem('grantt_role');
+  const _vtoken = localStorage.getItem('vtoken');
+  let _fromVtoken = false;
+
+  if (!_ss) {
+    if (_vtoken) {
+      // Viene del portal vendedores — verificar que tenga acceso a vencidos
+      try {
+        const _vr = await fetch('/api/verify?token=' + encodeURIComponent(_vtoken));
+        if (!_vr.ok) throw new Error();
+        const _vp = await _vr.json();
+        if (!(_vp.tabs || []).includes('vencidos')) {
+          window.location.href = '/portal_vendedor.html'; return;
+        }
+        _fromVtoken = true;
+      } catch { window.location.href = '/vendedores.html'; return; }
+    } else {
+      // Sin sesión de ningún tipo — verificar localStorage grantt_role
+      try {
+        const _ls = JSON.parse(localStorage.getItem('grantt_role') || 'null');
+        if (!_ls || _ls.exp <= Date.now()) { window.location.href = '/'; return; }
+      } catch { window.location.href = '/'; return; }
+    }
+  }
+
+  // Si viene de vtoken (vendedor), ocultar controles de modificación
+  if (_fromVtoken) {
+    ['bUpd','bApply','bCancel','bJson'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
+    const updPanel = document.getElementById('upd');
+    if (updPanel) updPanel.hidden = true;
+  }
+})();
+// ── Fin auth guard ──────────────────────────────────────────────────────────
+
 const CUENTAS={'10-04-01-01':'Clientes Nacionales','10-05-01-02':'Cheques por Cobrar','20-05-01-02':'Anticipo de Clientes'};
 const EXCLUIDOS=['77.398.220-1','96.899.860-9'];
 // Retail: se incluyen en la cartera; el filtro "Clientes → Sin retail" los oculta

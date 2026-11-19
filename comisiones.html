@@ -433,7 +433,9 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
 
 (async()=>{
   // ── Auth guard: si viene de portal vendedores, verificar token ──────────────
-  const _vtoken = localStorage.getItem('vtoken');
+  // Si se accede desde el dashboard principal (gerencia/admin), ignorar vtoken
+  const _granttRole = sessionStorage.getItem('grantt_role');
+  const _vtoken = _granttRole ? null : localStorage.getItem('vtoken');
   if (_vtoken) {
     try {
       const _vr = await fetch('/api/verify?token=' + encodeURIComponent(_vtoken));

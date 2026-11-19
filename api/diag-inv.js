@@ -3,7 +3,11 @@ module.exports = async (req, res) => {
   const key = process.env.DASH_API_KEY;
   if (!url || !key) { res.status(500).json({ error: 'env' }); return; }
 
-  const sql = `SELECT TABLE_NAME FROM GRANTT_DASH.INFORMATION_SCHEMA.TABLES ORDER BY TABLE_NAME`;
+  // Try to find the right inventory/sales table by probing common Softland names
+  const tablas = ['invdocenc','invenc','bolfac','facenc','venenc','invdoc','cwfactven','cwinvdoc','invmovenc'];
+  const sql = tablas.map(t =>
+    `SELECT '${t}' AS t, COUNT(*) AS n FROM GRANTT_DASH.src.${t}`
+  ).join(' UNION ALL ');
   try {
     const r = await fetch(`${url}/consulta`, {
       method: 'POST',

@@ -149,17 +149,6 @@ header .sub{font-size:.75rem;color:var(--text3)}
       <label>Referencia / N° OC (opcional)</label>
       <input id="nvRef" type="text" placeholder="Número de OC del cliente">
     </div>
-    <!-- Solo visible en modo cotización -->
-    <div id="cotEmails" hidden style="margin-top:10px;display:none;flex-direction:column;gap:10px">
-      <div class="field">
-        <label>Correo cliente</label>
-        <input id="emailTo" type="email" placeholder="cliente@empresa.cl" inputmode="email">
-      </div>
-      <div class="field">
-        <label>Correo copia (CC)</label>
-        <input id="emailCc" type="email" placeholder="copia@empresa.cl (opcional)" inputmode="email">
-      </div>
-    </div>
   </div>
 
   <!-- 3. Productos -->
@@ -215,13 +204,7 @@ function setTipo(t) {
   TIPO_DOC = t;
   const esCot = t === 'cot';
   document.getElementById('labelNumDoc').textContent = esCot ? 'N° Cotización' : 'N° NV';
-  const emails = document.getElementById('cotEmails');
-  emails.hidden = !esCot;
-  emails.style.display = esCot ? 'flex' : 'none';
-  const btn = document.getElementById('btnGenerar');
-  if (!btn.disabled) btn.textContent = esCot ? 'Generar Cotización' : 'Generar Excel NV';
   document.getElementById('btnConvertirNV').hidden = true;
-  document.getElementById('nvNum').placeholder = esCot ? 'Ej: 1001' : 'Ej: 12345';
 }
 const MARGEN_MIN = 0.30;
 
@@ -615,8 +598,8 @@ function generarCotizacion() {
   const cotFecha  = document.getElementById('nvFecha').value;
   const cotValida = document.getElementById('nvEntrega').value;
   const cotRef    = document.getElementById('nvRef').value.trim();
-  const emailTo   = document.getElementById('emailTo').value.trim();
-  const emailCc   = document.getElementById('emailCc').value.trim();
+  const emailTo   = '';
+  const emailCc   = '';
 
   if (!cotFecha) { mostrarMsg('Ingresa la fecha', 'err'); return; }
   if (!cliente) { mostrarMsg('Selecciona un cliente', 'err'); return; }

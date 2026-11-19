@@ -262,7 +262,8 @@ const ALIAS = {
   'chilemat marcelo':      'Marcelo Herrera',
   'chilemat sandra':       'Sandra Ortega',
 };
-function normalizeVend(v){ const k=(v||'').toLowerCase().trim(); return ALIAS[k]||v||''; }
+function toTitleCase(s){ return s.replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()); }
+function normalizeVend(v){ const k=(v||'').toLowerCase().trim(); return ALIAS[k]||toTitleCase(k)||''; }
 function tasaVendedor(v){ return TASAS[(v||'').toLowerCase().trim()]||0; }
 
 const LS = 'libro_ventas_data';

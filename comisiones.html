@@ -456,9 +456,8 @@ document.getElementById('fBuscar').addEventListener('input',renderTable);
         window.location.href = '/vendedores.html'; return;
       }
       if (_vp.vendedores) {
-        VENDEDOR_LOCK = _vp.vendedores; // array de nombres en minúsculas
-        // Ocultar selector de vendedor y mostrar nombre bloqueado
-        const vdrop = document.getElementById('vdropBtn')?.closest('span, div, label')?.parentElement;
+        VENDEDOR_LOCK = _vp.vendedores;
+        // Mostrar nombre en el selector y bloquearlo
         const btn = document.getElementById('vdropBtn');
         if (btn) {
           btn.textContent = _vp.vendedores.map(v=>v.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ')).join(' / ');

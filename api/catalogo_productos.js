@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
       LTRIM(RTRIM(p.CodProd)) AS sku,
       LTRIM(RTRIM(p.DesProd)) AS desc,
       COALESCE(NULLIF(LTRIM(RTRIM(COALESCE(p.CodUMed,''))), ''), 'UNI') AS umed,
-      COALESCE(c.CostoUnitario, p.ValorUltCom, 0) AS costo,
+      COALESCE(c.CostoUnitario, 0) AS costo,
       COALESCE(c.Stock, 0) AS stock,
       LTRIM(RTRIM(COALESCE(p.CodGrupo,''))) AS grupo
     FROM GRANTT_DASH.src.iw_tprod p
@@ -18,7 +18,6 @@ module.exports = async (req, res) => {
       FROM GRANTT_DASH.src.iw_costop
     ) c ON c.CodProd = LTRIM(RTRIM(p.CodProd)) AND c.rn = 1
     WHERE p.Inactivo = 0
-      AND p.esParaVenta <> 0
       AND LTRIM(RTRIM(COALESCE(p.CodGrupo,''))) NOT IN ('OBSOL','BLOQ')
       AND LTRIM(RTRIM(COALESCE(p.DesProd,''))) NOT IN ('','no usar')
     ORDER BY p.DesProd`;

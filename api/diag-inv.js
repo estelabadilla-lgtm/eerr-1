@@ -3,11 +3,7 @@ module.exports = async (req, res) => {
   const key = process.env.DASH_API_KEY;
   if (!url || !key) { res.status(500).json({ error: 'env' }); return; }
 
-  // Probe: list tables in GRANTT_DASH.src that start with 'inv' or 'doc'
-  const sql = `SELECT TABLE_NAME FROM GRANTT_DASH.INFORMATION_SCHEMA.TABLES
-               WHERE TABLE_SCHEMA = 'src'
-                 AND (TABLE_NAME LIKE 'inv%' OR TABLE_NAME LIKE 'doc%' OR TABLE_NAME LIKE 'ven%')
-               ORDER BY TABLE_NAME`;
+  const sql = `SELECT TABLE_NAME FROM GRANTT_DASH.INFORMATION_SCHEMA.TABLES ORDER BY TABLE_NAME`;
   try {
     const r = await fetch(`${url}/consulta`, {
       method: 'POST',

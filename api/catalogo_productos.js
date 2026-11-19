@@ -4,24 +4,17 @@ module.exports = async (req, res) => {
   if (!url || !key) { res.status(500).json({ error: 'Config' }); return; }
 
   const sql = `
-    SELECT
-      LTRIM(RTRIM(p.CodProd)) AS sku,
-      LTRIM(RTRIM(p.DesProd)) AS desc,
-      COALESCE(LTRIM(RTRIM(p.CodUMed)),'UNI') AS umed,
-      COALESCE(c.CostoUnitario, p.ValorUltCom, 0) AS costo,
-      COALESCE(c.Stock, 0) AS stock,
-      COALESCE(LTRIM(RTRIM(p.CodGrupo)),'') AS grupo
-    FROM GRANTT_DASH.src.iw_tprod p
-    OUTER APPLY (
-      SELECT TOP 1 CostoUnitario, Stock
-      FROM GRANTT_DASH.src.iw_costop x
-      WHERE LTRIM(RTRIM(x.CodProd)) = LTRIM(RTRIM(p.CodProd))
-      ORDER BY Fecha DESC
-    ) c
-    WHERE p.Inactivo = 0
-      AND p.esParaVenta = 1
-      AND LTRIM(RTRIM(COALESCE(p.DesProd,''))) <> ''
-    ORDER BY p.DesProd`;
+    SELECT TOP 2000
+      LTRIM(RTRIM(CodProd)) AS sku,
+      LTRIM(RTRIM(DesProd)) AS desc,
+      COALESCE(LTRIM(RTRIM(CodUMed)),'UNI') AS umed,
+      COALESCE(ValorUltCom, 0) AS costo,
+      0 AS stock,
+      COALESCE(LTRIM(RTRIM(CodGrupo)),'') AS grupo
+    FROM GRANTT_DASH.src.iw_tprod
+    WHERE Inactivo = 0
+      AND esParaVenta = 1
+    ORDER BY DesProd`;
 
   try {
     const r = await fetch(`${url}/consulta`, {

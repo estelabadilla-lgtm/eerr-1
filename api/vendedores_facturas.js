@@ -10,23 +10,33 @@ module.exports = async (req, res) => {
   }
 
   const sql = `
-    WITH folios AS (
-      -- Facturas emitidas desde dic 2025 con vendedor asignado
+    WITH cpbtes AS (
+      -- Asientos contables validados desde dic 2025 con norma tributaria S
+      SELECT c.CpbAno, c.CpbNum, c.AreaCod,
+             MAX(CASE WHEN m2.VendCod IS NOT NULL AND LTRIM(RTRIM(m2.VendCod)) <> ''
+                      THEN LTRIM(RTRIM(m2.VendCod)) END) AS vend_cod
+      FROM GRANTT_DASH.src.cwcpbte c
+      JOIN GRANTT_DASH.src.cwmovim m2
+        ON m2.CpbAno = c.CpbAno AND m2.CpbNum = c.CpbNum AND m2.AreaCod = c.AreaCod
+      WHERE c.CpbEst = 'V'
+        AND c.CpbNormaTrib = 'S'
+        AND (c.CpbAno = '2025' OR c.CpbAno >= '2026')
+      GROUP BY c.CpbAno, c.CpbNum, c.AreaCod
+    ),
+    folios AS (
+      -- Facturas emitidas desde dic 2025: busca vendedor en cualquier linea del asiento
       SELECT DISTINCT m.NumDoc, m.CodAux,
              MAX(RTRIM(COALESCE(v.VenDes,''))) AS vendedor,
              MAX(COALESCE(a.Bloqueado,'N')) AS bloqueado,
              MAX(m.MovFv) AS vencimiento
       FROM GRANTT_DASH.src.cwmovim m
-      JOIN GRANTT_DASH.src.cwcpbte c
-        ON c.CpbAno = m.CpbAno AND c.CpbNum = m.CpbNum AND c.AreaCod = m.AreaCod
-      LEFT JOIN GRANTT_DASH.src.cwtvend v ON v.VenCod = m.VendCod
+      JOIN cpbtes cp
+        ON cp.CpbAno = m.CpbAno AND cp.CpbNum = m.CpbNum AND cp.AreaCod = m.AreaCod
+      LEFT JOIN GRANTT_DASH.src.cwtvend v ON v.VenCod = cp.vend_cod
       LEFT JOIN GRANTT_DASH.src.cwtauxi a ON a.CodAux = m.CodAux
-      WHERE (m.CpbAno = '2025' OR m.CpbAno >= '2026')
-        AND c.CpbEst = 'V'
-        AND c.CpbNormaTrib = 'S'
-        AND m.PctCod IN ('10-04-01-01','10-05-01-02')
+      WHERE m.PctCod IN ('10-04-01-01','10-05-01-02')
         AND m.MovFe >= '2025-12-01'
-        AND m.VendCod IS NOT NULL AND m.VendCod <> ''
+        AND cp.vend_cod IS NOT NULL
       GROUP BY m.NumDoc, m.CodAux
     ),
     saldos AS (

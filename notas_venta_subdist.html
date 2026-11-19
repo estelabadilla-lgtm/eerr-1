@@ -453,7 +453,22 @@ function eliminarDelCarrito(idx) {
 
 function actualizarCampo(idx, campo, val) {
   carrito[idx][campo] = parseFloat(val) || 0;
-  renderCarrito();
+  // Actualiza solo el badge de margen y el total sin re-renderizar el carrito completo
+  const item = carrito[idx];
+  const mg = margenInfo(item);
+  const row = document.querySelectorAll('.prod-row')[idx];
+  if (row) {
+    const badge = row.querySelector('.margin-badge');
+    if (badge) { badge.className = 'margin-badge ' + mg.cls; badge.textContent = mg.txt; }
+    const subtotal = row.querySelector('.subtotal-val');
+    if (subtotal) subtotal.textContent = item.precio > 0 ? fmt(item.qty * item.precio) : '';
+  }
+  const total = carrito.reduce((s, r) => s + r.qty * (r.precio || 0), 0);
+  document.getElementById('totalNeto').textContent = fmt(total);
+  const hayErrores = carrito.some(r => !r.precio || r.precio < r.costo);
+  const btn = document.getElementById('btnGenerar');
+  btn.disabled = !cliente || hayErrores;
+  if (!btn.disabled) btn.textContent = 'Generar Cotización';
 }
 
 function margenInfo(item) {
@@ -499,7 +514,7 @@ function renderCarrito() {
       <div class="margin-info">
         <span class="margin-badge ${mg.cls}">${mg.txt}</span>
         <span class="stock-info">Stock: ${item.stock}</span>
-        ${item.precio>0?`<span style="color:var(--text2);margin-left:auto">${fmt(item.qty*(item.precio||0))}</span>`:''}
+        <span class="subtotal-val" style="color:var(--text2);margin-left:auto">${item.precio>0?fmt(item.qty*item.precio):''}</span>
       </div>
     </div>`;
   }).join('');

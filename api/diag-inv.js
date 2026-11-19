@@ -3,11 +3,9 @@ module.exports = async (req, res) => {
   const key = process.env.DASH_API_KEY;
   if (!url || !key) { res.status(500).json({ error: 'env' }); return; }
 
-  // Try to find the right inventory/sales table by probing common Softland names
-  const tablas = ['invdocenc','invenc','bolfac','facenc','venenc','invdoc','cwfactven','cwinvdoc','invmovenc'];
-  const sql = tablas.map(t =>
-    `SELECT '${t}' AS t, COUNT(*) AS n FROM GRANTT_DASH.src.${t}`
-  ).join(' UNION ALL ');
+  const tbl = (req.query.t || 'nw_nventa');
+  const safe = ['nw_nventa','iw_gmovi','VentasDetalle','nw_detnv','iw_gsaen','IW_GSaEn_RefDTE'].includes(tbl) ? tbl : 'nw_nventa';
+  const sql = `SELECT TOP 2 * FROM GRANTT_DASH.src.${safe}`;
   try {
     const r = await fetch(`${url}/consulta`, {
       method: 'POST',

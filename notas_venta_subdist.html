@@ -732,10 +732,16 @@ function generarCotizacion() {
   <p class="nota">Los precios indicados son netos (sin IVA). Cotización válida según fecha indicada.</p>
   </body></html>`;
 
-  const win = window.open('', '_blank', 'width=900,height=700');
-  if (!win) { mostrarMsg('Permite ventanas emergentes para ver la cotización', 'err'); return; }
-  win.document.write(html);
-  win.document.close();
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
 
   mostrarMsg('✅ Cotización generada. Usa Ctrl+P para guardar como PDF.', 'ok');
   document.getElementById('btnConvertirNV').hidden = false;

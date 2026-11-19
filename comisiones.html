@@ -369,7 +369,7 @@ function renderTable(){
       <td class="col-fecha">${r.fecha?r.fecha.split('-').reverse().join('/'):'—'}${r.vencimiento?`<br><span style="font-size:0.72em;color:#94a3b8;white-space:nowrap">Vce ${r.vencimiento.slice(0,10).split('-').reverse().join('/')}</span>`:''}</td>
       <td class="col-tipo ${neg?'neg':''}">${tipoLabel(r.tipo)}</td>
       <td class="col-pago">${badgePago}</td>
-      <td class="col-folio">${tipoLabel(r.tipo)} ${r.folio}</td>
+      <td class="col-folio">${r.folio}</td>
       <td class="col-rut">${r.rut||''}</td>
       <td class="col-razon razon">${r.razon||''}</td>
       <td class="col-vend">${r.vendedor||'—'}</td>

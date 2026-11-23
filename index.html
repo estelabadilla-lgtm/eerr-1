@@ -3819,7 +3819,7 @@ function segRenderTabla(categoria) {
     // Agrupar por n_poliza: una fila por póliza, con todos los vehículos que cubre
     table.querySelector('thead').innerHTML = `<tr>
       <th>N° PÓLIZA</th><th>ASEGURADORA</th>
-      <th>VEHÍCULOS</th><th>CUOTAS</th>
+      <th style="min-width:160px">VEHÍCULOS</th><th>CUOTAS</th>
       <th>VALOR TOTAL</th><th>DÍA DE PAGO</th>
       <th>VIGENCIA</th><th>FECHA TÉRMINO</th><th></th>
     </tr>`;
@@ -3842,13 +3842,13 @@ function segRenderTabla(categoria) {
       const rangoFechas = `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`;
       const vehiculos = polizas.map(x => {
         const v = segVehiculoPorId(x.vehiculo_id);
-        return v ? `<span style="font-weight:700;color:var(--azul-dark)">${v.patente}</span>${v.asignado ? ' <span style="opacity:.65;font-size:.8em">'+v.asignado+'</span>' : ''}` : '';
-      }).filter(Boolean).join('<br>');
+        return v ? `<b style="color:var(--azul-dark)">${v.patente || ''}</b>` : '';
+      }).filter(Boolean).join(' · ');
       const tieneDoc = (SEG_DOCS[p.id] || []).length > 0;
       html += `<tr>
         <td style="font-weight:700">${p.n_poliza || '<span class="seg-nota">pendiente</span>'}</td>
         <td>${p.aseguradora || '—'}</td>
-        <td>${vehiculos || '—'}</td>
+        <td style="min-width:160px;white-space:normal">${vehiculos || '—'}</td>
         <td>${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) + ' ' + (p.moneda || 'UF') : '—'}</td>
         <td>${segFmtUF(p.valor_total)}</td>
         <td><span class="seg-pago ${pago.cls}" title="${rangoFechas}">${pago.label}</span></td>

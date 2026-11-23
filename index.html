@@ -3838,17 +3838,16 @@ function segRenderTabla(categoria) {
         const v = segVehiculoPorId(x.vehiculo_id);
         return v ? `<span style="font-weight:700;color:var(--azul-dark)">${v.patente}</span>${v.asignado ? ' <span style="opacity:.65;font-size:.8em">'+v.asignado+'</span>' : ''}` : '';
       }).filter(Boolean).join('<br>');
-      const docsKey = p.id;
-      const tieneDoc = (SEG_DOCS[docsKey] || []).length > 0;
+      const tieneDoc = (SEG_DOCS[p.id] || []).length > 0;
       html += `<tr>
         <td style="font-weight:700">${p.n_poliza || '<span class="seg-nota">pendiente</span>'}</td>
-        <td class="col-aseguradora">${p.aseguradora || '—'}</td>
+        <td>${p.aseguradora || '—'}</td>
         <td>${vehiculos || '—'}</td>
-        <td class="col-cuotas">${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) + ' ' + (p.moneda || 'UF') : '—'}</td>
-        <td class="col-valortotal">${segFmtUF(p.valor_total)}</td>
+        <td>${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) + ' ' + (p.moneda || 'UF') : '—'}</td>
+        <td>${segFmtUF(p.valor_total)}</td>
         <td><span class="seg-pago ${pago.cls}" title="${rangoFechas}">${pago.label}</span></td>
-        <td class="col-vigencia"><span class="seg-badge ${vig.cls}">${vig.label}</span></td>
-        <td class="col-fechatermino">${segFmtFecha(p.fecha_termino)}</td>
+        <td><span class="seg-badge ${vig.cls}">${vig.label}</span></td>
+        <td>${segFmtFecha(p.fecha_termino)}</td>
         <td>
           <div class="seg-actions">
             <button type="button" class="seg-icon-btn" title="Editar" onclick="segAbrirModal('${p.id}')">✏️</button>

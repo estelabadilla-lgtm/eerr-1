@@ -279,14 +279,20 @@
   .seg-doc-del { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 12px; }
   .seg-doc-upload { font-size: 11px; margin-top: 4px; }
 
-  /* Columnas ocultables — activadas por el menú "Columnas" */
-  .seg-wrap.oculta-asignado     .col-asignado,
-  .seg-wrap.oculta-aseguradora  .col-aseguradora,
-  .seg-wrap.oculta-npoliza      .col-npoliza,
-  .seg-wrap.oculta-cuotas       .col-cuotas,
-  .seg-wrap.oculta-valortotal   .col-valortotal,
-  .seg-wrap.oculta-vigencia     .col-vigencia,
-  .seg-wrap.oculta-fechatermino .col-fechatermino { display: none; }
+  /* Columnas ocultables — solo afectan las tablas de Robo (accidentes e incendio) */
+  .seg-wrap.oculta-asignado     #seg-tbl-robo_accidentes .col-asignado,
+  .seg-wrap.oculta-aseguradora  #seg-tbl-robo_accidentes .col-aseguradora,
+  .seg-wrap.oculta-aseguradora  #seg-tbl-robo_incendio .col-aseguradora,
+  .seg-wrap.oculta-npoliza      #seg-tbl-robo_accidentes .col-npoliza,
+  .seg-wrap.oculta-npoliza      #seg-tbl-robo_incendio .col-npoliza,
+  .seg-wrap.oculta-cuotas       #seg-tbl-robo_accidentes .col-cuotas,
+  .seg-wrap.oculta-cuotas       #seg-tbl-robo_incendio .col-cuotas,
+  .seg-wrap.oculta-valortotal   #seg-tbl-robo_accidentes .col-valortotal,
+  .seg-wrap.oculta-valortotal   #seg-tbl-robo_incendio .col-valortotal,
+  .seg-wrap.oculta-vigencia     #seg-tbl-robo_accidentes .col-vigencia,
+  .seg-wrap.oculta-vigencia     #seg-tbl-robo_incendio .col-vigencia,
+  .seg-wrap.oculta-fechatermino #seg-tbl-robo_accidentes .col-fechatermino,
+  .seg-wrap.oculta-fechatermino #seg-tbl-robo_incendio .col-fechatermino { display: none; }
 
   /* Modal alta/edición */
   .seg-modal-overlay { position: fixed; inset: 0; background: rgba(13,28,36,0.55); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }

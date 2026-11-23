@@ -257,10 +257,11 @@
   .seg-colmenu label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text1); padding: 4px 0; cursor: pointer; text-transform: none; font-weight: 500; }
   .seg-colmenu input { width: auto; }
   .seg-pago { display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; white-space: nowrap; }
-  .seg-pago-ok   { background: rgba(30,132,73,0.12); color: var(--verde); }
-  .seg-pago-warn { background: rgba(212,172,13,0.18); color: #8A6D00; }
-  .seg-pago-late { background: rgba(192,57,43,0.13); color: var(--rojo); }
-  .seg-pago-off  { background: rgba(93,109,126,0.12); color: var(--gris); }
+  .seg-pago-ok     { background: rgba(30,132,73,0.12); color: var(--verde); }
+  .seg-pago-warn   { background: rgba(212,172,13,0.18); color: #8A6D00; }
+  .seg-pago-late   { background: rgba(192,57,43,0.13); color: var(--rojo); }
+  .seg-pago-off    { background: rgba(93,109,126,0.12); color: var(--gris); }
+  .seg-pago-pagada { background: rgba(30,132,73,0.22); color: #0a5c2e; font-weight: 800; }
   .seg-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; }
   .seg-badge-vigente   { background: rgba(30,132,73,0.12); color: var(--verde); }
   .seg-badge-porvencer { background: rgba(212,172,13,0.18); color: #8A6D00; }
@@ -3820,7 +3821,12 @@ function segRenderMercancia(table, filas) {
   let html = '';
   Object.values(grupos).forEach(grupo => {
     const p = grupo[0];
-    const pago = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
+    const notasGrupo = p.notas || '';
+    const esPagada = notasGrupo.startsWith('pagado:');
+    const fechaPago = esPagada ? notasGrupo.split(':')[1] : '';
+    const pago = esPagada
+      ? { cls: 'seg-pago-pagada', label: 'Pagada ' + fechaPago }
+      : segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
     const vig  = segEstadoVigencia(p.fecha_termino);
     const rango = segFmtFecha(p.fecha_inicio) + ' → ' + segFmtFecha(p.fecha_termino);
     const vList = grupo.map(x => {
@@ -3844,7 +3850,7 @@ function segRenderMercancia(table, filas) {
       + '<button type="button" class="seg-icon-btn" title="Documentación" onclick="segAbrirDocsModal(\'' + p.id + '\')"' + (tieneDoc ? ' style="color:var(--azul)"' : '') + '>📎</button>'
       + '</div></td>'
       + '</tr>';
-    if (p.notas) html += '<tr><td colspan="9" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ' + p.notas + '</span></td></tr>';
+    if (p.notas && !esPagada) html += '<tr><td colspan="9" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ' + p.notas + '</span></td></tr>';
   });
   tbody.innerHTML = html;
 }

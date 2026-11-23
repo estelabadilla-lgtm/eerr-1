@@ -1081,6 +1081,11 @@
       <div class="seg-section-header">Mercancía en Vehículos de la Bodega</div>
       <div class="seg-table-wrap"><table class="seg-table" id="seg-tbl-mercancia"><thead></thead><tbody></tbody></table></div>
     </div>
+
+    <div class="seg-section">
+      <div class="seg-section-header">Póliza de Responsabilidad Civil</div>
+      <div class="seg-table-wrap"><table class="seg-table" id="seg-tbl-responsabilidad_civil"><thead></thead><tbody></tbody></table></div>
+    </div>
   </div>
 </div>
 
@@ -1099,6 +1104,7 @@
             <option value="robo_accidentes">Robo y Accidentes de Vehículos</option>
             <option value="mercancia">Mercancía en Vehículos de la Bodega</option>
             <option value="robo_incendio">Robo e Incendio (sin vehículo, ej. bodega)</option>
+            <option value="responsabilidad_civil">Póliza de Responsabilidad Civil</option>
           </select>
         </div>
 
@@ -3548,6 +3554,7 @@ const SEG_CATEGORIAS = {
   robo_accidentes: { titulo: 'Seguro de Robo y Accidentes de Vehículos', conVehiculo: true },
   robo_incendio:   { titulo: 'Robo e Incendio',                          conVehiculo: false },
   mercancia:       { titulo: 'Mercancía en Vehículos de la Bodega',      conVehiculo: true },
+  responsabilidad_civil: { titulo: 'Póliza de Responsabilidad Civil',   conVehiculo: false },
 };
 
 // Mismo orden que la pestaña "Centros de Costos" del dashboard
@@ -3689,7 +3696,7 @@ function segEstadoPago(diaPago, fechaInicio, fechaTermino) {
 // ── Render ───────────────────────────────────────────────
 function segRenderTodas() {
   segRenderRoboAccidentes();
-  ['robo_incendio', 'mercancia'].forEach(cat => segRenderTabla(cat));
+  ['robo_incendio', 'mercancia', 'responsabilidad_civil'].forEach(cat => segRenderTabla(cat));
 }
 
 // Estado de documentación de un vehículo (basado en fecha_termino de sus docs)

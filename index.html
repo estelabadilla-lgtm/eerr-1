@@ -3809,7 +3809,59 @@ function segRenderTabla(categoria) {
     return;
   }
 
-  if (cfg.conVehiculo) {
+  if (categoria === 'mercancia') {
+    // Agrupar por n_poliza: una fila por póliza, con todos los vehículos que cubre
+    table.querySelector('thead').innerHTML = `<tr>
+      <th>N° PÓLIZA</th><th class="col-aseguradora">ASEGURADORA</th>
+      <th>VEHÍCULOS</th><th class="col-cuotas">CUOTAS</th>
+      <th class="col-valortotal">VALOR TOTAL</th><th>DÍA DE PAGO</th>
+      <th class="col-vigencia">VIGENCIA</th><th class="col-fechatermino">FECHA TÉRMINO</th><th></th>
+    </tr>`;
+    // Agrupar pólizas por n_poliza
+    const grupos = {};
+    filas.forEach(p => {
+      const key = p.n_poliza || p.id;
+      if (!grupos[key]) grupos[key] = [];
+      grupos[key].push(p);
+    });
+    if (Object.keys(grupos).length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" class="seg-empty">Sin registros todavía.</td></tr>`;
+      return;
+    }
+    let html = '';
+    Object.values(grupos).forEach(polizas => {
+      const p = polizas[0];
+      const pago = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
+      const vig = segEstadoVigencia(p.fecha_termino);
+      const rangoFechas = `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`;
+      const vehiculos = polizas.map(x => {
+        const v = segVehiculoPorId(x.vehiculo_id);
+        return v ? `<span style="font-weight:700;color:var(--azul-dark)">${v.patente}</span>${v.asignado ? ' <span style="opacity:.65;font-size:.8em">'+v.asignado+'</span>' : ''}` : '';
+      }).filter(Boolean).join('<br>');
+      const docsKey = p.id;
+      const tieneDoc = (SEG_DOCS[docsKey] || []).length > 0;
+      html += `<tr>
+        <td style="font-weight:700">${p.n_poliza || '<span class="seg-nota">pendiente</span>'}</td>
+        <td class="col-aseguradora">${p.aseguradora || '—'}</td>
+        <td>${vehiculos || '—'}</td>
+        <td class="col-cuotas">${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) + ' ' + (p.moneda || 'UF') : '—'}</td>
+        <td class="col-valortotal">${segFmtUF(p.valor_total)}</td>
+        <td><span class="seg-pago ${pago.cls}" title="${rangoFechas}">${pago.label}</span></td>
+        <td class="col-vigencia"><span class="seg-badge ${vig.cls}">${vig.label}</span></td>
+        <td class="col-fechatermino">${segFmtFecha(p.fecha_termino)}</td>
+        <td>
+          <div class="seg-actions">
+            <button type="button" class="seg-icon-btn" title="Editar" onclick="segAbrirModal('${p.id}')">✏️</button>
+            <button type="button" class="seg-icon-btn" title="Eliminar" onclick="segEliminarPoliza('${p.id}')">🗑️</button>
+            <button type="button" class="seg-icon-btn" title="Ver todo" onclick="segAbrirDetalle('${p.id}')">🔍</button>
+            <button type="button" class="seg-icon-btn" title="Documentación" onclick="segAbrirDocsModal('${p.id}')" style="${tieneDoc?'color:var(--azul)':''}">📎</button>
+          </div>
+        </td>
+      </tr>`;
+      if (p.notas) html += `<tr><td colspan="9" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ${p.notas}</span></td></tr>`;
+    });
+    tbody.innerHTML = html;
+  } else if (cfg.conVehiculo) {
     filas = filas.slice().sort((a, b) => {
       const ccA = segVehiculoPorId(a.vehiculo_id)?.centro_costo;
       const ccB = segVehiculoPorId(b.vehiculo_id)?.centro_costo;

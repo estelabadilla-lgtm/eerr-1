@@ -3796,12 +3796,65 @@ function segRenderRoboAccidentes() {
   table.querySelector('tbody').innerHTML = html;
 }
 
-// Render original para Robo e Incendio y Mercancía (sin cambios)
+function segRenderMercancia(table, filas) {
+  table.querySelector('thead').innerHTML = `<tr>
+    <th>N° PÓLIZA</th><th>ASEGURADORA</th>
+    <th>VEHÍCULOS</th><th>CUOTAS</th>
+    <th>VALOR TOTAL</th><th>DÍA DE PAGO</th>
+    <th>VIGENCIA</th><th>FECHA TÉRMINO</th><th></th>
+  </tr>`;
+  const tbody = table.querySelector('tbody');
+  if (filas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="seg-empty">Sin registros todavía.</td></tr>`;
+    return;
+  }
+  const grupos = {};
+  filas.forEach(p => {
+    const key = p.n_poliza || p.id;
+    if (!grupos[key]) grupos[key] = [];
+    grupos[key].push(p);
+  });
+  let html = '';
+  Object.values(grupos).forEach(grupo => {
+    const p = grupo[0];
+    const pago = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
+    const vig  = segEstadoVigencia(p.fecha_termino);
+    const rango = segFmtFecha(p.fecha_inicio) + ' → ' + segFmtFecha(p.fecha_termino);
+    const vList = grupo.map(x => {
+      const v = segVehiculoPorId(x.vehiculo_id);
+      return v && v.patente ? '<b style="color:var(--azul-dark)">' + v.patente + '</b>' : '';
+    }).filter(Boolean).join(' · ');
+    const tieneDoc = (SEG_DOCS[p.id] || []).length > 0;
+    html += '<tr>'
+      + '<td style="font-weight:700">' + (p.n_poliza || '<span class="seg-nota">pendiente</span>') + '</td>'
+      + '<td>' + (p.aseguradora || '—') + '</td>'
+      + '<td>' + (vList || '—') + '</td>'
+      + '<td>' + (p.total_cuotas != null ? p.total_cuotas : '—') + ' x ' + (p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) + ' ' + (p.moneda || 'UF') : '—') + '</td>'
+      + '<td>' + segFmtUF(p.valor_total) + '</td>'
+      + '<td><span class="seg-pago ' + pago.cls + '" title="' + rango + '">' + pago.label + '</span></td>'
+      + '<td><span class="seg-badge ' + vig.cls + '">' + vig.label + '</span></td>'
+      + '<td>' + segFmtFecha(p.fecha_termino) + '</td>'
+      + '<td><div class="seg-actions">'
+      + '<button type="button" class="seg-icon-btn" title="Editar" onclick="segAbrirModal(\'' + p.id + '\')">✏️</button>'
+      + '<button type="button" class="seg-icon-btn" title="Eliminar" onclick="segEliminarPoliza(\'' + p.id + '\')">🗑️</button>'
+      + '<button type="button" class="seg-icon-btn" title="Ver todo" onclick="segAbrirDetalle(\'' + p.id + '\')">🔍</button>'
+      + '<button type="button" class="seg-icon-btn" title="Documentación" onclick="segAbrirDocsModal(\'' + p.id + '\')"' + (tieneDoc ? ' style="color:var(--azul)"' : '') + '>📎</button>'
+      + '</div></td>'
+      + '</tr>';
+    if (p.notas) html += '<tr><td colspan="9" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ' + p.notas + '</span></td></tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+// Render original para Robo e Incendio y Responsabilidad Civil
 function segRenderTabla(categoria) {
   const cfg = SEG_CATEGORIAS[categoria];
   const table = document.getElementById('seg-tbl-' + categoria);
   if (!table) return;
   let filas = SEG_POLIZAS.filter(p => p.categoria === categoria);
+
+  // Mercancía tiene su propia lógica (agrupada por póliza)
+  if (categoria === 'mercancia') { segRenderMercancia(table, filas); return; }
 
   const cols = cfg.conVehiculo
     ? [['Patente',null],['Asignado','asignado'],['Aseguradora','aseguradora'],['N° Póliza','npoliza'],['Cuotas','cuotas'],['Valor Total','valortotal'],['Día de Pago',null],['Vigencia','vigencia'],['Fecha Término','fechatermino'],['',null]]
@@ -3815,58 +3868,7 @@ function segRenderTabla(categoria) {
     return;
   }
 
-  if (categoria === 'mercancia') {
-    // Agrupar por n_poliza: una fila por póliza, con todos los vehículos que cubre
-    table.querySelector('thead').innerHTML = `<tr>
-      <th>N° PÓLIZA</th><th>ASEGURADORA</th>
-      <th style="min-width:160px">VEHÍCULOS</th><th>CUOTAS</th>
-      <th>VALOR TOTAL</th><th>DÍA DE PAGO</th>
-      <th>VIGENCIA</th><th>FECHA TÉRMINO</th><th></th>
-    </tr>`;
-    // Agrupar pólizas por n_poliza
-    const grupos = {};
-    filas.forEach(p => {
-      const key = p.n_poliza || p.id;
-      if (!grupos[key]) grupos[key] = [];
-      grupos[key].push(p);
-    });
-    if (Object.keys(grupos).length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" class="seg-empty">Sin registros todavía.</td></tr>`;
-      return;
-    }
-    let html = '';
-    Object.values(grupos).forEach(polizas => {
-      const p = polizas[0];
-      const pago = segEstadoPago(p.dia_pago, p.fecha_inicio, p.fecha_termino);
-      const vig = segEstadoVigencia(p.fecha_termino);
-      const rangoFechas = `${segFmtFecha(p.fecha_inicio)} → ${segFmtFecha(p.fecha_termino)}`;
-      const vehiculos = polizas.map(x => {
-        const v = segVehiculoPorId(x.vehiculo_id);
-        return v ? `<b style="color:var(--azul-dark)">${v.patente || ''}</b>` : '';
-      }).filter(Boolean).join(' · ');
-      const tieneDoc = (SEG_DOCS[p.id] || []).length > 0;
-      html += `<tr>
-        <td style="font-weight:700">${p.n_poliza || '<span class="seg-nota">pendiente</span>'}</td>
-        <td>${p.aseguradora || '—'}</td>
-        <td style="min-width:160px;white-space:normal">${vehiculos || '—'}</td>
-        <td>${p.total_cuotas ?? '—'} x ${p.valor_cuota != null ? Number(p.valor_cuota).toLocaleString('es-CL',{minimumFractionDigits:2}) + ' ' + (p.moneda || 'UF') : '—'}</td>
-        <td>${segFmtUF(p.valor_total)}</td>
-        <td><span class="seg-pago ${pago.cls}" title="${rangoFechas}">${pago.label}</span></td>
-        <td><span class="seg-badge ${vig.cls}">${vig.label}</span></td>
-        <td>${segFmtFecha(p.fecha_termino)}</td>
-        <td>
-          <div class="seg-actions">
-            <button type="button" class="seg-icon-btn" title="Editar" onclick="segAbrirModal('${p.id}')">✏️</button>
-            <button type="button" class="seg-icon-btn" title="Eliminar" onclick="segEliminarPoliza('${p.id}')">🗑️</button>
-            <button type="button" class="seg-icon-btn" title="Ver todo" onclick="segAbrirDetalle('${p.id}')">🔍</button>
-            <button type="button" class="seg-icon-btn" title="Documentación" onclick="segAbrirDocsModal('${p.id}')" style="${tieneDoc?'color:var(--azul)':''}">📎</button>
-          </div>
-        </td>
-      </tr>`;
-      if (p.notas) html += `<tr><td colspan="9" style="padding:2px 10px 8px"><span class="seg-nota">⚠ ${p.notas}</span></td></tr>`;
-    });
-    tbody.innerHTML = html;
-  } else if (cfg.conVehiculo) {
+  if (cfg.conVehiculo) {
     filas = filas.slice().sort((a, b) => {
       const ccA = segVehiculoPorId(a.vehiculo_id)?.centro_costo;
       const ccB = segVehiculoPorId(b.vehiculo_id)?.centro_costo;

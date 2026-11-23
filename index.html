@@ -3812,10 +3812,10 @@ function segRenderTabla(categoria) {
   if (categoria === 'mercancia') {
     // Agrupar por n_poliza: una fila por póliza, con todos los vehículos que cubre
     table.querySelector('thead').innerHTML = `<tr>
-      <th>N° PÓLIZA</th><th class="col-aseguradora">ASEGURADORA</th>
-      <th>VEHÍCULOS</th><th class="col-cuotas">CUOTAS</th>
-      <th class="col-valortotal">VALOR TOTAL</th><th>DÍA DE PAGO</th>
-      <th class="col-vigencia">VIGENCIA</th><th class="col-fechatermino">FECHA TÉRMINO</th><th></th>
+      <th>N° PÓLIZA</th><th>ASEGURADORA</th>
+      <th>VEHÍCULOS</th><th>CUOTAS</th>
+      <th>VALOR TOTAL</th><th>DÍA DE PAGO</th>
+      <th>VIGENCIA</th><th>FECHA TÉRMINO</th><th></th>
     </tr>`;
     // Agrupar pólizas por n_poliza
     const grupos = {};

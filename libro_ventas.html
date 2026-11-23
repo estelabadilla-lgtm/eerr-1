@@ -813,6 +813,15 @@ function renderRechazadas(){
   });
 }
 
+// OC y guías de una factura: Softland + guía referenciada en el RCV
+function ocGdDe(r){
+  const sf=refsDe(r);
+  const oc=sf?[...sf.oc]:[];
+  const gd=sf?[...sf.gd]:[];
+  if(r.tipoRef==='52'&&r.folioRef&&!gd.includes(r.folioRef)) gd.unshift(r.folioRef);
+  return{oc,gd};
+}
+
 function toggleRechFiltro(estado){
   const cbs=document.querySelectorAll('#rechFilter input[type=checkbox]');
   if(estado==='all'){cbs.forEach(cb=>cb.checked=true);}
@@ -834,9 +843,14 @@ function renderTablaRech(){
     sin_nc:'<span class="pill sin-nc">✗ Sin NC</span>'
   }[e]||'');
 
-  document.getElementById('tbodyRech').innerHTML=visible.length?visible.map(a=>`<tr>
+  document.getElementById('tbodyRech').innerHTML=visible.length?visible.map(a=>{
+    const rf=ocGdDe(a);
+    let folioCell=`${a.folio}`;
+    if(rf.oc.length) folioCell+=` <span class="pill ref">OC ${rf.oc.join(', ')}</span>`;
+    if(rf.gd.length) folioCell+=` <span class="pill ref">GD ${rf.gd.join(', ')}</span>`;
+    return `<tr>
     <td>${a.fechaRaw||a.fecha}</td>
-    <td>${a.folio}</td>
+    <td style="white-space:normal;min-width:90px">${folioCell}</td>
     <td>${a.rut}</td>
     <td style="white-space:normal;min-width:160px">${a.razon}</td>
     <td class="num">${fmtFull(a.neto)}</td>
@@ -844,7 +858,7 @@ function renderTablaRech(){
     <td class="num">${a.ncList.length?fmtFull(a.totalNC):'—'}</td>
     <td class="num" style="${a.saldo>0?'color:var(--crit-ink)':'color:var(--good-ink)'}">${fmtFull(Math.max(a.saldo,0))}</td>
     <td>${estadoPill(a.estado)}</td>
-  </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:16px">Sin resultados con los filtros seleccionados</td></tr>';
+  </tr>`;}).join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:16px">Sin resultados con los filtros seleccionados</td></tr>';
 }
 
 // --- Excel y PDF del análisis de rechazadas ---
@@ -852,11 +866,12 @@ document.getElementById('bRechXls').addEventListener('click',()=>{
   if(!window.XLSX||!analisisRech.length)return;
   const activos=new Set([...document.querySelectorAll('#rechFilter input[type=checkbox]')].filter(cb=>cb.checked).map(cb=>cb.value));
   const visible=analisisRech.filter(a=>activos.has(a.estado));
-  const data=[['Fecha','Folio Fac.','RUT','Razón Social','Neto Factura','NCs Asociadas','Total NC','Saldo','Estado']];
+  const data=[['Fecha','Folio Fac.','OC','Guía','RUT','Razón Social','Neto Factura','NCs Asociadas','Total NC','Saldo','Estado']];
   for(const a of visible){
     const estLabel={anulada:'Anulada',parcial:'Parcial',sin_nc:'Sin NC'}[a.estado]||a.estado;
     const ncs=a.ncList.length?a.ncList.map(n=>`Folio ${n.folio}: $${n.neto.toLocaleString('es-CL')}`).join(' | '):'—';
-    data.push([a.fechaRaw,a.folio,a.rut,a.razon,a.neto,ncs,a.ncList.length?a.totalNC:'',Math.max(a.saldo,0),estLabel]);
+    const rf=ocGdDe(a);
+    data.push([a.fechaRaw,a.folio,rf.oc.join(', '),rf.gd.join(', '),a.rut,a.razon,a.neto,ncs,a.ncList.length?a.totalNC:'',Math.max(a.saldo,0),estLabel]);
   }
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(data);
@@ -873,8 +888,9 @@ document.getElementById('bRechPdf').addEventListener('click',()=>{
     const estStyle={anulada:'color:green',parcial:'color:#8a4a00',sin_nc:'color:red'}[a.estado]||'';
     const estLabel={anulada:'✓ Anulada',parcial:'⚠ Parcial',sin_nc:'✗ Sin NC'}[a.estado]||a.estado;
     const ncs=a.ncList.length?a.ncList.map(n=>`Folio ${n.folio}: $${n.neto.toLocaleString('es-CL')}`).join('<br>'):'—';
+    const rf=ocGdDe(a);
     return `<tr>
-      <td>${a.fechaRaw}</td><td>${a.folio}</td><td>${a.rut}</td><td>${a.razon}</td>
+      <td>${a.fechaRaw}</td><td>${a.folio}</td><td>${rf.oc.join(', ')}</td><td>${rf.gd.join(', ')}</td><td>${a.rut}</td><td>${a.razon}</td>
       <td align="right">$${a.neto.toLocaleString('es-CL')}</td>
       <td style="font-size:10px">${ncs}</td>
       <td align="right">${a.ncList.length?'$'+a.totalNC.toLocaleString('es-CL'):'—'}</td>
@@ -890,7 +906,7 @@ document.getElementById('bRechPdf').addEventListener('click',()=>{
   @media print{button{display:none}}</style></head>
   <body><h2>⚠ Análisis de Facturas Rechazadas</h2>
   <p style="font-size:11px;color:#666">Mostrando ${visible.length} de ${analisisRech.length} · Generado ${new Date().toLocaleDateString('es-CL')}</p>
-  <table><thead><tr><th>Fecha</th><th>Folio</th><th>RUT</th><th>Razón Social</th>
+  <table><thead><tr><th>Fecha</th><th>Folio</th><th>OC</th><th>Guía</th><th>RUT</th><th>Razón Social</th>
   <th>Neto Fac.</th><th>NCs Asociadas</th><th>Total NC</th><th>Saldo</th><th>Estado</th></tr></thead>
   <tbody>${filas}</tbody></table></body></html>`);
   w.document.close();w.focus();setTimeout(()=>{w.print();},400);
